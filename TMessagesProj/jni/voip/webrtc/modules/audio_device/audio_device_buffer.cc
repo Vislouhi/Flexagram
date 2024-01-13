@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+//#include <list>
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "rtc_base/checks.h"
@@ -238,6 +239,7 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
                                              size_t samples_per_channel,
                                              int64_t capture_timestamp_ns) {
   // Copy the complete input buffer to the local buffer.
+  samples_per_channel_ = samples_per_channel;
   const size_t old_size = rec_buffer_.size();
   rec_buffer_.SetData(static_cast<const int16_t*>(audio_buffer),
                       rec_channels_ * samples_per_channel);
@@ -286,11 +288,15 @@ int32_t AudioDeviceBuffer::DeliverRecordedData() {
   const size_t frames = rec_buffer_.size() / rec_channels_;
   const size_t bytes_per_frame = rec_channels_ * sizeof(int16_t);
   uint32_t new_mic_level_dummy = 0;
-  uint32_t total_delay_ms = play_delay_ms_ + rec_delay_ms_;
+  uint32_t total_delay_ms = play_delay_ms_ + rec_delay_ms_ + 0;
+
+
+// TODO pass delay parameter
   int32_t res = audio_transport_cb_->RecordedDataIsAvailable(
-      rec_buffer_.data(), frames, bytes_per_frame, rec_channels_,
-      rec_sample_rate_, total_delay_ms, 0, 0, typing_status_,
-      new_mic_level_dummy, capture_timestamp_ns_);
+            rec_buffer_.data(), frames, bytes_per_frame, rec_channels_,
+            rec_sample_rate_, total_delay_ms, 0, 0, typing_status_,
+            new_mic_level_dummy, capture_timestamp_ns_);
+//  }
   if (res == -1) {
     RTC_LOG(LS_ERROR) << "RecordedDataIsAvailable() failed";
   }

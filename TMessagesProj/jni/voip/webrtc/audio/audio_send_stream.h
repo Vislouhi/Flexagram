@@ -97,6 +97,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                           int event,
                           int duration_ms) override;
   void SetMuted(bool muted) override;
+  void SetFlexatarDelay1(bool flexatarDelay) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
   webrtc::AudioSendStream::Stats GetStats(
       bool has_remote_tracks) const override;
@@ -182,6 +183,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
       RTC_GUARDED_BY(worker_thread_checker_);
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   const std::unique_ptr<voe::ChannelSendInterface> channel_send_;
+  std::vector<std::unique_ptr<AudioFrame>> delayedFramesList;
+  bool flexatar_delay_ = false;
   RtcEventLog* const event_log_;
   const bool use_legacy_overhead_calculation_;
 

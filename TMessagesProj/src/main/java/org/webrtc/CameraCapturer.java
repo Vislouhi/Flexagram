@@ -13,6 +13,8 @@ package org.webrtc;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
@@ -153,6 +155,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
 
     @Override
     public void onFrameCaptured(CameraSession session, VideoFrame frame) {
+
       checkIsOnCameraThread();
       synchronized (stateLock) {
         if (session != currentSession) {

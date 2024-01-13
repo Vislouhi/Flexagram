@@ -305,6 +305,10 @@ public class VoIPPiPView implements VoIPService.StateListener, NotificationCente
         currentUserTextureView = new VoIPTextureView(context, false, true);
         currentUserTextureView.renderer.setMirror(true);
 
+        callingUserTextureView.renderer.setIsFlexatar(false);
+        currentUserTextureView.renderer.setIsFlexatar(true);
+
+
         floatingView.addView(callingUserTextureView);
         floatingView.addView(currentUserTextureView);
         floatingView.setBackgroundColor(Color.GRAY);

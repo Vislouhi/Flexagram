@@ -13,7 +13,9 @@ package org.webrtc;
 /** Simplest possible GL shader that just draws frames as opaque quads. */
 public class GlRectDrawer extends GlGenericDrawer {
   private static final String FRAGMENT_SHADER = "void main() {\n"
+//      + "  gl_FragColor = vec4(1.0,0.0,0.0,1.0);\n"
       + "  gl_FragColor = sample(tc);\n"
+//      + "  gl_FragColor = vec4(sample(tc).xyz,1.0)  + vec4(1.0,0.0,0.0,0.0);\n"
       + "}\n";
 
   private static class ShaderCallbacks implements GlGenericDrawer.ShaderCallbacks {

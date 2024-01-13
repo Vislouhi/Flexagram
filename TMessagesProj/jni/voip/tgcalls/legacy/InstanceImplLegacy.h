@@ -19,6 +19,8 @@ public:
 	void receiveSignalingData(const std::vector<uint8_t> &data) override;
 	void setNetworkType(NetworkType networkType) override;
 	void setMuteMicrophone(bool muteMicrophone) override;
+	void setFlexatarDelay1(bool flexatarDelay) override;
+
 	void setVideoCapture(std::shared_ptr<VideoCaptureInterface> videoCapture) override;
 	void sendVideoDeviceUpdated() override;
 	void setRequestedVideoAspect(float aspect) override;

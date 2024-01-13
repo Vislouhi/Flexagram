@@ -17,6 +17,7 @@ import android.graphics.Shader;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Parcelable;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -27,6 +28,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.flexatar.FlexatarRenderer;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
@@ -78,7 +80,7 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         super(context);
 
         needScreencast = screencast;
-        titles = new TextView[needScreencast ? 3 : 2];
+        titles = new TextView[needScreencast ? 4 : 3];
 
         viewPager = new ViewPager(context);
         AndroidUtilities.setViewPagerEdgeEffectColor(viewPager, 0x7f000000);
@@ -100,11 +102,15 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
 
             @Override
             public void onPageSelected(int i) {
+                Log.d("FLX_INJECT","onPageSelected "+i);
                 if (scrollState == ViewPager.SCROLL_STATE_IDLE) {
                     if (i <= (needScreencast ? 1 : 0)) {
                         currentTexturePage = 1;
                     } else {
                         currentTexturePage = 2;
+                    }
+                    if  (i == (needScreencast ? 3 : 2)){
+                        currentTexturePage = 3;
                     }
                     onFinishMoveCameraPage();
                 } else {
@@ -112,6 +118,9 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
                         willSetPage = 1;
                     } else {
                         willSetPage = 2;
+                    }
+                    if  (i == (needScreencast ? 3 : 2)){
+                        willSetPage = 3;
                     }
                 }
             }
@@ -125,7 +134,7 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
                 }
             }
         });
-
+//        FlexatarRenderer.isFlexatarRendering = true;
         textureView = new VoIPTextureView(context, false, false);
         textureView.renderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL);
         textureView.scaleType = VoIPTextureView.SCALE_TYPE_FIT;
@@ -133,6 +142,7 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         textureView.renderer.setAlpha(0);
         textureView.renderer.setRotateTextureWithScreen(true);
         textureView.renderer.setUseCameraRotation(true);
+        textureView.renderer.setIsFlexatar(true);
         addView(textureView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         ActionBar actionBar = new ActionBar(context);
@@ -243,8 +253,12 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
                 titles[a].setText(LocaleController.getString("VoipPhoneScreen", R.string.VoipPhoneScreen));
             } else if (a == 0 || a == 1 && needScreencast) {
                 titles[a].setText(LocaleController.getString("VoipFrontCamera", R.string.VoipFrontCamera));
-            } else {
+            } else if (a == 1 || a == 2 && needScreencast) {
+//                titles[a].setText("BaCK_CaM");
                 titles[a].setText(LocaleController.getString("VoipBackCamera", R.string.VoipBackCamera));
+            } else {
+//                TODO Add FLEXATAR to strings.xml
+                titles[a].setText("FLEXATAR");
             }
             int num = a;
             titles[a].setOnClickListener(view -> viewPager.setCurrentItem(num, true));
@@ -337,7 +351,10 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         positiveButton.invalidate();
         if (needScreencast && currentPage == 0 && pageOffset <= 0) {
             textureView.setVisibility(INVISIBLE);
+//            Log.d("FLX_INJECT","textureView invisible ");
+
         } else {
+            Log.d("FLX_INJECT","textureView visible ");
             textureView.setVisibility(VISIBLE);
             if (currentPage + (needScreencast ? 0 : 1) == currentTexturePage) {
                 textureView.setTranslationX(-pageOffset * getMeasuredWidth());
@@ -366,10 +383,12 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
     }
 
     private void onFinishMoveCameraPage() {
+
         VoIPService service = VoIPService.getSharedInstance();
         if (currentTexturePage == visibleCameraPage || service == null) {
             return;
         }
+        FlexatarRenderer.isFlexatarRendering = false;
         boolean currentFrontface = service.isFrontFaceCamera();
         if (currentTexturePage == 1 && !currentFrontface || currentTexturePage == 2 && currentFrontface) {
             saveLastCameraBitmap();
@@ -377,6 +396,16 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             VoIPService.getSharedInstance().switchCamera();
             textureView.setAlpha(0.0f);
         }
+        if (currentTexturePage == 3){
+            saveLastCameraBitmap();
+            FlexatarRenderer.isFlexatarRendering = true;
+            textureView.renderer.setIsFlexatar(true);
+            VoIPService voipInstance = VoIPService.getSharedInstance();
+            if (voipInstance != null)
+                voipInstance.setFlexatarDelay(FlexatarRenderer.isFlexatarRendering);
+//            textureView.setAlpha(0.0f);
+        }
+        Log.d("FLX_INJECT","currentTexturePage "+currentTexturePage);
         visibleCameraPage = currentTexturePage;
     }
 

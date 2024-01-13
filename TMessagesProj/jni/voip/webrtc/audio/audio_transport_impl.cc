@@ -167,13 +167,19 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
                       swap_stereo_channels, audio_processing_,
                       audio_frame.get());
   audio_frame->set_absolute_capture_timestamp_ms(estimated_capture_time_ns /
-                                                 1000000);
-
-  RTC_DCHECK_GT(audio_frame->samples_per_channel_, 0);
-  if (async_audio_processing_)
-    async_audio_processing_->Process(std::move(audio_frame));
-  else
-    SendProcessedData(std::move(audio_frame));
+                                                 1000000 );
+  /*delayedFramesList.push_back(std::move(audio_frame));
+  // TODO pass delay parameter
+  if (delayedFramesList.size()>45) {
+    std::unique_ptr<AudioFrame>& af = delayedFramesList.at(0);
+    delayedFramesList.erase(delayedFramesList.begin());
+    RTC_DCHECK_GT(audio_frame->samples_per_channel_, 0);
+    if (async_audio_processing_)
+      async_audio_processing_->Process(std::move(af));
+    else
+      SendProcessedData(std::move(af));
+  }*/
+  SendProcessedData(std::move(audio_frame));
 
   return 0;
 }

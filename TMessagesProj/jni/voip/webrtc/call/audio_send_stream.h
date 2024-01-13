@@ -190,6 +190,8 @@ class AudioSendStream : public AudioSender {
 
   virtual void SetMuted(bool muted) = 0;
 
+  virtual  void SetFlexatarDelay1(bool flexatarDelay)  = 0;
+
   virtual Stats GetStats() const = 0;
   virtual Stats GetStats(bool has_remote_tracks) const = 0;
 };

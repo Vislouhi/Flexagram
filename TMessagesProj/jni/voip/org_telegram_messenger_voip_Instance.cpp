@@ -1,6 +1,7 @@
 #include "org_telegram_messenger_voip_Instance.h"
 
 #include <jni.h>
+#include <android/log.h>
 #include <sdk/android/native_api/video/wrapper.h>
 #include <VideoCapturerInterface.h>
 #include <platform/android/AndroidInterface.h>
@@ -816,6 +817,18 @@ JNIEXPORT void JNICALL Java_org_telegram_messenger_voip_NativeInstance_setMuteMi
         instance->nativeInstance->setMuteMicrophone(muteMicrophone);
     } else if (instance->groupNativeInstance != nullptr) {
         instance->groupNativeInstance->setIsMuted(muteMicrophone);
+    }
+}
+extern "C"
+JNIEXPORT void JNICALL Java_org_telegram_messenger_voip_NativeInstance_setFlexatarDelay1(JNIEnv *env, jobject obj, jboolean flexatarDelay) {
+    InstanceHolder *instance = getInstanceHolder(env, obj);
+    if (instance->nativeInstance != nullptr) {
+        instance->nativeInstance->setFlexatarDelay1(flexatarDelay);
+        __android_log_print(ANDROID_LOG_DEBUG, "FLX_INJECT", "nativeInstance setFlexatarDelay");
+    } else if (instance->groupNativeInstance != nullptr) {
+        __android_log_print(ANDROID_LOG_DEBUG, "FLX_INJECT", "groupNativeInstance setFlexatarDelay");
+
+        instance->groupNativeInstance->setFlexatarDelay1(flexatarDelay);
     }
 }
 

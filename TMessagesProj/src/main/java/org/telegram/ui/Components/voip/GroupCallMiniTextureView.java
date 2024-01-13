@@ -22,6 +22,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -87,7 +88,17 @@ public class GroupCallMiniTextureView extends FrameLayout implements GroupCallSt
     private boolean updateNextLayoutAnimated;
 
     boolean attached;
-    public ChatObject.VideoParticipant participant;
+    private ChatObject.VideoParticipant participant;
+    public void setParticipant(ChatObject.VideoParticipant participant){
+        this.participant=participant;
+        this.textureView.renderer.setIsFlexatar(this.participant.participant.self);
+
+    }
+    public ChatObject.VideoParticipant participant( ){
+        return this.participant;
+
+
+    }
     GroupCallRenderersContainer parentContainer;
 
     ArrayList<GroupCallMiniTextureView> attachedRenderers;
@@ -481,6 +492,7 @@ public class GroupCallMiniTextureView extends FrameLayout implements GroupCallSt
             }
         };
         textureView.renderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
+
         this.parentContainer = parentContainer;
         this.attachedRenderers = attachedRenderers;
         this.activity = activity;
@@ -793,6 +805,7 @@ public class GroupCallMiniTextureView extends FrameLayout implements GroupCallSt
         }
         if (renderer == null) {
             renderer = new GroupCallMiniTextureView(renderersContainer, attachedRenderers, call, activity);
+            renderer.textureView.renderer.setIsFlexatar(participant.participant.self);
         }
         if (primaryView != null) {
             renderer.setPrimaryView(primaryView);
@@ -1107,6 +1120,9 @@ public class GroupCallMiniTextureView extends FrameLayout implements GroupCallSt
                 noVideoStubLayout.avatarImageReceiver.setImage(imageLocation, null, thumb, null, parentObject, 0);
                 noVideoStubLayout.backgroundImageReceiver.setImage(imageLocation, "50_50_b", new ColorDrawable(Theme.getColor(Theme.key_voipgroup_listViewBackground)), null, parentObject, 0);
                 hasVideoLocal = false;
+
+                textureView.renderer.setIsFlexatar(participant.participant.self);
+                Log.d("FLX_INJECT","setIsFlexatar" + participant.participant.self);
             }
 
             boolean skipNoStubTransition = animated && secondaryView != null && !showingInFullscreen && !hasVideoLocal;

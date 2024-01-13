@@ -31,6 +31,7 @@ public:
     void removeIncomingVideoSource(uint32_t ssrc);
 
     void setIsMuted(bool isMuted);
+    void setFlexatarDelay1(bool flexatarDelay);
     void setIsNoiseSuppressionEnabled(bool isNoiseSuppressionEnabled);
     void setVideoCapture(std::shared_ptr<VideoCaptureInterface> videoCapture);
     void setVideoSource(std::function<rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>()> getVideoSource);
@@ -50,6 +51,7 @@ private:
     std::shared_ptr<Threads> _threads;
     std::unique_ptr<ThreadLocalObject<GroupInstanceCustomInternal>> _internal;
     std::unique_ptr<LogSinkImpl> _logSink;
+//    bool _flexatarDelay = false;
 
 };
 

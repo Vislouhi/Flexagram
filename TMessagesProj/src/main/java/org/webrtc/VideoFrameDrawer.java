@@ -13,7 +13,13 @@ package org.webrtc;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.opengl.GLES20;
+import android.util.Log;
+
 import androidx.annotation.Nullable;
+
+import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlxDrawer;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -23,6 +29,8 @@ import java.nio.ByteBuffer;
  */
 public class VideoFrameDrawer {
   public static final String TAG = "VideoFrameDrawer";
+  private FlxDrawer flxDrawer;
+
   /**
    * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb
    * depending on the type of the buffer. You can supply an additional render matrix. This is
@@ -31,18 +39,41 @@ public class VideoFrameDrawer {
    */
   public static void drawTexture(RendererCommon.GlDrawer drawer, VideoFrame.TextureBuffer buffer,
       Matrix renderMatrix, int rotatedWidth, int rotatedHeight, int frameWidth, int frameHeight, int viewportX, int viewportY,
-      int viewportWidth, int viewportHeight, boolean blur) {
+      int viewportWidth, int viewportHeight, boolean blur,boolean fromEncoder,boolean isFlexatar,int flexatarTextureId) {
     Matrix finalMatrix = new Matrix(buffer.getTransformMatrix());
     finalMatrix.preConcat(renderMatrix);
     float[] finalGlMatrix = RendererCommon.convertMatrixFromAndroidGraphicsMatrix(finalMatrix);
+//    if (fromEncoder)
+//      Log.d("FLX_INJECT","drawFrame");
     switch (buffer.getType()) {
       case OES:
-        drawer.drawOes(buffer.getTextureId(), buffer.getWidth(), buffer.getHeight(), rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
-            viewportY, viewportWidth, viewportHeight, blur);
+
+
+//        drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+//                viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
+
+        if ( flexatarTextureId == -1) {
+          drawer.drawOes(buffer.getTextureId(), buffer.getWidth(), buffer.getHeight(), rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+                  viewportY, viewportWidth, viewportHeight, blur);
+        }else{
+
+          drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+                  viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
+
+        }
         break;
+//      case FLX:
+//        Log.d("FLX_INJECT","drawFlx");
+//        drawer.drawOes(buffer.getTextureId(), buffer.getWidth(), buffer.getHeight(), rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+//                viewportY, viewportWidth, viewportHeight, blur);
+//        break;
       case RGB:
+//        Log.d("FLX_INJECT","drawRgb");
+//        drawer.drawFlx( 512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+//                viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
         drawer.drawRgb(buffer.getTextureId(), buffer.getWidth(), buffer.getHeight(), rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
             viewportY, viewportWidth, viewportHeight, blur);
+
         break;
       default:
         throw new RuntimeException("Unknown texture type.");
@@ -188,13 +219,23 @@ public class VideoFrameDrawer {
 
   public void drawFrame(
       VideoFrame frame, RendererCommon.GlDrawer drawer, Matrix additionalRenderMatrix) {
+//    drawFrame(frame, drawer, additionalRenderMatrix, 0 /* viewportX */, 0 /* viewportY */,
+//        frame.getRotatedWidth(), frame.getRotatedHeight(), false, false);
     drawFrame(frame, drawer, additionalRenderMatrix, 0 /* viewportX */, 0 /* viewportY */,
-        frame.getRotatedWidth(), frame.getRotatedHeight(), false, false);
+            frame.getRotatedWidth(), frame.getRotatedHeight(), false, false,false);
+  }
+  public void drawFrameFromEncoder(
+          VideoFrame frame, RendererCommon.GlDrawer drawer, Matrix additionalRenderMatrix) {
+//    drawFrame(frame, drawer, additionalRenderMatrix, 0 /* viewportX */, 0 /* viewportY */,
+//        frame.getRotatedWidth(), frame.getRotatedHeight(), false, false);
+    drawFrame(frame, drawer, additionalRenderMatrix, 0 /* viewportX */, 0 /* viewportY */,
+            frame.getRotatedWidth(), frame.getRotatedHeight(), true, false,true);
   }
 
   public void drawFrame(VideoFrame frame, RendererCommon.GlDrawer drawer,
       @Nullable Matrix additionalRenderMatrix, int viewportX, int viewportY, int viewportWidth,
-      int viewportHeight, boolean rotate, boolean blur) {
+      int viewportHeight, boolean rotate, boolean blur,boolean fromEncoder) {
+//    Log.d("FLX_INJECT","drawFrame ");
     final int width = rotate ? frame.getRotatedHeight() : frame.getRotatedWidth();
     final int height = rotate ? frame.getRotatedWidth() : frame.getRotatedHeight();
     calculateTransformedRenderSize(width, height, additionalRenderMatrix);
@@ -209,7 +250,30 @@ public class VideoFrameDrawer {
     if (!isTextureFrame) {
       renderMatrix.preScale(1f, -1f); // I420-frames are upside down
     }
-    renderMatrix.preRotate(frame.getRotation());
+
+//    renderMatrix.preRotate(frame.getRotation());
+
+    if (!frame.getIsFlexatar() || !FlexatarRenderer.isFlexatarRendering) {
+
+      renderMatrix.preRotate(frame.getRotation());
+    }else {
+      if (fromEncoder){
+        renderMatrix.preRotate(270);
+      }else {
+        renderMatrix.preRotate(180);
+      }
+      /*if (fromEncoder){
+
+        if(FlexatarRenderer.isFrontFaceCamera) {
+          renderMatrix.preRotate(90);
+        }else{
+          renderMatrix.preRotate(270);
+        }
+      }else{
+        renderMatrix.preRotate(180);
+      }*/
+    }
+
     renderMatrix.preTranslate(-0.5f, -0.5f);
     renderRotateMatrix.set(renderMatrix);
     if (additionalRenderMatrix != null) {
@@ -217,9 +281,38 @@ public class VideoFrameDrawer {
     }
 
     if (isTextureFrame) {
+//      if (fromEncoder){
+//        Log.d("FLX_RNDMAT", frame.getRotatedWidth() +" " + frame.getRotatedHeight());
+//      }
       lastI420Frame = null;
+      int flexatarTextureId = -1;
+      if (frame.getIsFlexatar() && FlexatarRenderer.isFlexatarRendering) {
+        if (flxDrawer == null) {
+          flxDrawer = new FlxDrawer();
+          flxDrawer.addHead(FlexatarRenderer.currentFlxData);
+        }
+        if (fromEncoder) {
+          flxDrawer.screenRatio = (float) renderWidth / (float) renderHeight;
+        } else {
+
+
+          if (viewportHeight<viewportWidth ){
+            int newViewportWidth = (int)((float)viewportHeight / 1.5f);
+            viewportX = (viewportWidth - newViewportWidth) /2;
+            viewportWidth = newViewportWidth;
+            flxDrawer.screenRatio = (float) frame.getRotatedWidth() / (float) frame.getRotatedHeight() * (float) viewportWidth / (float) viewportHeight / (float) renderWidth * (float) renderHeight;
+          }else{
+            flxDrawer.screenRatio = (float) frame.getRotatedWidth() / (float) frame.getRotatedHeight();
+          }
+        }
+        flxDrawer.drawToFrameBuffer();
+//        Log.d("FLX_INJECT","flexatar is drawing");
+        flexatarTextureId = flxDrawer.renderTexture[0];
+      }
+
+//      Log.d("FLX_INJECT","ratio "+ (float)viewportWidth/(float)viewportHeight);
       drawTexture(drawer, (VideoFrame.TextureBuffer) frame.getBuffer(), renderMatrix, frame.getRotatedWidth(), frame.getRotatedHeight(), renderWidth,
-          renderHeight, viewportX, viewportY, viewportWidth, viewportHeight, blur);
+          renderHeight, viewportX, viewportY, viewportWidth, viewportHeight, blur,fromEncoder,frame.getIsFlexatar(),flexatarTextureId);
     } else {
       // Only upload the I420 data to textures once per frame, if we are called multiple times
       // with the same frame.
@@ -233,6 +326,7 @@ public class VideoFrameDrawer {
       drawer.drawYuv(yuvUploader.getYuvTextures(), frame.getBuffer().getWidth(), frame.getBuffer().getHeight(), frame.getRotatedWidth(), frame.getRotatedHeight(),
           RendererCommon.convertMatrixFromAndroidGraphicsMatrix(renderMatrix), renderWidth,
           renderHeight, viewportX, viewportY, viewportWidth, viewportHeight, blur);
+
     }
   }
 

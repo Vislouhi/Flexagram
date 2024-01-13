@@ -8,3 +8,4 @@ google-services.json
 TMessagesProj/.cxx/
 TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
 TMessagesProj/src/main/assets/flexatar/
+TMessagesProj_AppStandalone/google-services.json

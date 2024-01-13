@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.webrtc.VideoFrame;
 
 /**
@@ -40,6 +42,7 @@ public class NativeCapturerObserver implements CapturerObserver {
 
   @Override
   public void onFrameCaptured(VideoFrame frame) {
+
     final VideoProcessor.FrameAdaptationParameters parameters =
         nativeAndroidVideoTrackSource.adaptFrame(frame);
     if (parameters == null || parameters.cropWidth == 0 || parameters.cropHeight == 0) {

@@ -406,7 +406,22 @@ void AudioSendStream::SendAudioData(std::unique_ptr<AudioFrame> audio_frame) {
     MutexLock lock(&audio_level_lock_);
     audio_level_.ComputeLevel(*audio_frame, duration);
   }
-  channel_send_->ProcessAndEncodeAudio(std::move(audio_frame));
+//  RTC_LOG(LS_INFO) << "ProcessAndEncodeAudio";
+  // TODO pass delay parameter
+//  if(flexatar_delay_)
+
+  if(flexatar_delay_) {
+    delayedFramesList.push_back(std::move(audio_frame));
+    if (delayedFramesList.size() > 45) {
+      std::unique_ptr<AudioFrame> &af = delayedFramesList.at(0);
+      delayedFramesList.erase(delayedFramesList.begin());
+      RTC_DCHECK_GT(audio_frame->samples_per_channel_, 0);
+      channel_send_->ProcessAndEncodeAudio(std::move(af));
+
+    }
+  }else {
+    channel_send_->ProcessAndEncodeAudio(std::move(audio_frame));
+  }
 }
 
 bool AudioSendStream::SendTelephoneEvent(int payload_type,
@@ -423,6 +438,13 @@ void AudioSendStream::SetMuted(bool muted) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   channel_send_->SetInputMute(muted);
 }
+void AudioSendStream::SetFlexatarDelay1(bool flexatarDelay) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  flexatar_delay_ = flexatarDelay;
+//  channel_send_->SetInputMute(muted);
+// TODO pass flexatar delay
+}
+
 
 webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   return GetStats(true);

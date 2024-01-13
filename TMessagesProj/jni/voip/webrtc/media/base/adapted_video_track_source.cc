@@ -16,6 +16,9 @@
 #include "api/video/video_rotation.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/time_utils.h"
+//#include "rtc_base/logging.h"
+
+
 
 namespace rtc {
 
@@ -48,6 +51,7 @@ void AdaptedVideoTrackSource::OnFrame(const webrtc::VideoFrame& frame) {
      true was just added. The VideoBroadcaster enforces
      synchronization for us in this case, by not passing the frame on
      to sinks which don't want it. */
+//  RTC_DLOG(LS_INFO) << "Creating new format encoder for RTC event log.";
   if (apply_rotation() && frame.rotation() != webrtc::kVideoRotation_0 &&
       buffer->type() == webrtc::VideoFrameBuffer::Type::kI420) {
     /* Apply pending rotation. */

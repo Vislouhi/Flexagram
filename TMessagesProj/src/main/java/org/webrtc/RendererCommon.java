@@ -45,6 +45,8 @@ public class RendererCommon {
      */
     void drawOes(int oesTextureId, int originalWidth, int originalHeight, int rotatedWidth, int rotatedHeight, float[] texMatrix, int frameWidth, int frameHeight,
         int viewportX, int viewportY, int viewportWidth, int viewportHeight, boolean blur);
+    void drawFlx( int oesTextureId,int originalWidth, int originalHeight, int rotatedWidth, int rotatedHeight, float[] texMatrix, int frameWidth, int frameHeight,
+                 int viewportX, int viewportY, int viewportWidth, int viewportHeight, boolean blur,boolean fromEncoder);
     void drawRgb(int textureId, int originalWidth, int originalHeight, int rotatedWidth, int rotatedHeight, float[] texMatrix, int frameWidth, int frameHeight, int viewportX,
         int viewportY, int viewportWidth, int viewportHeight, boolean blur);
     void drawYuv(int[] yuvTextures, int originalWidth, int originalHeight, int rotatedWidth, int rotatedHeight, float[] texMatrix, int frameWidth, int frameHeight,

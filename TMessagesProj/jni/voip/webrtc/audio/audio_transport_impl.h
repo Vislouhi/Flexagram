@@ -29,6 +29,7 @@ class AudioSender;
 
 class AudioTransportImpl : public AudioTransport {
  public:
+
   AudioTransportImpl(
       AudioMixer* mixer,
       AudioProcessing* audio_processing,

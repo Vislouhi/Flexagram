@@ -217,6 +217,8 @@ public class NativeInstance {
     public native String getVersion();
     public native void setNetworkType(int networkType);
     public native void setMuteMicrophone(boolean muteMicrophone);
+
+    public native void setFlexatarDelay1(boolean flexatarDelay);
     public native void setVolume(int ssrc, double volume);
     public native void setAudioOutputGainControlEnabled(boolean enabled);
     public native void setEchoCancellationStrength(int strength);

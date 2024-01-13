@@ -77,6 +77,7 @@ import android.telephony.TelephonyManager;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.util.LruCache;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
@@ -87,6 +88,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
+import org.flexatar.FlexatarRenderer;
 import org.json.JSONObject;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -123,6 +125,7 @@ import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.VoIPFeedbackActivity;
 import org.telegram.ui.VoIPFragment;
 import org.telegram.ui.VoIPPermissionActivity;
+import org.webrtc.Logging;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
 import org.webrtc.voiceengine.WebRtcAudioTrack;
@@ -482,6 +485,10 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		return isPrivateScreencast;
 	}
 
+	public void setFlexatarDelay(boolean status){
+		if (tgVoip[CAPTURE_DEVICE_CAMERA]!=null)
+			tgVoip[CAPTURE_DEVICE_CAMERA].setFlexatarDelay1(status);
+	}
 	public void setMicMute(boolean mute, boolean hold, boolean send) {
 		if (micMute == mute || micSwitching) {
 			return;
@@ -508,6 +515,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		unmutedByHold = !micMute && hold;
 		if (tgVoip[CAPTURE_DEVICE_CAMERA] != null) {
 			tgVoip[CAPTURE_DEVICE_CAMERA].setMuteMicrophone(mute);
+//			tgVoip[CAPTURE_DEVICE_CAMERA].setFlexatarDelay(true);
 		}
 		for (StateListener l : stateListeners) {
 			l.onAudioSettingsChanged();
@@ -574,6 +582,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		addRemoteSink(participant, screencast, new VideoSink() {
 			@Override
 			public void onFrame(VideoFrame frame) {
+				Logging.d("FLX_INJECT", "renderFrameOnRenderThread");
 				VideoSink thisSink = this;
 				if (frame != null && frame.getBuffer().getHeight() != 0 && frame.getBuffer().getWidth() != 0) {
 					AndroidUtilities.runOnUIThread(() -> {
@@ -622,6 +631,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 
 		@Override
 		synchronized public void onFrame(VideoFrame frame) {
+
 			if (target != null) {
 				target.onFrame(frame);
 			}
@@ -1093,6 +1103,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	}
 
 	public void requestVideoCall(boolean screencast) {
+		Log.d("FLX_INJECT","tgVoip[CAPTURE_DEVICE_CAMERA] "+captureDevice[CAPTURE_DEVICE_CAMERA]);
 		if (tgVoip[CAPTURE_DEVICE_CAMERA] == null) {
 			return;
 		}
@@ -1108,12 +1119,16 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	public void switchCamera() {
 		if (tgVoip[CAPTURE_DEVICE_CAMERA] == null || !tgVoip[CAPTURE_DEVICE_CAMERA].hasVideoCapturer() || switchingCamera) {
 			if (captureDevice[CAPTURE_DEVICE_CAMERA] != 0 && !switchingCamera) {
+				FlexatarRenderer.isFrontFaceCamera = isFrontFaceCamera;
 				NativeInstance.switchCameraCapturer(captureDevice[CAPTURE_DEVICE_CAMERA], !isFrontFaceCamera);
+
 			}
 			return;
 		}
 		switchingCamera = true;
 		tgVoip[CAPTURE_DEVICE_CAMERA].switchCamera(!isFrontFaceCamera);
+
+		FlexatarRenderer.isFrontFaceCamera = isFrontFaceCamera;
 	}
 
 	public boolean isSwitchingCamera() {
@@ -1121,6 +1136,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	}
 
 	public void createCaptureDevice(boolean screencast) {
+		Log.d("FLX_INJECT","createCaptureDevice");
 		int index = screencast ? CAPTURE_DEVICE_SCREEN : CAPTURE_DEVICE_CAMERA;
 		int deviceType;
 		if (screencast) {
@@ -2080,6 +2096,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			tgVoip[type] = NativeInstance.makeGroup(logFilePath, captureDevice[type], type == CAPTURE_DEVICE_SCREEN, type == CAPTURE_DEVICE_CAMERA && SharedConfig.noiseSupression, (ssrc, json) -> {
 				if (type == CAPTURE_DEVICE_CAMERA) {
 					startGroupCall(ssrc, json, true);
+
 				} else {
 					startScreenCapture(ssrc, json);
 				}
@@ -2209,9 +2226,11 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 					}
 				}
 			});
+
 			tgVoip[type].setOnStateUpdatedListener((state, inTransition) -> updateConnectionState(type, state, inTransition));
 		}
 		tgVoip[type].resetGroupInstance(!created, false);
+		tgVoip[type].setFlexatarDelay1(FlexatarRenderer.isFlexatarRendering);
 		if (captureDevice[type] != 0) {
 			destroyCaptureDevice[type] = false;
 		}
@@ -2280,6 +2299,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 					if (!micMute) {
 						instance.setMuteMicrophone(false);
 					}
+
 				}
 				setParticipantsVolume();
 			}
@@ -2449,6 +2469,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.webRtcMicAmplitudeEvent, levels[0]);
 				NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.webRtcSpeakerAmplitudeEvent, levels[1]);
 			});
+			tgVoip[CAPTURE_DEVICE_CAMERA].setFlexatarDelay1(FlexatarRenderer.isFlexatarRendering);
 			tgVoip[CAPTURE_DEVICE_CAMERA].setOnStateUpdatedListener(this::onConnectionStateChanged);
 			tgVoip[CAPTURE_DEVICE_CAMERA].setOnSignalBarsUpdatedListener(this::onSignalBarCountChanged);
 			tgVoip[CAPTURE_DEVICE_CAMERA].setOnSignalDataListener(this::onSignalingData);

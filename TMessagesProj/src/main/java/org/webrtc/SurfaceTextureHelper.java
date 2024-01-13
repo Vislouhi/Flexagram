@@ -17,8 +17,17 @@ import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
+
 import androidx.annotation.Nullable;
+
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Callable;
+
+import org.flexatar.AnimationUnit;
+import org.flexatar.BlinkGenerator;
+import org.flexatar.FlexatarCommon;
 import org.webrtc.EglBase.Context;
 import org.webrtc.TextureBufferImpl.RefCountMonitor;
 import org.webrtc.VideoFrame.TextureBuffer;
@@ -163,6 +172,7 @@ public class SurfaceTextureHelper {
     @Override
     public void run() {
       Logging.d(TAG, "Setting listener to " + pendingListener);
+//      Logging.d("FLX_INJECT", "Setting listener to " + pendingListener);
       listener = pendingListener;
       pendingListener = null;
       // May have a pending frame from the previous capture session - drop it.
@@ -271,6 +281,26 @@ public class SurfaceTextureHelper {
    * Forces a frame to be produced. If no new frame is available, the last frame is sent to the
    * listener again.
    */
+  public void startFrameTimer(){
+    Timer timer = new Timer();
+    TimerTask task = new TimerTask() {
+
+
+      @Override
+      public void run() {
+
+
+        handler.post(() -> {
+          hasPendingTexture = true;
+          tryDeliverTextureFrame();
+
+        });
+
+
+      }
+    };
+    timer.scheduleAtFixedRate(task, 0, 100);
+  }
   public void forceFrame() {
     handler.post(() -> {
       hasPendingTexture = true;
@@ -357,9 +387,14 @@ public class SurfaceTextureHelper {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("Wrong thread.");
     }
+//    Log.d("FLX_INJECT","listener" + listener);
+//    if (listener == null) {
+//      return;
+//    }
     if (isQuitting || !hasPendingTexture || isTextureInUse || listener == null) {
       return;
     }
+//    Log.d("FLX_INJECT","tryDeliverTextureFrame");
     if (textureWidth == 0 || textureHeight == 0) {
       // Information about the resolution needs to be provided by a call to setTextureSize() before
       // frames are produced.
@@ -385,6 +420,7 @@ public class SurfaceTextureHelper {
       frameRefMonitor.onNewBuffer(buffer);
     }
     final VideoFrame frame = new VideoFrame(buffer, frameRotation, timestampNs);
+//    Log.d("FLX_INJECT","tryDeliverTextureFrame " + listener);
     listener.onFrame(frame);
     frame.release();
   }

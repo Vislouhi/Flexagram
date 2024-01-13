@@ -76,6 +76,7 @@ import androidx.recyclerview.widget.ListUpdateCallback;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
@@ -151,6 +152,7 @@ import org.telegram.ui.Components.voip.GroupCallRenderersContainer;
 import org.telegram.ui.Components.voip.GroupCallStatusIcon;
 import org.telegram.ui.Components.voip.PrivateVideoPreviewDialog;
 import org.telegram.ui.Components.voip.RTMPStreamPipOverlay;
+import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 import org.telegram.ui.Components.voip.VoIPToggleButton;
 import org.webrtc.voiceengine.WebRtcAudioTrack;
 
@@ -4128,7 +4130,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
 
                 for (int i = 0; i < attachedRenderers.size(); i++) {
                     GroupCallMiniTextureView renderer = attachedRenderers.get(i);
-                    if (renderer.participant.participant.self && !renderer.participant.presentation) {
+                    if (renderer.participant().participant.self && !renderer.participant().presentation) {
                         renderer.startFlipAnimation();
                     }
                 }
@@ -4933,7 +4935,9 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             }
         };
         containerView.addView(renderersContainer);
+
         renderersContainer.addView(fullscreenUsersListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 80, Gravity.BOTTOM, 0, 0, 0, 100));
+
 
         buttonsContainer.setWillNotDraw(false);
         buttonsBackgroundGradientView = new View(context);
@@ -5285,6 +5289,10 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         updateState(false, false);
         setColorProgress(0.0f);
         updateSubtitle();
+
+//        FlexatarUI.LinearLayoutSemiTransparent flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context, new VoIPBackgroundProvider());
+//        containerView.addView(flexatarPanelView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER, 0, 0, 0, 0));
+
     }
 
     public LaunchActivity getParentActivity() {
@@ -5346,7 +5354,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                         if (miniTextureView.tabletGridView != null) {
                             miniTextureView.tabletGridView.setRenderer(null);
                         }
-                        activeSinks.add(miniTextureView.participant);
+                        activeSinks.add(miniTextureView.participant());
                         miniTextureView.forceDetach(false);
                         miniTextureView.animate().alpha(0f).setListener(new AnimatorListenerAdapter() {
                             @Override
@@ -5365,8 +5373,8 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                 attachedRenderersTmp.addAll(attachedRenderers);
                 for (int i = 0; i < attachedRenderersTmp.size(); i++) {
                     final GroupCallMiniTextureView miniTextureView = attachedRenderersTmp.get(i);
-                    if (miniTextureView.tabletGridView != null && (miniTextureView.participant == null || !miniTextureView.participant.equals(videoParticipant))) {
-                        activeSinks.add(miniTextureView.participant);
+                    if (miniTextureView.tabletGridView != null && (miniTextureView.participant() == null || !miniTextureView.participant().equals(videoParticipant))) {
+                        activeSinks.add(miniTextureView.participant());
                         miniTextureView.forceDetach(false);
                         if (miniTextureView.secondaryView != null) {
                             miniTextureView.secondaryView.setRenderer(null);
@@ -5390,8 +5398,8 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                 if (!activeSinks.isEmpty()) {
                     AndroidUtilities.runOnUIThread(() -> {
                         for (int i = 0; i < attachedRenderers.size(); i++) {
-                            if (attachedRenderers.get(i).participant != null) {
-                                activeSinks.remove(attachedRenderers.get(i).participant);
+                            if (attachedRenderers.get(i).participant() != null) {
+                                activeSinks.remove(attachedRenderers.get(i).participant());
                             }
                         }
                         for (int i = 0; i < activeSinks.size(); i++) {

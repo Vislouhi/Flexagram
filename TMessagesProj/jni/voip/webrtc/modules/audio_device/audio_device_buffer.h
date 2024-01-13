@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <list>
 
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_factory.h"
@@ -35,6 +36,14 @@ const size_t kMaxBufferSizeBytes = 3840;  // 10ms in stereo @ 96kHz
 
 class AudioDeviceBuffer {
  public:
+  int32_t frameCounter = 0;
+  int32_t delayWriteCounter = 0;
+  int32_t delayReadCounter = 1;
+
+    int32_t samples_per_channel_ = 1;
+//  std::list<void*> buffersDataDelayList;
+//  std::list<int32_t> buffersSizeDelayList;
+  std::vector<rtc::BufferT<int16_t>*> buffersDelayList;
   enum LogState {
     LOG_START = 0,
     LOG_STOP,

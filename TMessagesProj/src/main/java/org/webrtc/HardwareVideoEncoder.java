@@ -329,6 +329,7 @@ class HardwareVideoEncoder implements VideoEncoder {
 
   @Override
   public VideoCodecStatus encode(VideoFrame videoFrame, EncodeInfo encodeInfo) {
+//    Logging.d("FLX_INJECT","encode hredwareencoder");
     encodeThreadChecker.checkIsOnValidThread();
     if (codec == null) {
       return VideoCodecStatus.UNINITIALIZED;
@@ -373,6 +374,7 @@ class HardwareVideoEncoder implements VideoEncoder {
                                        .setCaptureTimeNs(videoFrame.getTimestampNs())
                                        .setEncodedWidth(videoFrame.getBuffer().getWidth())
                                        .setEncodedHeight(videoFrame.getBuffer().getHeight())
+//                                       .setRotation(0);
                                        .setRotation(videoFrame.getRotation());
     outputBuilders.offer(builder);
 
@@ -381,6 +383,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       returnValue = encodeTextureBuffer(videoFrame);
     } else {
       returnValue = encodeByteBuffer(videoFrame, videoFrameBuffer, bufferSize);
+
     }
 
     // Check if the queue was successful.
@@ -401,8 +404,10 @@ class HardwareVideoEncoder implements VideoEncoder {
       // It is not necessary to release this frame because it doesn't own the buffer.
       VideoFrame derotatedFrame =
           new VideoFrame(videoFrame.getBuffer(), 0 /* rotation */, videoFrame.getTimestampNs());
-      videoFrameDrawer.drawFrame(derotatedFrame, textureDrawer, null /* additionalRenderMatrix */);
+      derotatedFrame.setIsFlexatar(true);
+      videoFrameDrawer.drawFrameFromEncoder(derotatedFrame, textureDrawer, null /* additionalRenderMatrix */);
       textureEglBase.swapBuffers(videoFrame.getTimestampNs(), false);
+
     } catch (RuntimeException e) {
       Logging.e(TAG, "encodeTexture failed", e);
       return VideoCodecStatus.ERROR;

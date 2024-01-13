@@ -194,6 +194,11 @@ public:
         });
 
         setIsMuted(false);
+
+        _threads->getWorkerThread()->BlockingCall([&]() {
+            _outgoingAudioChannel->media_channel()->SetFlexatarDelay1(_ssrc, _flexatarDelay,
+                                                                     nullptr, _audioSource);
+        });
     }
 
     ~OutgoingAudioChannel() {
@@ -214,6 +219,15 @@ public:
                 _outgoingAudioChannel->media_channel()->SetAudioSend(_ssrc, !_isMuted, nullptr, _audioSource);
             });
         }
+    }
+    void setFlexatarDelay1(bool flexatarDelay) {
+        _flexatarDelay=flexatarDelay;
+            if (_outgoingAudioChannel) {
+                _threads->getWorkerThread()->BlockingCall([&]() {
+                    _outgoingAudioChannel->media_channel()->SetFlexatarDelay1(_ssrc, flexatarDelay,
+                                                                             nullptr, _audioSource);
+                });
+            }
     }
 
     uint32_t ssrc() const {
@@ -251,6 +265,7 @@ private:
     cricket::VoiceChannel *_outgoingAudioChannel = nullptr;
 
     bool _isMuted = true;
+    bool _flexatarDelay = false;
 };
 
 namespace {
@@ -2047,6 +2062,15 @@ public:
 
     }
 
+    void setFlexatarDelay1(bool flexatarDelay) {
+
+
+            if (_outgoingAudioChannel) {
+                _outgoingAudioChannel->setFlexatarDelay1(flexatarDelay);
+            }
+
+
+    }
     void setMuteMicrophone(bool muteMicrophone) {
         if (_isMicrophoneMuted != muteMicrophone) {
             _isMicrophoneMuted = muteMicrophone;
@@ -2326,6 +2350,11 @@ void InstanceV2Impl::setMuteMicrophone(bool muteMicrophone) {
         internal->setMuteMicrophone(muteMicrophone);
     });
 }
+void InstanceV2Impl::setFlexatarDelay1(bool flexatarDelay) {
+    _internal->perform([flexatarDelay](InstanceV2ImplInternal *internal) {
+        internal->setFlexatarDelay1(flexatarDelay);
+    });
+}
 
 void InstanceV2Impl::setIncomingVideoOutput(std::weak_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> sink) {
     _internal->perform([sink](InstanceV2ImplInternal *internal) {
@@ -2411,7 +2440,9 @@ void InstanceV2Impl::stop(std::function<void(FinalState)> completion) {
     });
 }
 
-template <>
+
+
+    template <>
 bool Register<InstanceV2Impl>() {
     return Meta::RegisterOne<InstanceV2Impl>();
 }

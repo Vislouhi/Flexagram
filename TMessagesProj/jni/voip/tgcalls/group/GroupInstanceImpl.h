@@ -188,6 +188,7 @@ public:
     virtual void removeIncomingVideoSource(uint32_t ssrc) = 0;
 
     virtual void setIsMuted(bool isMuted) = 0;
+    virtual void setFlexatarDelay1(bool flexatarDelay) = 0;
     virtual void setIsNoiseSuppressionEnabled(bool isNoiseSuppressionEnabled) = 0;
     virtual void setVideoCapture(std::shared_ptr<VideoCaptureInterface> videoCapture) = 0;
     virtual void setVideoSource(std::function<rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>()> getVideoSource) = 0;

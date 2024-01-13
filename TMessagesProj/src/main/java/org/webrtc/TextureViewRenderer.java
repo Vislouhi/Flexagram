@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.os.Looper;
+import android.util.Log;
 import android.view.TextureView;
 import android.view.View;
 
@@ -54,7 +55,9 @@ public class TextureViewRenderer extends TextureView
     private VideoSink parentSink;
 
     Runnable updateScreenRunnable;
-
+    public void setIsFlexatar(boolean isFlexatar){
+        eglRenderer.setIsFlexatar(isFlexatar);
+    }
     public void setBackgroundRenderer(@Nullable TextureView backgroundRenderer) {
         if (!LiteMode.isEnabled(LiteMode.FLAG_CALLS_ANIMATIONS)) {
             return;
@@ -247,8 +250,10 @@ public class TextureViewRenderer extends TextureView
         super(context);
         this.resourceName = getResourceName();
         eglRenderer = new TextureEglRenderer(resourceName);
+        eglRenderer.setIsCamera(isCamera);
         setSurfaceTextureListener(this);
     }
+
 
     /**
      * Initialize this class, sharing resources with |sharedContext|. It is allowed to call init() to
@@ -272,6 +277,9 @@ public class TextureViewRenderer extends TextureView
         rotatedFrameWidth = 0;
         rotatedFrameHeight = 0;
         eglRenderer.init(sharedContext, this /* rendererEvents */, configAttributes, drawer);
+    }
+    public void postRenderTask(Runnable r){
+        eglRenderer.postRenderTask(r);
     }
 
     /**
@@ -438,6 +446,8 @@ public class TextureViewRenderer extends TextureView
     // VideoSink interface.
     @Override
     public void onFrame(VideoFrame frame) {
+
+
         eglRenderer.onFrame(frame);
     }
 

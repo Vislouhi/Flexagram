@@ -33,6 +33,17 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.graphics.ColorUtils;
 
+import com.google.android.exoplayer2.util.Log;
+
+import org.flexatar.AnimationUnit;
+import org.flexatar.BlinkGenerator;
+import org.flexatar.DataOps.AssetAccess;
+import org.flexatar.DataOps.FlexatarData;
+import org.flexatar.DataOps.LengthBasedFlxUnpack;
+import org.flexatar.FlexatarCommon;
+import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlxDrawer;
+import org.flexatar.InterUnit;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
@@ -48,10 +59,13 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.LaunchActivity;
+import org.webrtc.EglBase;
 import org.webrtc.RendererCommon;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Timer;
+import java.util.TimerTask;
 
 @TargetApi(21)
 public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implements VoIPService.StateListener {
@@ -96,7 +110,7 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
 
         this.startLocationX = startLocationX;
         this.startLocationY = startLocationY;
-        titles = new VoIpBitmapTextView[3];
+        titles = new VoIpBitmapTextView[4];
         scrollGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             private boolean startDragging;
             private boolean lockDragging;
@@ -111,11 +125,11 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
             public boolean onScroll(@NonNull MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
                 float dx = e1.getX() - e2.getX();
                 float dy = e1.getY() - e2.getY();
-                if (Math.abs(dx) > AndroidUtilities.getPixelsInCM(0.4f, true) && Math.abs(dx) / 3 > dy && startDragging && !lockDragging) {
+                if (Math.abs(dx) > AndroidUtilities.getPixelsInCM(0.4f, true) && Math.abs(dx) / 4 > dy && startDragging && !lockDragging) {
                     startDragging = false;
                     Runnable action = () -> {
                         if (dx > 0) {
-                            if (realCurrentPage < 2) {
+                            if (realCurrentPage < 3) {
                                 setCurrentPage(realCurrentPage + 1, true);
                             }
                         } else {
@@ -291,15 +305,21 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
         };
         titlesLayout.setClipChildren(false);
         addView(titlesLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 64, Gravity.BOTTOM));
-
+        FlexatarRenderer.isFlexatarRendering = false;
         for (int i = 0; i < titles.length; i++) {
             String text;
             if (i == 0) {
                 text = LocaleController.getString("VoipPhoneScreen", R.string.VoipPhoneScreen);
             } else if (i == 1) {
                 text = LocaleController.getString("VoipFrontCamera", R.string.VoipFrontCamera);
-            } else {
+            } else if (i == 2) {
+//                text = "BKCAM";
                 text = LocaleController.getString("VoipBackCamera", R.string.VoipBackCamera);
+            }
+            else {
+                //                TODO Add FLEXATAR to strings.xml
+                text = "FLEXATAR";
+
             }
             titles[i] = new VoIpBitmapTextView(context, text);
             titles[i].setPadding(AndroidUtilities.dp(16), 0, AndroidUtilities.dp(10), 0);
@@ -308,6 +328,9 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
             titles[i].setOnClickListener(view -> {
                 if (scrollAnimator != null || view.getAlpha() == 0f) return;
                 setCurrentPage(num, true);
+
+
+
             });
         }
 
@@ -315,8 +338,16 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
 
         VoIPService service = VoIPService.getSharedInstance();
         if (service != null) {
+            Log.d("FLX_INJECT","Start renderer");
             textureView.renderer.setMirror(service.isFrontFaceCamera());
-            textureView.renderer.init(VideoCapturerDevice.getEglBase().getEglBaseContext(), new RendererCommon.RendererEvents() {
+            EglBase.Context glContext = VideoCapturerDevice.getEglBase().getEglBaseContext();
+//            FlexatarRenderer flxRender = new FlexatarRenderer(glContext, this.getContext());
+//            FlexatarRenderer.init();
+//            AssetAccess.context = this.getContext();
+
+//            FlexatarRenderer.drawer = new FlxDrawer();
+//            FlexatarRenderer.drawer.addHead(flxData);
+            textureView.renderer.init(glContext, new RendererCommon.RendererEvents() {
                 @Override
                 public void onFirstFrameRendered() {
 
@@ -327,6 +358,7 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
 
                 }
             });
+            textureView.renderer.setIsFlexatar(true);
             service.setLocalSink(textureView.renderer, false);
         }
         createPages(viewPager);
@@ -408,6 +440,16 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
     private void setCurrentPage(int position, boolean animate) {
         if (strangeCurrentPage == position || realCurrentPage == position) return;
 
+        FlexatarRenderer.isFlexatarRendering = position == 3;
+
+        VoIPService voipInstance = VoIPService.getSharedInstance();
+        if (voipInstance != null)
+            voipInstance.setFlexatarDelay(FlexatarRenderer.isFlexatarRendering);
+
+//        if (FlexatarRenderer.isFlexatarRendering){
+//            animate = false;
+//        }
+
         if (animate) {
             if (realCurrentPage == 0) {
                 //switch from screencast to any camera
@@ -415,7 +457,7 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                     visibleCameraPage = position;
                     cameraReady = false;
                     showStub(true, true);
-                    if (VoIPService.getSharedInstance() != null) {
+                    if (VoIPService.getSharedInstance() != null ) {
                         VoIPService.getSharedInstance().switchCamera();
                     }
                 } else {
@@ -436,7 +478,7 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                     cameraReady = false;
                     showStub(true, false);
                     textureView.animate().alpha(0f).setDuration(250).start();
-                    if (VoIPService.getSharedInstance() != null) {
+                    if (VoIPService.getSharedInstance() != null ) {
                         VoIPService.getSharedInstance().switchCamera();
                     }
                 }
@@ -552,6 +594,7 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
     }
 
     public void dismiss(boolean screencast, boolean apply) {
+
         if (isDismissed || openProgress1 != 1f) {
             return;
         }

@@ -19,6 +19,8 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import androidx.annotation.Nullable;
+
+import android.util.Log;
 import android.view.Surface;
 
 import org.telegram.messenger.FileLog;
@@ -191,6 +193,15 @@ public class EglRenderer implements VideoSink {
 
   private final EglSurfaceCreation eglSurfaceCreationRunnable = new EglSurfaceCreation(false);
   private final EglSurfaceCreation eglSurfaceBackgroundCreationRunnable = new EglSurfaceCreation(true);
+  private boolean isCamera = false;
+
+  private boolean isFlexatar = false;
+  public void setIsFlexatar(boolean isFlexatar){
+    this.isFlexatar = isFlexatar;
+  }
+  public void setIsCamera(boolean isCamera){
+    this.isCamera=isCamera;
+  }
 
   /**
    * Standard constructor. The name will be used for the render thread name and included when
@@ -203,6 +214,7 @@ public class EglRenderer implements VideoSink {
   public EglRenderer(String name, VideoFrameDrawer videoFrameDrawer) {
     this.name = name;
     this.frameDrawer = videoFrameDrawer;
+    Log.d("FLX_INJECT","eglname "+this.name);
   }
 
   /**
@@ -508,8 +520,12 @@ public class EglRenderer implements VideoSink {
   }
 
   // VideoSink interface.
+  public void postRenderTask(Runnable r){
+    renderThreadHandler.post(r);
+  }
   @Override
   public void onFrame(VideoFrame frame) {
+
     final boolean dropOldFrame;
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
@@ -521,6 +537,7 @@ public class EglRenderer implements VideoSink {
         if (dropOldFrame) {
           pendingFrame.release();
         }
+
         pendingFrame = frame;
         pendingFrame.retain();
         renderThreadHandler.post(this ::renderFrameOnRenderThread);
@@ -618,6 +635,7 @@ public class EglRenderer implements VideoSink {
    */
   private void renderFrameOnRenderThread() {
     // Fetch and render |pendingFrame|.
+
     final VideoFrame frame;
     synchronized (frameLock) {
       if (pendingFrame == null) {
@@ -682,14 +700,18 @@ public class EglRenderer implements VideoSink {
 
     try {
       if (shouldRenderFrame) {
+
+         frame.setIsFlexatar(isFlexatar);
+//        Logging.d("FLX_INJECT","EglRender draw frame");
         frameDrawer.drawFrame(frame, drawer, drawMatrix, 0 /* viewportX */, 0 /* viewportY */,
-                eglBase.surfaceWidth(), eglBase.surfaceHeight(), rotate, false);
+                eglBase.surfaceWidth(), eglBase.surfaceHeight(), rotate, false,false);
+
 
         if (eglBase.hasBackgroundSurface()) {
           eglBase.makeBackgroundCurrent();
 
           frameDrawer.drawFrame(frame, drawer, drawMatrix, 0, 0,
-                  eglBase.surfaceWidth(), eglBase.surfaceHeight(), rotate, true);
+                  eglBase.surfaceWidth(), eglBase.surfaceHeight(), rotate, true,false);
 
           if (usePresentationTimeStamp) {
             eglBase.swapBuffers(frame.getTimestampNs(), true);
@@ -771,7 +793,7 @@ public class EglRenderer implements VideoSink {
       GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
       frameDrawer.drawFrame(frame, listenerAndParams.drawer, drawMatrix, 0 /* viewportX */,
-          0 /* viewportY */, scaledWidth, scaledHeight, false, false);
+          0 /* viewportY */, scaledWidth, scaledHeight, false, false,false);
 
       final ByteBuffer bitmapBuffer = ByteBuffer.allocateDirect(scaledWidth * scaledHeight * 4);
       GLES20.glViewport(0, 0, scaledWidth, scaledHeight);

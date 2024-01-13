@@ -12,6 +12,8 @@ package org.webrtc;
 
 import android.opengl.GLES20;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.telegram.messenger.FileLog;
 
 import java.nio.FloatBuffer;
@@ -43,6 +45,8 @@ public class GlShader {
   public GlShader(String vertexSource, String fragmentSource) {
     final int vertexShader = compileShader(GLES20.GL_VERTEX_SHADER, vertexSource);
     final int fragmentShader = compileShader(GLES20.GL_FRAGMENT_SHADER, fragmentSource);
+    Log.d("FLX_INJECT",vertexSource);
+    Log.d("FLX_INJECT",fragmentSource);
     program = GLES20.glCreateProgram();
     if (program == 0) {
       throw new RuntimeException("glCreateProgram() failed. GLES20 error: " + GLES20.glGetError());

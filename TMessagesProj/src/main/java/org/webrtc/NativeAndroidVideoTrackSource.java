@@ -11,6 +11,8 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
+
+import org.flexatar.FlexatarRenderer;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoProcessor;
 
@@ -55,7 +57,9 @@ public class NativeAndroidVideoTrackSource {
    * expected to be called first and that the passed frame conforms to those parameters.
    */
   public void onFrameCaptured(VideoFrame frame) {
-    nativeOnFrameCaptured(nativeAndroidVideoTrackSource, frame.getRotation(),
+    int rotation = FlexatarRenderer.isFlexatarRendering ? 270 : frame.getRotation();
+
+    nativeOnFrameCaptured(nativeAndroidVideoTrackSource, rotation,
         frame.getTimestampNs(), frame.getBuffer());
   }
 

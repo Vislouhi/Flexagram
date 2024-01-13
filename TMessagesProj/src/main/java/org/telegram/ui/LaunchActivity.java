@@ -83,6 +83,9 @@ import com.google.firebase.appindexing.Action;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.AssistActionBuilder;
 
+import org.flexatar.DataOps.AssetAccess;
+import org.flexatar.FlexatarCommon;
+import org.flexatar.FlexatarRenderer;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -332,6 +335,13 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     .build());
         }
         instance = this;
+
+//        Flexatar load static data
+        AssetAccess.context = instance;
+        FlexatarRenderer.init();
+
+
+
         ApplicationLoader.postInitApplication();
         AndroidUtilities.checkDisplaySize(this, getResources().getConfiguration());
         currentAccount = UserConfig.selectedAccount;

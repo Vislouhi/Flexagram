@@ -14,9 +14,13 @@ import android.graphics.Bitmap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
+import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlxDrawer;
 import org.telegram.messenger.FileLog;
 
 import androidx.annotation.Nullable;
+
+import com.google.android.exoplayer2.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -44,6 +48,7 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
   private static final int OES = 0;
   private static final int RGB = 1;
   private static final int YUV = 2;
+//  private static final int FLX = 3;
 
   /**
    * The shader callbacks is used to customize behavior for a GlDrawer. It provides a hook to set
@@ -97,6 +102,7 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
 
   static String createFragmentShaderString(String genericFragmentSource, int shaderType, boolean blur) {
     final StringBuilder stringBuilder = new StringBuilder();
+
     if (shaderType == OES) {
       stringBuilder.append("#extension GL_OES_EGL_image_external : require\n");
     }
@@ -147,6 +153,7 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
                 .append("vec3 result = col / weightSum;\n")
                 .append("lowp float satLuminance = dot(result.rgb, satLuminanceWeighting);\n")
                 .append("lowp vec3 greyScaleColor = vec3(satLuminance);\n")
+//                .append("gl_FragColor = vec4(1.0,0.0,0.0, 1.0);\n")
                 .append("gl_FragColor = vec4(clamp(mix(greyScaleColor, result.rgb, 1.1), 0.0, 1.0), 1.0);\n")
                 .append("}\n");
       } else {
@@ -170,12 +177,13 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
   public GlGenericDrawer(String genericFragmentSource, ShaderCallbacks shaderCallbacks) {
     this(DEFAULT_VERTEX_SHADER_STRING, genericFragmentSource, shaderCallbacks);
   }
-
+  private FlxDrawer flxDrawer;
   public GlGenericDrawer(
       String vertexShader, String genericFragmentSource, ShaderCallbacks shaderCallbacks) {
     this.vertexShader = vertexShader;
     this.genericFragmentSource = genericFragmentSource;
     this.shaderCallbacks = shaderCallbacks;
+
   }
 
   // Visible for testing.
@@ -249,9 +257,17 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
     callback.run(bitmap, rotation);
   }
 
+//  public int drawFlexatar(){
+//    flxDrawer.drawToFB();
+//    return flxDrawer.renderTexture[0];
+//  }
   @Override
   public void drawOes(int oesTextureId, int originalWidth, int originalHeight, int rotatedWidth, int rotatedHeight, float[] texMatrix, int frameWidth, int frameHeight,
       int viewportX, int viewportY, int viewportWidth, int viewportHeight, boolean blur) {
+//    if (flexatar){
+//      Log.d("FLX_INJECT","Flexatar render choosen");
+//    }
+//    Log.d("FLX_INJECT","drawOes");
     if (blur) {
       ensureRenderTargetCreated(originalWidth, originalHeight, 1);
 
@@ -295,9 +311,85 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
       GLES20.glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
       GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
       GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+
+//      prepareShader(FLX, texMatrix, rotatedWidth, rotatedHeight, frameWidth, frameHeight, viewportWidth, viewportHeight, 0);
+//      GLES20.glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
+//      GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
     }
   }
+  public void drawFlx( int oesTextureId,int originalWidth, int originalHeight, int rotatedWidth, int rotatedHeight, float[] texMatrix, int frameWidth, int frameHeight,
+                      int viewportX, int viewportY, int viewportWidth, int viewportHeight, boolean blur,boolean fromEncoder) {
+//    if (flexatar){
+//      Log.d("FLX_INJECT","Flexatar render choosen");
+//    }
+//    Log.d("FLX_INJECT","drawOes");
+//    if (drawerReleased){
+//      Log.d("FLX_INJECT","draw on released drawer");
+//    }
+    /*if (flxDrawer == null){
+      flxDrawer = new FlxDrawer();
+      flxDrawer.addHead(FlexatarRenderer.currentFlxData);
+    }
+    if (fromEncoder) {
+      flxDrawer.screenRatio = (float) frameWidth / (float) frameHeight;
+    }else{
+      flxDrawer.screenRatio = (float) rotatedWidth / (float) rotatedHeight;
+    }
+    flxDrawer.drawToFB();*/
+//    int oesTextureId = flxDrawer.renderTexture[0];
 
+    if (blur) {
+      ensureRenderTargetCreated(originalWidth, originalHeight, 1);
+
+      textureMatrix = texMatrix;
+      int viewportW = (int) (originalWidth / renderTextureDownscale);
+      int viewportH = (int) (originalHeight / renderTextureDownscale);
+      GLES20.glViewport(0, 0, viewportW, viewportH);
+      prepareShader(RGB, renderMatrix, rotatedWidth, rotatedHeight, frameWidth, frameHeight, viewportWidth, viewportHeight, 0);
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, oesTextureId);
+      GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFrameBuffer[1]);
+      GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, renderTexture[1], 0);
+      GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+      GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
+      if (rotatedWidth != originalWidth) {
+        int temp = viewportW;
+        viewportW = viewportH;
+        viewportH = temp;
+      }
+
+      ensureRenderTargetCreated(originalWidth, originalHeight, 0);
+      prepareShader(RGB, renderMatrix, rotatedWidth != originalWidth ? viewportH : viewportW, rotatedWidth != originalWidth ? viewportW : viewportH, frameWidth, frameHeight, viewportWidth, viewportHeight, 1);
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, renderTexture[1]);
+      GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFrameBuffer[0]);
+      GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, renderTexture[0], 0);
+      GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+      GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
+      GLES20.glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
+      prepareShader(RGB, texMatrix, rotatedWidth != originalWidth ? viewportH : viewportW, rotatedWidth != originalWidth ? viewportW : viewportH, frameWidth, frameHeight, viewportWidth, viewportHeight, 2);
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, renderTexture[0]);
+      GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+    } else {
+      prepareShader(RGB, texMatrix, rotatedWidth, rotatedHeight, frameWidth, frameHeight, viewportWidth, viewportHeight, 0);
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, oesTextureId);
+      GLES20.glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
+      GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+//      Log.d("FLX_INJECT","flx draw rgb tex no blur");
+
+//      prepareShader(FLX, texMatrix, rotatedWidth, rotatedHeight, frameWidth, frameHeight, viewportWidth, viewportHeight, 0);
+//      GLES20.glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
+//      GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
+    }
+  }
   /**
    * Draw a RGB(A) texture frame with specified texture transformation matrix. Required resources
    * are allocated at the first call to this function.
@@ -305,6 +397,7 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
   @Override
   public void drawRgb(int textureId, int originalWidth, int originalHeight, int rotatedWidth, int rotatedHeight, float[] texMatrix, int frameWidth, int frameHeight,
       int viewportX, int viewportY, int viewportWidth, int viewportHeight, boolean blur) {
+//    Log.d("FLX_INJECT","drawRgb");
       prepareShader(RGB, texMatrix, rotatedWidth, rotatedHeight, frameWidth, frameHeight, viewportWidth, viewportHeight, 0);
       GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
       GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
@@ -396,13 +489,16 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
 
       shader.useProgram();
       // Set input texture units.
-      if (shaderType == YUV) {
-        GLES20.glUniform1i(shader.getUniformLocation("y_tex"), 0);
-        GLES20.glUniform1i(shader.getUniformLocation("u_tex"), 1);
-        GLES20.glUniform1i(shader.getUniformLocation("v_tex"), 2);
-      } else {
-        GLES20.glUniform1i(shader.getUniformLocation("tex"), 0);
-      }
+
+        if (shaderType == YUV) {
+          GLES20.glUniform1i(shader.getUniformLocation("y_tex"), 0);
+          GLES20.glUniform1i(shader.getUniformLocation("u_tex"), 1);
+          GLES20.glUniform1i(shader.getUniformLocation("v_tex"), 2);
+        } else {
+          GLES20.glUniform1i(shader.getUniformLocation("tex"), 0);
+//          Log.d("FLX_INJECT","Set tex uniform");
+        }
+
 
       GlUtil.checkNoGLES2Error("Create shader");
       shaderCallbacks.onNewShader(shader);
@@ -427,7 +523,7 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
     GLES20.glVertexAttribPointer(inPosLocation[shaderType][blurPass], /* size= */ 2,
             /* type= */ GLES20.GL_FLOAT, /* normalized= */ false, /* stride= */ 0,
             FULL_RECTANGLE_BUFFER);
-
+//    Log.d("FLX_INJECT","attrib location" + inPosLocation[shaderType][blurPass]);
     // Upload the texture coordinates.
     GLES20.glEnableVertexAttribArray(inTcLocation[shaderType][blurPass]);
     GLES20.glVertexAttribPointer(inTcLocation[shaderType][blurPass], /* size= */ 2,
@@ -436,6 +532,7 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
 
     // Upload the texture transformation matrix.
     GLES20.glUniformMatrix4fv(texMatrixLocation[shaderType][blurPass], 1 /* count= */, false /* transpose= */, texMatrix, 0 /* offset= */);
+
     // Do custom per-frame shader preparation.
     shaderCallbacks.onPrepareShader(shader, texMatrix, frameWidth, frameHeight, viewportWidth, viewportHeight);
     GlUtil.checkNoGLES2Error("Prepare shader");
@@ -444,6 +541,7 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
   /**
    * Release all GLES resources. This needs to be done manually, otherwise the resources are leaked.
    */
+//  private boolean drawerReleased = false;
   @Override
   public void release() {
     for (int a = 0; a < currentShader.length; a++) {
@@ -458,5 +556,10 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
       GLES20.glDeleteFramebuffers(2, renderFrameBuffer, 0);
       GLES20.glDeleteTextures(2, renderTexture, 0);
     }
+//    if (flxDrawer!=null) flxDrawer.release();
+    flxDrawer = null;
+//    drawerReleased = true;
+
   }
+
 }

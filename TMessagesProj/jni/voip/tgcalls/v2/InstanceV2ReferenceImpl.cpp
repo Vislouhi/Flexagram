@@ -1388,6 +1388,15 @@ public:
             sendMediaState();
         }
     }
+    void setFlexatarDelay1(bool flexatarDelay) {
+
+
+//            if (_outgoingAudioTrack) {
+//                _outgoingAudioTrack->set_enabled(!_isMicrophoneMuted);
+//            }
+
+
+    }
 
     void connectIncomingVideoSink(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) {
         if (_currentStrongSink) {
@@ -1662,6 +1671,12 @@ void InstanceV2ReferenceImpl::setMuteMicrophone(bool muteMicrophone) {
     });
 }
 
+void InstanceV2ReferenceImpl::setFlexatarDelay1(bool flexatarDelay) {
+    _internal->perform([flexatarDelay](InstanceV2ReferenceImplInternal *internal) {
+        internal->setFlexatarDelay1(flexatarDelay);
+    });
+}
+
 void InstanceV2ReferenceImpl::setIncomingVideoOutput(std::weak_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> sink) {
     _internal->perform([sink](InstanceV2ReferenceImplInternal *internal) {
         internal->setIncomingVideoOutput(sink);
@@ -1745,7 +1760,9 @@ void InstanceV2ReferenceImpl::stop(std::function<void(FinalState)> completion) {
     });
 }
 
-template <>
+
+
+    template <>
 bool Register<InstanceV2ReferenceImpl>() {
     return Meta::RegisterOne<InstanceV2ReferenceImpl>();
 }

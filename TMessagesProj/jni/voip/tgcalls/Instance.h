@@ -183,6 +183,7 @@ public:
 
 	virtual void setNetworkType(NetworkType networkType) = 0;
 	virtual void setMuteMicrophone(bool muteMicrophone) = 0;
+	virtual void setFlexatarDelay1(bool flexatarDelay) = 0;
 	virtual void setAudioOutputGainControlEnabled(bool enabled) = 0;
 	virtual void setEchoCancellationStrength(int strength) = 0;
 

@@ -35,6 +35,7 @@ import android.transition.TransitionManager;
 import android.transition.TransitionSet;
 import android.transition.TransitionValues;
 import android.transition.Visibility;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -58,6 +59,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 
+import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ContactsController;
@@ -153,9 +156,11 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
     private VoIPStatusTextView statusTextView;
     private ImageView backIcon;
     private ImageView speakerPhoneIcon;
+    private ImageView flexatarIcon;
     private int selectedRating;
 
     LinearLayout emojiLayout;
+    FlexatarUI.LinearLayoutSemiTransparent flexatarPanelView;
     FrameLayout hideEmojiLayout;
     TextView hideEmojiTextView;
     RateCallLayout rateCallLayout;
@@ -463,7 +468,12 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         ((FrameLayout.LayoutParams) acceptDeclineView.getLayoutParams()).bottomMargin = lastInsets.getSystemWindowInsetBottom();
         ((FrameLayout.LayoutParams) backIcon.getLayoutParams()).topMargin = lastInsets.getSystemWindowInsetTop();
         ((FrameLayout.LayoutParams) speakerPhoneIcon.getLayoutParams()).topMargin = lastInsets.getSystemWindowInsetTop();
+        ((FrameLayout.LayoutParams) flexatarIcon.getLayoutParams()).topMargin = AndroidUtilities.dp(115) + lastInsets.getSystemWindowInsetTop();
+
         ((FrameLayout.LayoutParams) statusLayout.getLayoutParams()).topMargin = AndroidUtilities.dp(135) + lastInsets.getSystemWindowInsetTop();
+        ((FrameLayout.LayoutParams) flexatarPanelView.getLayoutParams()).topMargin = AndroidUtilities.dp(185) + lastInsets.getSystemWindowInsetTop();
+        ((FrameLayout.LayoutParams) flexatarPanelView.getLayoutParams()).leftMargin = AndroidUtilities.dp(12) + lastInsets.getSystemWindowInsetLeft();
+        ((FrameLayout.LayoutParams) flexatarPanelView.getLayoutParams()).rightMargin = AndroidUtilities.dp(12) + lastInsets.getSystemWindowInsetRight();
         ((FrameLayout.LayoutParams) emojiLayout.getLayoutParams()).topMargin = AndroidUtilities.dp(17) + lastInsets.getSystemWindowInsetTop();
         ((FrameLayout.LayoutParams) callingUserPhotoViewMini.getLayoutParams()).topMargin = AndroidUtilities.dp(93) + lastInsets.getSystemWindowInsetTop();
         ((FrameLayout.LayoutParams) hideEmojiLayout.getLayoutParams()).topMargin = lastInsets.getSystemWindowInsetTop();
@@ -781,6 +791,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         callingUserTextureView.renderer.setEnableHardwareScaler(true);
         callingUserTextureView.renderer.setRotateTextureWithScreen(true);
         callingUserTextureView.scaleType = VoIPTextureView.SCALE_TYPE_FIT;
+        callingUserTextureView.renderer.setIsFlexatar(false);
+
         //     callingUserTextureView.attachBackgroundRenderer();
 
         frameLayout.addView(gradientLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
@@ -803,6 +815,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         currentUserTextureView = new VoIPTextureView(context, true, false);
         currentUserTextureView.renderer.setIsCamera(true);
         currentUserTextureView.renderer.setUseCameraRotation(true);
+        currentUserTextureView.renderer.setIsFlexatar(true);
         currentUserCameraFloatingLayout.setOnTapListener(view -> {
             if (currentUserIsVideo && callingUserIsVideo && System.currentTimeMillis() - lastContentTapTime > 500) {
                 AndroidUtilities.cancelRunOnUIThread(hideUIRunnable);
@@ -826,6 +839,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         callingUserMiniTextureRenderer.setIsCamera(false);
         callingUserMiniTextureRenderer.setFpsReduction(30);
         callingUserMiniTextureRenderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
+        callingUserMiniTextureRenderer.setIsFlexatar(false);
 
         View backgroundView = new View(context);
         backgroundView.setBackgroundColor(0xff1b1f23);
@@ -855,6 +869,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         topShadow = new View(context);
         topShadow.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{ColorUtils.setAlphaComponent(Color.BLACK, (int) (255 * 0.4f)), Color.TRANSPARENT}));
         frameLayout.addView(topShadow, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 160, Gravity.TOP));
+
+
 
         emojiLayout = new LinearLayout(context) {
             @Override
@@ -957,6 +973,12 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         statusLayout.setFocusable(true);
         statusLayout.setFocusableInTouchMode(true);
 
+
+
+        flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context,backgroundProvider);
+        flexatarPanelView.setVisibility(View.GONE);
+//        FlexatarRenderer.startVoiceProcessing();
+
         callingUserPhotoViewMini = new ImageWithWavesView(context);
         AvatarDrawable avatarDrawable = new AvatarDrawable();
         avatarDrawable.setInfo(callingUser);
@@ -979,6 +1001,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         statusTextView = new VoIPStatusTextView(context, backgroundProvider);
         ViewCompat.setImportantForAccessibility(statusTextView, ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         statusLayout.addView(statusTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 6));
+//        flexatarLayout.addView(statusTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 6));
 
         statusLayout.setClipChildren(false);
         statusLayout.setClipToPadding(false);
@@ -991,9 +1014,11 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
 
         frameLayout.addView(callingUserPhotoViewMini, LayoutHelper.createFrame(204, 204, Gravity.CENTER_HORIZONTAL, 0, 93, 0, 0));
         frameLayout.addView(statusLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 135, 0, 0));
+        frameLayout.addView(flexatarPanelView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 185, 0, 0));
         frameLayout.addView(hideEmojiLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
         frameLayout.addView(emojiRationalLayout, LayoutHelper.createFrame(304, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 118, 0, 0));
         frameLayout.addView(emojiLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
+
         frameLayout.addView(endCloseLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 52, Gravity.RIGHT, 0, 0, 0, 0));
         frameLayout.addView(rateCallLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT, 0, 380, 0, 0));
 
@@ -1092,6 +1117,23 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         backIcon.setContentDescription(LocaleController.getString("Back", R.string.Back));
         frameLayout.addView(backIcon, LayoutHelper.createFrame(56, 56, Gravity.TOP | Gravity.LEFT));
 
+//        Flexatar icon injection begin
+
+        flexatarIcon = new ImageView(context);
+        flexatarIcon.setContentDescription("flexatar button");
+        flexatarIcon.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
+        flexatarIcon.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+        frameLayout.addView(flexatarIcon, LayoutHelper.createFrame(72, 72, Gravity.TOP | Gravity.RIGHT));
+        flexatarIcon.setAlpha(0f);
+        flexatarIcon.setEnabled(false);
+        flexatarIcon.setOnClickListener(view -> {
+//            FlexatarRenderer.isFlexatarRendering = !FlexatarRenderer.isFlexatarRendering;
+            flexatarPanelView.setVisibility(View.VISIBLE);
+            flexatarPanelView.switchToCameraButton.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
+            Log.d("FLX_BUTTON","on click");
+        });
+//        Flexatar icon injection end
+
         speakerPhoneIcon = new ImageView(context) {
             @Override
             public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
@@ -1127,6 +1169,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 service.toggleSpeakerphoneOrShowRouteSheet(activity, false, selectedSpeaker);
             }
         });
+
+
 
         backIcon.setOnClickListener(view -> {
             if (!lockOnScreen) {
@@ -1383,9 +1427,12 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         }
 
         speakerPhoneIcon.animate().alpha(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+        flexatarIcon.animate().alpha(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+        flexatarIcon.setEnabled(false);
         backIcon.animate().alpha(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
         emojiLayout.animate().alpha(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
         statusLayout.animate().alpha(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+        flexatarPanelView.animate().alpha(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
         buttonsLayout.animate().alpha(0).setDuration(350).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
         bottomShadow.animate().alpha(0).setDuration(350).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
         topShadow.animate().alpha(0).setDuration(350).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
@@ -1440,10 +1487,13 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             backIcon.setAlpha(0f);
             emojiLayout.setAlpha(0f);
             statusLayout.setAlpha(0f);
+            flexatarPanelView.setAlpha(0f);
             buttonsLayout.setAlpha(0f);
             bottomShadow.setAlpha(0f);
             topShadow.setAlpha(0f);
             speakerPhoneIcon.setAlpha(0f);
+            flexatarIcon.setAlpha(0f);
+            flexatarIcon.setEnabled(false);
             notificationsLayout.setAlpha(0f);
 
             currentUserCameraFloatingLayout.switchingToPip = true;
@@ -1452,9 +1502,12 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 VoIPPiPView.finish();
 
                 speakerPhoneIcon.animate().setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+                flexatarIcon.animate().setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+
                 backIcon.animate().alpha(1f).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
                 emojiLayout.animate().alpha(1f).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
                 statusLayout.animate().alpha(1f).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+                flexatarPanelView.animate().alpha(1f).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
                 buttonsLayout.animate().alpha(1f).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
                 bottomShadow.animate().alpha(1f).setDuration(350).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
                 topShadow.animate().alpha(1f).setDuration(350).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
@@ -1804,6 +1857,11 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                     }).start();
                     speakerPhoneIcon.animate().alpha(0f).setInterpolator(CubicBezierInterpolator.DEFAULT).setDuration(250).start();
                     speakerPhoneIcon.setVisibility(View.GONE);
+
+                    flexatarIcon.animate().alpha(0f).setInterpolator(CubicBezierInterpolator.DEFAULT).setDuration(250).start();
+                    flexatarIcon.setEnabled(false);
+                    flexatarIcon.setVisibility(View.GONE);
+
                     statusTextView.showReconnect(false, true);
                     statusTextView.showBadConnection(false, true);
                     statusTextView.setDrawCallIcon();
@@ -2122,6 +2180,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         callingUserMiniFloatingLayout.restoreRelativePosition();
 
         updateSpeakerPhoneIcon();
+        updateFlexatarIcon();
 
         if (currentState == VoIPService.STATE_ESTABLISHED) {
             callingUserPhotoViewMini.onConnected();
@@ -2169,6 +2228,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         if (!show && uiVisible) {
             notificationsLayoutStartDelay = 150;
             speakerPhoneIcon.animate().alpha(0).translationY(-AndroidUtilities.dp(10)).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+            flexatarIcon.animate().alpha(0).translationY(-AndroidUtilities.dp(10)).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+            flexatarIcon.setEnabled(false);
             backIcon.animate().alpha(0).translationY(-AndroidUtilities.dp(10)).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             emojiLayout.animate().alpha(0).translationY(-AndroidUtilities.dp(10)).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             callingUserTitle.animate().alpha(0).setDuration(150).translationY(-AndroidUtilities.dp(10)).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
@@ -2190,6 +2251,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             callingUserTitle.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             statusTextView.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             speakerPhoneIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+            flexatarIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+            flexatarIcon.setEnabled(true);
             backIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             emojiLayout.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             buttonsLayout.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
@@ -2510,10 +2573,14 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                     setFrontalCameraAction(bottomSpeakerBtn, service, animated);
                     if (uiVisible) {
                         speakerPhoneIcon.animate().alpha(1f).start();
+                        flexatarIcon.animate().alpha(1f).start();
+                        flexatarIcon.setEnabled(true);
                     }
                 } else {
                     setSpeakerPhoneAction(bottomSpeakerBtn, service, animated);
                     speakerPhoneIcon.animate().alpha(0).start();
+                    flexatarIcon.animate().alpha(0).start();
+                    flexatarIcon.setEnabled(false);
                 }
                 setVideoAction(bottomVideoBtn, service, false);
                 setMicrohoneAction(bottomMuteBtn, service, animated);
@@ -2532,11 +2599,15 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 if (uiVisible) {
                     speakerPhoneIcon.setTag(1);
                     speakerPhoneIcon.animate().alpha(1f).start();
+                    flexatarIcon.animate().alpha(1f).start();
+                    flexatarIcon.setEnabled(true);
                 }
             } else {
                 setSpeakerPhoneAction(bottomSpeakerBtn, service, animated);
                 speakerPhoneIcon.setTag(null);
                 speakerPhoneIcon.animate().alpha(0f).start();
+                flexatarIcon.animate().alpha(0f).start();
+                flexatarIcon.setEnabled(false);
             }
             setVideoAction(bottomVideoBtn, service, false);
             setMicrohoneAction(bottomMuteBtn, service, animated);
@@ -2568,6 +2639,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             bottomEndCallBtn.animationDelay = animationDelay;
         }
         updateSpeakerPhoneIcon();
+        updateFlexatarIcon();
     }
 
     private void setMicrohoneAction(VoIpSwitchLayout bottomButton, VoIPService service, boolean animated) {
@@ -2613,6 +2685,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 bottomButton.setType(VoIpSwitchLayout.Type.VIDEO, true, fast);
             }
             bottomButton.setOnBtnClickedListener(view -> {
+                flexatarPanelView.setVisibility(View.GONE);
                 AndroidUtilities.cancelRunOnUIThread(hideUIRunnable);
                 hideUiRunnableWaiting = false;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -2649,6 +2722,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         if (service.isBluetoothOn()) {
             speakerPhoneIcon.setImageResource(R.drawable.calls_bluetooth);
         } else if (vam.isSpeakerphoneOn()) {
+//            speakerPhoneIcon.setImageResource(R.drawable.calls_flexatar);
             speakerPhoneIcon.setImageResource(R.drawable.calls_speaker);
         } else {
             if (service.isHeadsetPlugged()) {
@@ -2657,6 +2731,10 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 speakerPhoneIcon.setImageResource(R.drawable.calls_menu_phone);
             }
         }
+    }
+    private void updateFlexatarIcon() {
+        flexatarIcon.setImageResource(R.drawable.calls_flexatar);
+
     }
 
     private void setSpeakerPhoneAction(VoIpSwitchLayout bottomButton, VoIPService service, boolean animated) {

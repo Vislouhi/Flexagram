@@ -1938,6 +1938,12 @@ public:
         onUpdatedIsMuted();
 
         adjustBitratePreferences(false);
+
+        _threads->getWorkerThread()->BlockingCall([&]() {
+            _outgoingAudioChannel->media_channel()->SetFlexatarDelay1(_outgoingAudioSsrc,
+                                                                     _flexatarDelay, nullptr,
+                                                                     &_audioSource);
+        });
     }
 
     void stop() {
@@ -2979,6 +2985,16 @@ public:
 
         onUpdatedIsMuted();
     }
+    void setFlexatarDelay1(bool flexatarDelay) {
+        _flexatarDelay = flexatarDelay;
+        if (_outgoingAudioChannel) {
+            _threads->getWorkerThread()->BlockingCall([&]() {
+                _outgoingAudioChannel->media_channel()->SetFlexatarDelay1(_outgoingAudioSsrc,
+                                                                         flexatarDelay, nullptr,
+                                                                         &_audioSource);
+            });
+        }
+    }
 
     void onUpdatedIsMuted() {
         if (_outgoingAudioChannel) {
@@ -3454,7 +3470,8 @@ private:
     rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> _networkThreadSafery;
 
     std::shared_ptr<PlatformContext> _platformContext;
-};
+        bool _flexatarDelay = false;
+    };
 
 GroupInstanceCustomImpl::GroupInstanceCustomImpl(GroupInstanceDescriptor &&descriptor) {
     if (descriptor.config.need_log) {
@@ -3526,6 +3543,12 @@ void GroupInstanceCustomImpl::removeIncomingVideoSource(uint32_t ssrc) {
 void GroupInstanceCustomImpl::setIsMuted(bool isMuted) {
     _internal->perform([isMuted](GroupInstanceCustomInternal *internal) {
         internal->setIsMuted(isMuted);
+    });
+}
+
+void GroupInstanceCustomImpl::setFlexatarDelay1(bool flexatarDelay) {
+    _internal->perform([flexatarDelay](GroupInstanceCustomInternal *internal) {
+        internal->setFlexatarDelay1(flexatarDelay);
     });
 }
 

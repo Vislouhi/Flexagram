@@ -14,6 +14,8 @@ import android.graphics.Matrix;
 import android.opengl.GLES20;
 import java.nio.ByteBuffer;
 
+import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlxDrawer;
 import org.telegram.messenger.FileLog;
 import org.webrtc.VideoFrame.I420Buffer;
 import org.webrtc.VideoFrame.TextureBuffer;
@@ -46,6 +48,7 @@ public class YuvConverter {
       + "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
       + "      sample(tc + 1.5 * xUnit).rgb);\n"
       + "}\n";
+  private FlxDrawer flxDrawer;
 
   private static class ShaderCallbacks implements GlGenericDrawer.ShaderCallbacks {
     // Y'UV444 to RGB888, see https://en.wikipedia.org/wiki/YUV#Y%E2%80%B2UV444_to_RGB888_conversion
@@ -171,12 +174,43 @@ public class YuvConverter {
 
     // Produce a frame buffer starting at top-left corner, not bottom-left.
     final Matrix renderMatrix = new Matrix();
+
     renderMatrix.preTranslate(0.5f, 0.5f);
+    if (FlexatarRenderer.isFlexatarRendering) {
+      renderMatrix.preRotate(270);
+
+    }
+//    renderMatrix.preRotate(90);
     renderMatrix.preScale(1f, -1f);
     renderMatrix.preTranslate(-0.5f, -0.5f);
 
+    /*if (false) {
+
+//      renderMatrix.preRotate(frame.getRotation());
+    }else{
+      renderMatrix.preRotate(90);
+    }*/
+
     try {
       i420TextureFrameBuffer.setSize(viewportWidth, totalHeight);
+
+      if (flxDrawer == null &&  FlexatarRenderer.isFlexatarRendering){
+        flxDrawer = new FlxDrawer();
+        flxDrawer.addHead(FlexatarRenderer.currentFlxData);
+      }
+      if (flxDrawer!=null)
+        flxDrawer.screenRatio = (float) frameHeight / (float) frameWidth;
+      /*if (fromEncoder) {
+        flxDrawer.screenRatio = (float) renderWidth / (float) renderHeight;
+      }else{
+        flxDrawer.screenRatio = (float)  frame.getRotatedWidth() / (float) frame.getRotatedHeight();
+      }*/
+
+      int flxRenderTextureId = FlexatarRenderer.isFlexatarRendering ? flxDrawer == null ? -1 : flxDrawer.drawToFrameBuffer() : -1;
+//      if (FlexatarRenderer.isFlexatarRendering){
+//        flxDrawer.drawToFB();
+//      }
+
 
       // Bind our framebuffer.
       GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, i420TextureFrameBuffer.getFrameBufferId());
@@ -186,19 +220,19 @@ public class YuvConverter {
       shaderCallbacks.setPlaneY();
       VideoFrameDrawer.drawTexture(drawer, preparedBuffer, renderMatrix, frameWidth, frameHeight, frameWidth, frameHeight,
               /* viewportX= */ 0, /* viewportY= */ 0, viewportWidth,
-              /* viewportHeight= */ frameHeight, false);
+              /* viewportHeight= */ frameHeight, false,false,false,flxRenderTextureId);
 
       // Draw U.
       shaderCallbacks.setPlaneU();
       VideoFrameDrawer.drawTexture(drawer, preparedBuffer, renderMatrix, frameWidth, frameHeight, frameWidth, frameHeight,
               /* viewportX= */ 0, /* viewportY= */ frameHeight, viewportWidth / 2,
-              /* viewportHeight= */ uvHeight, false);
+              /* viewportHeight= */ uvHeight, false,false,false,flxRenderTextureId);
 
       // Draw V.
       shaderCallbacks.setPlaneV();
       VideoFrameDrawer.drawTexture(drawer, preparedBuffer, renderMatrix, frameWidth, frameHeight, frameWidth, frameHeight,
               /* viewportX= */ viewportWidth / 2, /* viewportY= */ frameHeight, viewportWidth / 2,
-              /* viewportHeight= */ uvHeight, false);
+              /* viewportHeight= */ uvHeight, false,false,false,flxRenderTextureId);
 
       GLES20.glReadPixels(0, 0, i420TextureFrameBuffer.getWidth(), i420TextureFrameBuffer.getHeight(),
               GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, i420ByteBuffer);

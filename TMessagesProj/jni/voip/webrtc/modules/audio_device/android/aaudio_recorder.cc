@@ -179,6 +179,7 @@ aaudio_data_callback_result_t AAudioRecorder::OnDataCallback(
   }
   // Copy recorded audio in `audio_data` to the WebRTC sink using the
   // FineAudioBuffer object.
+  // TODO pass delay parameter
   fine_audio_buffer_->DeliverRecordedData(
       rtc::MakeArrayView(static_cast<const int16_t*>(audio_data),
                          aaudio_.samples_per_frame() * num_frames),

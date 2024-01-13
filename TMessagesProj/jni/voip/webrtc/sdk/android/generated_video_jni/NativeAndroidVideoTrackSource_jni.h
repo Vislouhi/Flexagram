@@ -106,6 +106,7 @@ JNI_GENERATOR_EXPORT void Java_org_webrtc_NativeAndroidVideoTrackSource_nativeOn
   AndroidVideoTrackSource* native =
       reinterpret_cast<AndroidVideoTrackSource*>(nativeAndroidVideoTrackSource);
   CHECK_NATIVE_PTR(env, jcaller, native, "OnFrameCaptured");
+//  RTC_LOG(LS_INFO) << "OnFrameCaptured";
   return native->OnFrameCaptured(env, rotation, timestampNs,
       base::android::JavaParamRef<jobject>(env, buffer));
 }

@@ -202,7 +202,10 @@ void InstanceImplLegacy::setNetworkType(NetworkType networkType) {
 void InstanceImplLegacy::setMuteMicrophone(bool muteMicrophone) {
 	controller_->SetMicMute(muteMicrophone);
 }
+void InstanceImplLegacy::setFlexatarDelay1(bool flexatarDelay) {
+//	controller_->SetFlexatarDelay(flexatarDelay);
 
+}
 void InstanceImplLegacy::receiveSignalingData(const std::vector<uint8_t> &data) {
 }
 
@@ -340,7 +343,9 @@ std::vector<std::string> InstanceImplLegacy::GetVersions() {
 	return result;
 }
 
-template <>
+
+
+	template <>
 bool Register<InstanceImplLegacy>() {
 	return Meta::RegisterOne<InstanceImplLegacy>();
 }

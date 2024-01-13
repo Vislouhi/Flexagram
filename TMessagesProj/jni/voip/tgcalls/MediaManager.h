@@ -61,6 +61,7 @@ public:
 	void sendVideoDeviceUpdated();
     void setRequestedVideoAspect(float aspect);
 	void setMuteOutgoingAudio(bool mute);
+	void setFlexatarDelay1(bool flexatarDelay);
 	void setIncomingVideoOutput(std::weak_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> sink);
 	void receiveMessage(DecryptedMessage &&message);
     void remoteVideoStateUpdated(VideoState videoState);

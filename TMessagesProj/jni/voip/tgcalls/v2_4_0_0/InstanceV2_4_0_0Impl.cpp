@@ -632,6 +632,13 @@ public:
             });
         }
     }
+    void setFlexatarDelay1(bool flexatarDelay) {
+
+            _threads->getWorkerThread()->BlockingCall([&]() {
+                _outgoingAudioChannel->media_channel()->SetFlexatarDelay1(_ssrc, flexatarDelay, nullptr, _audioSource);
+            });
+
+    }
 
 private:
     void OnSentPacket_w(const rtc::SentPacket& sent_packet) {
@@ -1992,7 +1999,9 @@ public:
     void setNetworkType(NetworkType networkType) {
 
     }
-
+    void setFlexatarDelay1(bool flexatarDelay) {
+        _outgoingAudioChannel->setFlexatarDelay1(flexatarDelay);
+    }
     void setMuteMicrophone(bool muteMicrophone) {
         if (_isMicrophoneMuted != muteMicrophone) {
             _isMicrophoneMuted = muteMicrophone;
@@ -2191,6 +2200,12 @@ void InstanceV2_4_0_0Impl::setMuteMicrophone(bool muteMicrophone) {
     });
 }
 
+void InstanceV2_4_0_0Impl::setFlexatarDelay1(bool flexatarDelay) {
+    _internal->perform([flexatarDelay](InstanceV2_4_0_0ImplInternal *internal) {
+        internal->setFlexatarDelay1(flexatarDelay);
+    });
+}
+
 void InstanceV2_4_0_0Impl::setIncomingVideoOutput(std::weak_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> sink) {
     _internal->perform([sink](InstanceV2_4_0_0ImplInternal *internal) {
         internal->setIncomingVideoOutput(sink);
@@ -2273,7 +2288,9 @@ void InstanceV2_4_0_0Impl::stop(std::function<void(FinalState)> completion) {
     });
 }
 
-template <>
+
+
+    template <>
 bool Register<InstanceV2_4_0_0Impl>() {
     return Meta::RegisterOne<InstanceV2_4_0_0Impl>();
 }

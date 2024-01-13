@@ -166,6 +166,11 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
                     bool enable,
                     const AudioOptions* options,
                     AudioSource* source) override;
+  bool SetFlexatarDelay1(uint32_t ssrc,
+    bool enable,
+    const AudioOptions* options,
+            AudioSource* source) override;
+
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;

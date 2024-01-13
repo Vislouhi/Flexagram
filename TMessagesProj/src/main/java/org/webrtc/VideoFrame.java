@@ -34,6 +34,7 @@ public class VideoFrame implements RefCounted {
    * and the buffer needs to be returned to the VideoSource as soon as all references are gone.
    */
   public interface Buffer extends RefCounted {
+
     /**
      * Representation of the underlying buffer. Currently, only NATIVE and I420 are supported.
      */
@@ -106,6 +107,7 @@ public class VideoFrame implements RefCounted {
   public interface TextureBuffer extends Buffer {
     enum Type {
       OES(GLES11Ext.GL_TEXTURE_EXTERNAL_OES),
+      FLX(GLES11Ext.GL_TEXTURE_EXTERNAL_OES),
       RGB(GLES20.GL_TEXTURE_2D);
 
       private final int glTarget;
@@ -133,6 +135,14 @@ public class VideoFrame implements RefCounted {
   private final Buffer buffer;
   private final int rotation;
   private final long timestampNs;
+  private boolean isFlexatar = false;
+  public void setIsFlexatar(boolean isFlexatar){
+    this.isFlexatar = isFlexatar;
+  }
+  public boolean getIsFlexatar(){
+    return this.isFlexatar;
+  }
+
 
   /**
    * Constructs a new VideoFrame backed by the given {@code buffer}.

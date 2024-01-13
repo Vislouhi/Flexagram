@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 
 /**
@@ -35,6 +37,7 @@ public class VideoSource extends MediaSource {
   private boolean isCapturerRunning;
 
   private final CapturerObserver capturerObserver = new CapturerObserver() {
+
     @Override
     public void onCapturerStarted(boolean success) {
       nativeAndroidVideoTrackSource.setState(success);
@@ -59,6 +62,7 @@ public class VideoSource extends MediaSource {
 
     @Override
     public void onFrameCaptured(VideoFrame frame) {
+
       final VideoProcessor.FrameAdaptationParameters parameters =
           nativeAndroidVideoTrackSource.adaptFrame(frame);
       synchronized (videoProcessorLock) {

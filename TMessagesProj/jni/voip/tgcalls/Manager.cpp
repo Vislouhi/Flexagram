@@ -334,6 +334,12 @@ void Manager::setMuteOutgoingAudio(bool mute) {
 	});
 }
 
+void Manager::setFlexatarDelay1(bool flexatarDelay) {
+	_mediaManager->perform([flexatarDelay](MediaManager *mediaManager) {
+		mediaManager->setFlexatarDelay1(flexatarDelay);
+	});
+}
+
 void Manager::setIncomingVideoOutput(std::weak_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> sink) {
 	_mediaManager->perform([sink](MediaManager *mediaManager) {
 		mediaManager->setIncomingVideoOutput(sink);

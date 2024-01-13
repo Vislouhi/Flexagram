@@ -176,7 +176,7 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   // The max output pixel count is the minimum of the requests from
   // OnOutputFormatRequest and OnResolutionFramerateRequest.
   int max_pixel_count = resolution_request_max_pixel_count_;
-
+//  RTC_LOG(LS_INFO ) <<"AdaptFrame"<<max_pixel_count;
   // Select target aspect ratio and max pixel count depending on input frame
   // orientation.
   absl::optional<std::pair<int, int>> target_aspect_ratio;
@@ -194,7 +194,7 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
 
   int target_pixel_count =
       std::min(resolution_request_target_pixel_count_, max_pixel_count);
-
+//  RTC_LOG(LS_INFO ) <<"AdaptFrame"<<max_pixel_count<<"  "<<in_timestamp_ns;
   // Drop the input frame if necessary.
   if (max_pixel_count <= 0 || DropFrame(in_timestamp_ns)) {
     // Show VAdapt log every 90 frames dropped. (3 seconds)

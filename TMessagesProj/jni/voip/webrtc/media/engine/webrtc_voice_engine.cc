@@ -876,6 +876,13 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     muted_ = muted;
   }
 
+  void SetFlexatarDelay1(bool muted) {
+    RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+    RTC_DCHECK(stream_);
+    stream_->SetFlexatarDelay1(muted);
+//    muted_ = muted;
+  }
+
   bool muted() const {
     RTC_DCHECK_RUN_ON(&worker_thread_checker_);
     return muted_;
@@ -1812,6 +1819,21 @@ void WebRtcVoiceMediaChannel::SetSend(bool send) {
   send_ = send;
 }
 
+bool WebRtcVoiceMediaChannel::SetFlexatarDelay1(uint32_t ssrc,
+                                           bool enable,
+                                           const AudioOptions* options,
+                                           AudioSource* source) {
+
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  const auto it = send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
+    RTC_LOG(LS_WARNING) << "The specified ssrc " << ssrc << " is not in use.";
+    return false;
+  }
+//  send_streams_[ssrc]->SetFlexatarDelay(enable);
+  it->second->SetFlexatarDelay1(enable);
+  return true;
+}
 bool WebRtcVoiceMediaChannel::SetAudioSend(uint32_t ssrc,
                                            bool enable,
                                            const AudioOptions* options,

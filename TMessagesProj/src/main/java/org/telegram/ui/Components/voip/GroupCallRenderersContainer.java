@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -24,6 +25,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -31,6 +33,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ChatObject;
@@ -64,6 +68,10 @@ import java.util.ArrayList;
 public class GroupCallRenderersContainer extends FrameLayout {
 
     private final int touchSlop;
+    private final ImageView flexatarIcon;
+    private PopupWindow flexatarUiPopupPanel;
+    //    private final FlexatarUI.LinearLayoutSemiTransparent flexatarPanelView;
+    private FlexatarUI.LinearLayoutSemiTransparent icon1;
     public boolean inFullscreenMode;
     public float progressToFullscreenMode;
     public long fullscreenPeerId;
@@ -200,6 +208,32 @@ public class GroupCallRenderersContainer extends FrameLayout {
         addView(backButton, LayoutHelper.createFrame(56, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
         backButton.setOnClickListener(view -> onBackPressed());
 
+//        flexatar button inject begin
+        flexatarIcon = new ImageView(context);
+        flexatarIcon.setContentDescription("flexatar button");
+        flexatarIcon.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
+        flexatarIcon.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+        flexatarIcon.setImageResource(R.drawable.calls_flexatar);
+        flexatarIcon.setVisibility(View.GONE);
+
+//        VoIPBackgroundProvider backgroundProvider = new VoIPBackgroundProvider();
+
+//        flexatarPanelView.setVisibility(View.GONE);
+
+        flexatarIcon.setOnClickListener((v)->{
+//            fullscreenTextureView.textureView.renderer.setIsFlexatar(fullscreenTextureView.participant().participant.self);
+            flexatarIcon.setVisibility(View.GONE);
+            flexatarIcon.setEnabled(false);
+            flexatarUiPopupPanel = FlexatarUI.panelPopup(context, this);
+            flexatarUiPopupPanel.setOnDismissListener(()->{
+                flexatarIcon.setVisibility(View.VISIBLE);
+                flexatarIcon.setEnabled(true);
+            });
+//            Log.d("FLX_INJECT","is my render view : " + fullscreenTextureView.participant.participant.self);
+        });
+        //        flexatar button inject end
+
+
         pinButton = new ImageView(context) {
             @Override
             public void invalidate() {
@@ -259,6 +293,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
         pinDrawable.setOffsets(-AndroidUtilities.dp(1), AndroidUtilities.dp(2), AndroidUtilities.dp(1));
         pinButton.setImageDrawable(pinDrawable);
         pinButton.setPadding(AndroidUtilities.dp(16), 0, AndroidUtilities.dp(16), 0);
+
         addView(pinButton, LayoutHelper.createFrame(56, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
 
 
@@ -361,6 +396,24 @@ public class GroupCallRenderersContainer extends FrameLayout {
         }
 
         pinContainer.setVisibility(View.GONE);
+        addView(flexatarIcon, LayoutHelper.createFrame(56, 56, Gravity.LEFT | Gravity.TOP));
+//        addView(flexatarPanelView, LayoutHelper.createFrame(100, 100, Gravity.CENTER, 0, 0, 0, 0));
+//        flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context,new VoIPBackgroundProvider());
+        VoIPBackgroundProvider bkg = new VoIPBackgroundProvider();
+        bkg.setTotalSize(200,200);
+        bkg.setHasVideo(true);
+//        icon1 = FlexatarUI.makeFlexatarChoosePanel(context,bkg);
+//        icon1.setClickable(true);
+//        icon1.setFocusable(true);
+//        icon1 = new ImageView(context);
+//        icon1.setContentDescription("flexatar button");
+//        icon1.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
+//        icon1.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+//        icon1.setImageResource(R.drawable.calls_flexatar);
+//        icon1.setVisibility(View.GONE);
+//        addView(icon1, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,Gravity.LEFT | Gravity.TOP, 12, 50, 12, 0));
+//        addView(icon1, LayoutHelper.createFrame(100, 100,Gravity.LEFT | Gravity.TOP, 0, 0, 0, 0));
+
         setIsTablet(GroupCallActivity.isTabletMode);
     }
 
@@ -369,7 +422,8 @@ public class GroupCallRenderersContainer extends FrameLayout {
     }
 
     protected void onBackPressed() {
-
+//        if (flexatarUiPopupPanel != null)
+//            flexatarUiPopupPanel.dismiss();
     }
 
     public void setIsTablet(boolean tablet) {
@@ -533,6 +587,12 @@ public class GroupCallRenderersContainer extends FrameLayout {
         }
 
         backButton.setAlpha(a);
+        flexatarIcon.setAlpha(a);
+
+        if (flexatarUiPopupPanel != null && !inFullscreenMode){
+            flexatarUiPopupPanel.getContentView().setAlpha(a);
+        }
+//        icon1.setAlpha(a);
 
         if (isRtmpStream()) {
             pinButton.setAlpha(0f);
@@ -557,10 +617,13 @@ public class GroupCallRenderersContainer extends FrameLayout {
         float x2 = getMeasuredWidth() - unpinTextView.getMeasuredWidth();
         float pinY = (ActionBar.getCurrentActionBarHeight() - pinTextView.getMeasuredHeight()) / 2f - AndroidUtilities.dp(1);
         float pinX = x2 * pinDrawable.getProgress() + x1 * (1f - pinDrawable.getProgress()) - AndroidUtilities.dp(21);
+        float flxX = x1 - AndroidUtilities.dp(21);;
         if (GroupCallActivity.isTabletMode) {
             pinX -= AndroidUtilities.dp(GroupCallActivity.TABLET_LIST_SIZE + 8);
+            flxX -= AndroidUtilities.dp(GroupCallActivity.TABLET_LIST_SIZE + 8);
         } else {
             pinX -= (GroupCallActivity.isLandscapeMode ? AndroidUtilities.dp(180) : 0);
+            flxX -= (GroupCallActivity.isLandscapeMode ? AndroidUtilities.dp(180) : 0);
         }
         pinTextView.setTranslationX(pinX);
         unpinTextView.setTranslationX(pinX);
@@ -571,7 +634,14 @@ public class GroupCallRenderersContainer extends FrameLayout {
         pinContainer.setTranslationY((ActionBar.getCurrentActionBarHeight() - pinContainer.getMeasuredHeight()) / 2f);
 
         pinButton.setTranslationX(pinX - AndroidUtilities.dp(44f));
+        flexatarIcon.setTranslationX(pinX - AndroidUtilities.dp(44f+40));
+        flexatarIcon.setTranslationY((ActionBar.getCurrentActionBarHeight() - pinContainer.getMeasuredHeight()) / 2f - AndroidUtilities.dp(5f));
 
+//        icon1.setTranslationX(0);
+//        icon1.setTranslationY(0);
+
+//        flexatarPanelView.setTranslationX(pinX - AndroidUtilities.dp(44f+40));
+//        flexatarPanelView.setTranslationY((ActionBar.getCurrentActionBarHeight() - pinContainer.getMeasuredHeight()) / 2f - AndroidUtilities.dp(5f));
         if (isRtmpStream()) {
             pinTextView.setAlpha(0f);
             unpinTextView.setAlpha(0f);
@@ -685,7 +755,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
                 }
                 inFullscreenMode = false;
 
-                if ((fullscreenTextureView.primaryView == null && fullscreenTextureView.secondaryView == null && fullscreenTextureView.tabletGridView == null) || !ChatObject.Call.videoIsActive(fullscreenTextureView.participant.participant, fullscreenTextureView.participant.presentation, call)) {
+                if ((fullscreenTextureView.primaryView == null && fullscreenTextureView.secondaryView == null && fullscreenTextureView.tabletGridView == null) || !ChatObject.Call.videoIsActive(fullscreenTextureView.participant().participant, fullscreenTextureView.participant().presentation, call)) {
                     fullscreenTextureView.forceDetach(true);
                     if (fullscreenTextureView.primaryView != null) {
                         fullscreenTextureView.primaryView.setRenderer(null);
@@ -711,11 +781,13 @@ public class GroupCallRenderersContainer extends FrameLayout {
                 }
             }
             backButton.setEnabled(false);
+            flexatarIcon.setEnabled(false);
             hasPinnedVideo = false;
         } else {
             GroupCallMiniTextureView textureView = null;
             for (int i = 0; i < attachedRenderers.size(); i++) {
-                if (attachedRenderers.get(i).participant.equals(videoParticipant)) {
+                if (attachedRenderers.get(i).participant().equals(videoParticipant)) {
+
                     textureView = attachedRenderers.get(i);
                     break;
                 }
@@ -728,7 +800,10 @@ public class GroupCallRenderersContainer extends FrameLayout {
                 if (!inFullscreenMode) {
                     inFullscreenMode = true;
                     clearCurrentFullscreenTextureView();
+
                     fullscreenTextureView = textureView;
+//                    fullscreenTextureView.textureView.renderer.setIsFlexatar(fullscreenTextureView.participant().participant.self);
+
                     fullscreenTextureView.setShowingInFullscreen(true, true);
                     invalidate();
                     pinDrawable.setCrossOut(hasPinnedVideo, false);
@@ -742,6 +817,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
                     GroupCallMiniTextureView newSmallTextureView = null;
                     if (!isTablet && (fullscreenTextureView.primaryView != null || fullscreenTextureView.secondaryView != null || fullscreenTextureView.tabletGridView != null)) {
                         newSmallTextureView = new GroupCallMiniTextureView(this, attachedRenderers, call, groupCallActivity);
+                        newSmallTextureView.setParticipant(fullscreenTextureView.participant());
                         newSmallTextureView.setViews(fullscreenTextureView.primaryView, fullscreenTextureView.secondaryView, fullscreenTextureView.tabletGridView);
                         newSmallTextureView.setFullscreenMode(inFullscreenMode, false);
                         newSmallTextureView.updateAttachState(false);
@@ -757,7 +833,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
                     }
 
                     GroupCallMiniTextureView newFullscreenTextureView = new GroupCallMiniTextureView(this, attachedRenderers, call, groupCallActivity);
-                    newFullscreenTextureView.participant = textureView.participant;
+                    newFullscreenTextureView.setParticipant(textureView.participant());
                     newFullscreenTextureView.setViews(textureView.primaryView, textureView.secondaryView, textureView.tabletGridView);
                     newFullscreenTextureView.setFullscreenMode(inFullscreenMode, false);
                     newFullscreenTextureView.updateAttachState(false);
@@ -800,6 +876,8 @@ public class GroupCallRenderersContainer extends FrameLayout {
                     }
 
                     GroupCallMiniTextureView finalNewSmallTextureView = newSmallTextureView;
+//                    finalNewSmallTextureView.textureView.renderer.setIsFlexatar(fullscreenTextureView.participant.participant.self);
+
                     newFullscreenTextureView.runOnFrameRendered(() -> {
                         if (replaceFullscreenViewAnimator != null) {
                             replaceFullscreenViewAnimator.start();
@@ -827,6 +905,8 @@ public class GroupCallRenderersContainer extends FrameLayout {
 
                     clearCurrentFullscreenTextureView();
                     fullscreenTextureView = newFullscreenTextureView;
+//                    fullscreenTextureView.textureView.renderer.setIsFlexatar(fullscreenTextureView.participant.participant.self);
+
                     fullscreenTextureView.setShowingInFullscreen(true, false);
                     update();
                 }
@@ -835,6 +915,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
                     if (fullscreenTextureView.primaryView != null || fullscreenTextureView.secondaryView != null | fullscreenTextureView.tabletGridView != null) {
                         fullscreenTextureView.forceDetach(false);
                         GroupCallMiniTextureView newSmallTextureView = new GroupCallMiniTextureView(this, attachedRenderers, call, groupCallActivity);
+                        newSmallTextureView.setParticipant(fullscreenTextureView.participant());
                         newSmallTextureView.setViews(fullscreenTextureView.primaryView, fullscreenTextureView.secondaryView, fullscreenTextureView.tabletGridView);
                         newSmallTextureView.setFullscreenMode(inFullscreenMode, false);
                         newSmallTextureView.updateAttachState(false);
@@ -864,7 +945,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
 
 
                     GroupCallMiniTextureView newFullscreenTextureView = new GroupCallMiniTextureView(this, attachedRenderers, call, groupCallActivity);
-                    newFullscreenTextureView.participant = videoParticipant;
+                    newFullscreenTextureView.setParticipant(videoParticipant);
                     newFullscreenTextureView.setFullscreenMode(inFullscreenMode, false);
                     newFullscreenTextureView.setShowingInFullscreen(true, false);
 
@@ -894,6 +975,8 @@ public class GroupCallRenderersContainer extends FrameLayout {
 
                     clearCurrentFullscreenTextureView();
                     fullscreenTextureView = newFullscreenTextureView;
+//                    fullscreenTextureView.textureView.renderer.setIsFlexatar(fullscreenTextureView.participant.participant.self);
+
                     fullscreenTextureView.setShowingInFullscreen(true, false);
                     fullscreenTextureView.updateAttachState(false);
                     update();
@@ -901,7 +984,10 @@ public class GroupCallRenderersContainer extends FrameLayout {
                     inFullscreenMode = true;
                     clearCurrentFullscreenTextureView();
                     fullscreenTextureView = new GroupCallMiniTextureView(this, attachedRenderers, call, groupCallActivity);
-                    fullscreenTextureView.participant = videoParticipant;
+                    fullscreenTextureView.setParticipant(videoParticipant);
+//                    fullscreenTextureView.participant = videoParticipant;
+//                    fullscreenTextureView.textureView.renderer.setIsFlexatar(fullscreenTextureView.participant.participant.self);
+
                     fullscreenTextureView.setFullscreenMode(inFullscreenMode, false);
                     fullscreenTextureView.setShowingInFullscreen(true, false);
                     // fullscreenTextureView.textureView.renderer.setAlpha(1f);
@@ -928,6 +1014,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
                 }
             }
             backButton.setEnabled(true);
+            flexatarIcon.setEnabled(true);
         }
 
 
@@ -941,6 +1028,8 @@ public class GroupCallRenderersContainer extends FrameLayout {
             } else {
                 backButton.setVisibility(View.VISIBLE);
                 pinButton.setVisibility(View.VISIBLE);
+                flexatarIcon.setVisibility(View.VISIBLE);
+//                icon1.setVisibility(View.VISIBLE);
                 unpinTextView.setVisibility(View.VISIBLE);
                 pinContainer.setVisibility(View.VISIBLE);
             }
@@ -975,6 +1064,13 @@ public class GroupCallRenderersContainer extends FrameLayout {
                     if (!inFullscreenMode) {
                         backButton.setVisibility(View.GONE);
                         pinButton.setVisibility(View.GONE);
+                        flexatarIcon.setVisibility(View.GONE);
+                        if (flexatarUiPopupPanel != null){
+                            flexatarUiPopupPanel.dismiss();
+                            flexatarUiPopupPanel = null;
+
+                        }
+//                        icon1.setVisibility(View.GONE);
                         unpinTextView.setVisibility(View.GONE);
                         pinContainer.setVisibility(View.GONE);
                     }
@@ -1325,7 +1421,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
 
     public void setAmplitude(TLRPC.TL_groupCallParticipant participant, float v) {
         for (int i = 0; i < attachedRenderers.size(); i++) {
-            if (MessageObject.getPeerId(attachedRenderers.get(i).participant.participant.peer) == MessageObject.getPeerId(participant.peer)) {
+            if (MessageObject.getPeerId(attachedRenderers.get(i).participant().participant.peer) == MessageObject.getPeerId(participant.peer)) {
                 attachedRenderers.get(i).setAmplitude(v);
             }
         }
@@ -1512,13 +1608,13 @@ public class GroupCallRenderersContainer extends FrameLayout {
 
     public void attach(GroupCallMiniTextureView view) {
         attachedRenderers.add(view);
-        long peerId = MessageObject.getPeerId(view.participant.participant.peer);
+        long peerId = MessageObject.getPeerId(view.participant().participant.peer);
         attachedPeerIds.put(peerId, attachedPeerIds.get(peerId, 0) + 1);
     }
 
     public void detach(GroupCallMiniTextureView view) {
         attachedRenderers.remove(view);
-        long peerId = MessageObject.getPeerId(view.participant.participant.peer);
+        long peerId = MessageObject.getPeerId(view.participant().participant.peer);
         attachedPeerIds.put(peerId, attachedPeerIds.get(peerId, 0) - 1);
     }
 

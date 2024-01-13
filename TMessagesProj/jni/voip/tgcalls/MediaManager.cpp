@@ -957,7 +957,13 @@ void MediaManager::setMuteOutgoingAudio(bool mute) {
         _audioChannel->SetAudioSend(_ssrcAudio.outgoing, _isConnected && (_outgoingAudioState == AudioState::Active), nullptr, &_audioSource);
     });
 }
-
+void MediaManager::setFlexatarDelay1(bool flexatarDelay) {
+//	setOutgoingAudioState(mute ? AudioState::Muted : AudioState::Active);
+// TODO pass delay parameter
+    StaticThreads::getWorkerThread()->BlockingCall([&] {
+        _audioChannel->SetFlexatarDelay1(_ssrcAudio.outgoing, flexatarDelay, nullptr, &_audioSource);
+    });
+}
 void MediaManager::setOutgoingAudioState(AudioState state) {
 	if (_outgoingAudioState == state) {
 		return;

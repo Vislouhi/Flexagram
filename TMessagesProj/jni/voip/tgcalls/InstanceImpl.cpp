@@ -93,6 +93,12 @@ void InstanceImpl::setMuteMicrophone(bool muteMicrophone) {
 	});
 }
 
+void InstanceImpl::setFlexatarDelay1(bool flexatarDelay) {
+	_manager->perform([flexatarDelay](Manager *manager) {
+		manager->setFlexatarDelay1(flexatarDelay);
+	});
+}
+
 void InstanceImpl::setIncomingVideoOutput(std::weak_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> sink) {
 	_manager->perform([sink](Manager *manager) {
 		manager->setIncomingVideoOutput(sink);
