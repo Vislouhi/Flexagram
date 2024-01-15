@@ -493,6 +493,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (micMute == mute || micSwitching) {
 			return;
 		}
+//		FlexatarRenderer.isSpeechAnimation = !mute;
 		micMute = mute;
 		if (groupCall != null) {
 			if (!send) {

@@ -1,10 +1,12 @@
 package org.flexatar;
 
+import android.opengl.Matrix;
+
 public class InterUnit {
 
-    final float[] weights;
-    final int[] idx;
-    final float[] extRot;
+    public final float[] weights;
+    public final int[] idx;
+    public final float[] extRot;
     public InterUnit(float[] weights, int[] idx, float[] extRot){
         this.weights=weights;
         this.idx=idx;
@@ -202,5 +204,23 @@ public class InterUnit {
         pointWeights[2] += (1f -weights[2])*dists[2];
         pointWeights[0] += weights[2]*dists[2];
         return vNorm(pointWeights);
+    }
+    float[] calcExtraMatrix(){
+        float xScale = Math.abs(extRot[0])/0.5f;
+        float yScale = Math.abs(extRot[1])/0.5f;
+        float extForce = 0.5f;
+        float xRot = -0.3f*extForce*(1f+yScale)*extRot[0];
+        float yRot = -0.5f*extForce*(1f+xScale)*extRot[1];
+        float[] xRotMat = new float[16];
+        Matrix.setIdentityM(xRotMat, 0);
+        Matrix.rotateM(xRotMat, 0,xRot/3.14f * 180f,0f,1f,0f);
+
+        float[] yRotMat = new float[16];
+        Matrix.setIdentityM(yRotMat, 0);
+        Matrix.rotateM(yRotMat, 0,yRot/3.14f * 180f,1f,0f,0f);
+
+        float[] rotMat = new float[16];
+        Matrix.multiplyMM(rotMat,0,xRotMat,0,yRotMat,0);
+        return rotMat;
     }
 }

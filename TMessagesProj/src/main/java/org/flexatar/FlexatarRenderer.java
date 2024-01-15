@@ -8,7 +8,6 @@ import android.graphics.BitmapFactory;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.os.Handler;
 import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
@@ -16,15 +15,14 @@ import androidx.core.app.ActivityCompat;
 import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
+import org.telegram.messenger.voip.VoIPService;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.VoIPFragment;
 import org.webrtc.EglBase;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -40,13 +38,18 @@ public class FlexatarRenderer {
     public static List<Bitmap> icons;
     public static List<String> flexatarLinks;
     public static FlexatarData currentFlxData;
+    public static FlexatarData altFlxData;
     public static float[] speechState = {0,0,0,0,0};
     private static AudioRecord audioRecord;
     private static ExecutorService executor;
     private static boolean isRecording;
 
     public static boolean isFrontFaceCamera;
-
+    public static float effectsMixWeight = 0.5f;
+    public static float chosenMixWeight = 0.5f;
+    public static boolean isMorphEffect = false;
+    public static int effectID = 0;
+    public static boolean isEffectsOn = false;
 
 
 
@@ -78,6 +81,7 @@ public class FlexatarRenderer {
         FlexatarCommon.prepare();
         makeIcons();
         currentFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenFirst));
+        altFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenSecond));
     }
 
     public static boolean isFlexatarRendering = false;
@@ -109,7 +113,7 @@ public class FlexatarRenderer {
         }
 
     }
-    private static boolean isVosceProcessingOn = false;
+    private static boolean isVoiceProcessingOn = false;
     public static void stopAnimateSpeech(){
         synchronized (mutexObject) {
             if (audioRecord != null) {
@@ -124,7 +128,7 @@ public class FlexatarRenderer {
                 executor.shutdown();
             audioRecord = null;
             executor = null;
-            isVosceProcessingOn = false;
+            isVoiceProcessingOn = false;
             isRecording = false;
             isFlexatarRendering = false;
         }
@@ -132,8 +136,8 @@ public class FlexatarRenderer {
 
     public static void startVoiceProcessing() {
         synchronized (mutexObject) {
-            if (isVosceProcessingOn) return;
-            isVosceProcessingOn = true;
+            if (isVoiceProcessingOn) return;
+            isVoiceProcessingOn = true;
 
             LaunchActivity context = LaunchActivity.instance;
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -159,10 +163,12 @@ public class FlexatarRenderer {
                         break;
                     }
 
-
-                    float[] avec = SpeechAnimation.processAudio(VPUtil.shortToFloat(audioBuffer));
-                    FlexatarRenderer.speechState = avec;
-//                Log.d("FLX_ANIM","animating");
+                    if (VoIPService.getSharedInstance()!=null && !VoIPService.getSharedInstance().isMicMute()) {
+                        FlexatarRenderer.speechState = SpeechAnimation.processAudio(VPUtil.shortToFloat(audioBuffer));
+                    }else{
+                        FlexatarRenderer.speechState = new float[]{0,0,0.05f,0,0};
+                    }
+//                  Log.d("FLX_ANIM", Arrays.toString(FlexatarRenderer.speechState));
 
 
                 }

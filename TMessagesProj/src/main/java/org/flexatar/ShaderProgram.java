@@ -53,6 +53,8 @@ public class ShaderProgram {
     private final int id;
     private Map<String,VtxDescriptor> attributes = new HashMap<>();
     private Map<String,Integer> uniforms4f = new HashMap<>();
+    private Map<String,Integer> uniforms1i = new HashMap<>();
+    private Map<String,Integer> uniforms1f = new HashMap<>();
     private Map<String,Integer> uniformsMatrix4fv = new HashMap<>();
     public Map<String,TextureArrayDescriptor> textureArrays = new HashMap<>();
 
@@ -89,14 +91,27 @@ public class ShaderProgram {
     }
     public void textureArray(String name,TextureArray textureArray,int textureUnit){
         textureArrays.put(name,
-            new TextureArrayDescriptor(textureArray,GLES20.glGetUniformLocation(id,name),textureUnit)
+                new TextureArrayDescriptor(textureArray,GLES20.glGetUniformLocation(id,name),textureUnit)
         ) ;
     }
     public void addUniform4f(String name){
         uniforms4f.put(name,GLES20.glGetUniformLocation(id,name));
     }
+
     public void uniform4f(String name,float f0,float f1,float f2,float f3){
         GLES20.glUniform4f(uniforms4f.get(name),f0,f1,f2,f3);
+    }
+    public void addUniform1i(String name){
+        uniforms1i.put(name,GLES20.glGetUniformLocation(id,name));
+    }
+    public void uniform1f(String name,float i0){
+        GLES20.glUniform1f(uniforms1f.get(name),i0);
+    }
+    public void addUniform1f(String name){
+        uniforms1f.put(name,GLES20.glGetUniformLocation(id,name));
+    }
+    public void uniform1i(String name,int i0){
+        GLES20.glUniform1i(uniforms1i.get(name),i0);
     }
     public void addUniformMatrix4fv(String name){
         uniformsMatrix4fv.put(name,GLES20.glGetUniformLocation(id,name));

@@ -40,7 +40,7 @@ import org.telegram.ui.Components.SeekBar;
 import org.telegram.ui.Components.SeekBarView;
 import org.telegram.ui.Components.voip.HideEmojiTextView;
 import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
-import org.webrtc.Camera2Session;
+
 
 public class FlexatarUI {
     public static class LinearLayoutSemiTransparent extends LinearLayout{
@@ -73,7 +73,7 @@ public class FlexatarUI {
 
     private static String chosenEffect = "No";
     public static int chosenFirst = 0;
-    private static int chosenSecond = 1;
+    static int chosenSecond = 1;
 
 
     public static PopupWindow panelPopup(Context context,View location){
@@ -138,7 +138,12 @@ public class FlexatarUI {
             icnFlx.setOnClickListener((v) -> {
                 if (FlexatarUI.chosenFirst == finalI) return;
                 FlexatarUI.chosenFirst = finalI;
+                FlexatarRenderer.altFlxData = FlexatarRenderer.currentFlxData;
                 FlexatarRenderer.currentFlxData = FlexatarRenderer.loadFlexatarByLink(FlexatarRenderer.flexatarLinks.get(FlexatarUI.chosenFirst));
+
+                if (chosenEffect.equals("Morph")){
+                    FlexatarRenderer.effectsMixWeight = 0;
+                }
                 icnFlx2.setImageDrawable(icnFlx1.getDrawable());
                 icnFlx1.setImageDrawable(icnFlx.getDrawable());
             });
@@ -215,6 +220,28 @@ public class FlexatarUI {
                 }
                 effectTextViews[finalI].setTextColor(Color.parseColor("#f7d26c"));
                 chosenEffect = effectNames[finalI];
+
+                if (chosenEffect.equals("No")){
+                    FlexatarRenderer.isEffectsOn = false;
+                    FlexatarRenderer.isMorphEffect = false;
+
+                } else if (chosenEffect.equals("Mix")){
+                    FlexatarRenderer.isEffectsOn = true;
+                    FlexatarRenderer.effectID = 0;
+                    FlexatarRenderer.effectsMixWeight = FlexatarRenderer.chosenMixWeight;
+                    FlexatarRenderer.isMorphEffect = false;
+                }else if (chosenEffect.equals("Morph")){
+                    FlexatarRenderer.isEffectsOn = true;
+                    FlexatarRenderer.effectID = 0;
+                    FlexatarRenderer.isMorphEffect = true;
+                    FlexatarRenderer.effectsMixWeight = 0;
+
+                }else if (chosenEffect.equals("Hybrid")){
+                    FlexatarRenderer.isEffectsOn = true;
+                    FlexatarRenderer.effectID = 1;
+                    FlexatarRenderer.isMorphEffect = false;
+
+                }
                 if (chosenEffect.equals("Mix")){
                     seekBar.setVisibility(View.VISIBLE);
                 }else{
@@ -232,6 +259,8 @@ public class FlexatarUI {
         seekBar.setDelegate(new SeekBarView.SeekBarViewDelegate() {
             @Override
             public void onSeekBarDrag(boolean stop, float progress) {
+                FlexatarRenderer.chosenMixWeight = 1-progress;
+                FlexatarRenderer.effectsMixWeight = FlexatarRenderer.chosenMixWeight;
             }
 
             @Override
@@ -250,7 +279,7 @@ public class FlexatarUI {
         });
 
         seekBar.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
-        seekBar.setProgress(0.5f);
+        seekBar.setProgress(1-FlexatarRenderer.chosenMixWeight);
         if (!chosenEffect.equals("Mix")){
             seekBar.setVisibility(View.GONE);
         }

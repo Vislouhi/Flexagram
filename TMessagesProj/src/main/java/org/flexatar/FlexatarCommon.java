@@ -1,11 +1,15 @@
 package org.flexatar;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 
 import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.Data;
 import org.flexatar.DataOps.LengthBasedUnpack;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -23,6 +27,8 @@ public class FlexatarCommon {
     public static float[] blinkPattren;
     public static float[] speechBspKeyBshp;
     public static int mouthLineMaskId;
+    public static float[] uvKeyPoint;
+    private static Bitmap mouthLineBitmap;
 
     public static void prepare(){
         prepareAnimationPatterns();
@@ -102,13 +108,15 @@ public class FlexatarCommon {
         public final VBO idxVBO;
         public final VBO[] speechBshVBO;
         public final int idxCount;
+        public final TextureArray mouthLineTexture;
 
-        public GlBuffers(VBO eyebrowVBO, VBO uvVBO, VBO idxVBO, VBO[] speechBshVBO,int idxCount) {
+        public GlBuffers(VBO eyebrowVBO, VBO uvVBO, VBO idxVBO, VBO[] speechBshVBO,int idxCount,TextureArray mouthLineTexture) {
             this.eyebrowVBO = eyebrowVBO;
             this.uvVBO = uvVBO;
             this.idxVBO = idxVBO;
             this.speechBshVBO = speechBshVBO;
             this.idxCount=idxCount;
+            this.mouthLineTexture=mouthLineTexture;
 
         }
         public void release(){
@@ -143,7 +151,7 @@ public class FlexatarCommon {
                 speechBspKeyBshp[2] = speechBshFloat.get(keyIdx * 4 + 1);
                 speechBspKeyBshp[3] = speechBshFloat.get(keyIdx * 4 + 3);
             }
-            if (i==3){
+            if (i==2){
                 speechBspKeyBshp[4] = speechBshFloat.get(keyIdx * 4 + 1);
 
             }
@@ -151,49 +159,29 @@ public class FlexatarCommon {
             speechBshBuffer.position(0);
             speechBshBB[i] = speechBshBuffer;
         }
-         uvBB = AssetAccess.bufferFromFile("flexatar/FLX_mesh_uv.dat");
-         idxBB = AssetAccess.bufferFromFile("flexatar/FLX_mesh_idx.dat");
+        uvBB = AssetAccess.bufferFromFile("flexatar/FLX_mesh_uv.dat");
+        idxBB = AssetAccess.bufferFromFile("flexatar/FLX_mesh_idx.dat");
+        FloatBuffer uvFB = uvBB.asFloatBuffer();
+        int keIdx = 50;
+        uvKeyPoint = new float[]{uvFB.get(keIdx * 2), uvFB.get(keIdx * 2 + 1)-0.15f,1f};
+        uvBB.position(0);
+        byte[] imgData = AssetAccess.dataFromFile("flexatar/FLX_mouth_line_mask.dat");
+        InputStream inputStream = new ByteArrayInputStream(imgData);
+        mouthLineBitmap = BitmapFactory.decodeStream(inputStream);
+
     }
     static GlBuffers bufferFactory(){
-//        ByteBuffer eyebrowBuffer = AssetAccess.bufferFromFile("flexatar/FLX_bkg_anim_blendshapes.dat");
         VBO eyebrowVBO1 = new VBO(eyebrowBB, GLES20.GL_ARRAY_BUFFER);
-
-//        byte[][] speechBshpData = repackSpeechBlendshape(new LengthBasedUnpack(AssetAccess.dataFromFile("flexatar/FLX_speech_bsh.dat")).bPacks.get(0));
-
-
-
-        /*int keyIdx = 50;
-        speechBspKeyBshp = new float[5];*/
         VBO[] speechBshVBO1 = new VBO[3];
         for (int i = 0; i < 3; i++) {
-            /*ByteBuffer speechBshBuffer = Data.dataToBuffer(speechBshpData[i]);
-            FloatBuffer speechBshFloat = speechBshBuffer.asFloatBuffer();
-            if (i==0){
-                speechBspKeyBshp[0] = speechBshFloat.get(keyIdx * 4 + 1);
-                speechBspKeyBshp[1] = speechBshFloat.get(keyIdx * 4 + 3);
-            }
-            if (i==1){
-                speechBspKeyBshp[2] = speechBshFloat.get(keyIdx * 4 + 1);
-                speechBspKeyBshp[3] = speechBshFloat.get(keyIdx * 4 + 3);
-            }
-            if (i==3){
-                speechBspKeyBshp[4] = speechBshFloat.get(keyIdx * 4 + 1);
-
-            }
-
-            speechBshBuffer.position(0);*/
             speechBshVBO1[i] = new VBO(speechBshBB[i], GLES20.GL_ARRAY_BUFFER);
         }
 
-
-
-
-
-//        ByteBuffer uvBuffer = AssetAccess.bufferFromFile("flexatar/FLX_mesh_uv.dat");
         VBO uvVBO1 = new VBO(uvBB, GLES20.GL_ARRAY_BUFFER);
-//        ByteBuffer idxBuffer = AssetAccess.bufferFromFile("flexatar/FLX_mesh_idx.dat");
         VBO idxVBO1 = new VBO(idxBB, GLES20.GL_ELEMENT_ARRAY_BUFFER);
-        return new GlBuffers(eyebrowVBO1,  uvVBO1, idxVBO1, speechBshVBO1,idxBB.capacity()/2);
+        TextureArray mouthLineTexture = new TextureArray();
+        mouthLineTexture.addTexture(mouthLineBitmap);
+        return new GlBuffers(eyebrowVBO1,  uvVBO1, idxVBO1, speechBshVBO1,idxBB.capacity()/2,mouthLineTexture);
 
     }
     static void makeBuffers(){

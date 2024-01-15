@@ -47,6 +47,7 @@ public class FlexatarAnimator {
 
     }
     private static final Object mutexObject = new Object();
+//    private float effectsWeightStep = 0.05f;
     public void start(){
         synchronized (mutexObject) {
             if (!isActive) {
@@ -75,6 +76,14 @@ public class FlexatarAnimator {
 
                         if (animIdx >= FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).size()) {
                             animIdx = 0;
+                        }
+                        if (FlexatarRenderer.isEffectsOn && FlexatarRenderer.effectID == 1){
+                            FlexatarRenderer.effectsMixWeight += 0.0025f;
+                            if (FlexatarRenderer.effectsMixWeight>1){FlexatarRenderer.effectsMixWeight = 0;}
+                        }
+                        if (FlexatarRenderer.isEffectsOn && FlexatarRenderer.isMorphEffect){
+                            FlexatarRenderer.effectsMixWeight += 0.005f;
+                            if (FlexatarRenderer.effectsMixWeight>1){FlexatarRenderer.effectsMixWeight = 1;}
                         }
 
                         // Code to be executed repeatedly

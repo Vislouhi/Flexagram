@@ -2,8 +2,7 @@ package org.flexatar;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-
-import com.google.android.exoplayer2.util.Log;
+import android.util.Log;
 
 import org.flexatar.DataOps.FlexatarData;
 
@@ -19,9 +18,11 @@ public class FlxDrawer {
     private final String PARAMETER_SET_2 = "parSet2";
     private final String PARAMETER_SET_3 = "parSet3";
     private final String HEAD_TEXTURE_SAMPLER = "uSampler";
+    private final String HEAD_TEXTURE_SAMPLER_ALT = "uSampler1";
 
     public ShaderProgram headProgram;
-//    private FlexatarAnimator animator;
+    public ShaderProgram mouthProgram;
+    //    private FlexatarAnimator animator;
     private float[] viewModelMatrix;
 
     public float screenRatio = 1;
@@ -29,13 +30,66 @@ public class FlxDrawer {
     public final List<FlexatarData> headQueue = new ArrayList<>();
     private int[] renderFrameBuffer;
     public int[] renderTexture;
-    public VBO[] headBuffers = new VBO[5];
-    private FlexatarCommon.GlBuffers commonBuffers;
-    private TextureArray headTexture;
-    private FlexatarData flexatarData;
 
+    private FlexatarCommon.GlBuffers commonBuffers;
+
+    private FlexatarData flexatarData;
+    private FlexatarData flexatarDataAlt;
+    private VBO mouthIdxVbo;
+    public GlBuffers buffers1;
+    public GlBuffers buffers2;
+    private ShaderProgram headProgramDual;
+    private ShaderProgram mouthProgramAlt;
+
+    private static class GlBuffers{
+        private VBO[] mouthBuffers = new VBO[5];
+        public VBO[] headBuffers = new VBO[5];
+        public TextureArray headTexture;
+        public VBO mouthUvVbo;
+        public VBO mouthIdxVbo;
+        public TextureArray mouthTexture;
+
+
+        public GlBuffers(FlexatarData flxData){
+            //            ======HEAD PART=======
+            for (int i = 0; i < 5; i++) {
+                VBO bshpVbo = new VBO(flxData.headBB[i], GLES20.GL_ARRAY_BUFFER);
+                headBuffers[i] = bshpVbo;
+
+            }
+            headTexture = new TextureArray();
+            for (int i = 0; i < 5; i++) {
+                headTexture.addTexture(flxData.headBitmaps[i]);
+            }
+
+//            ======HEAD PART=======
+            for (int i = 0; i < 5; i++) {
+                VBO bshpVbo = new VBO(flxData.mouthBlendshapeBB[i], GLES20.GL_ARRAY_BUFFER);
+                mouthBuffers[i] = bshpVbo;
+
+            }
+            mouthUvVbo = new VBO(flxData.mouthUvBB, GLES20.GL_ARRAY_BUFFER);
+            mouthIdxVbo = new VBO(flxData.mouthIdxBB, GLES20.GL_ELEMENT_ARRAY_BUFFER);
+
+            mouthTexture = new TextureArray();
+            for (int i = 0; i < 5; i++) {
+                mouthTexture.addTexture(flxData.mouthBitmaps[i]);
+            }
+
+        }
+        public void destroy(){
+            for (int i = 0; i < 5; i++) {
+                headBuffers[i].destroy();
+                mouthBuffers[i].destroy();
+            }
+            headTexture.release();
+            mouthUvVbo.destroy();
+            mouthIdxVbo.destroy();
+            mouthTexture.release();
+        }
+    }
     public FlxDrawer(){
-        Log.d("FLX_INJECT","flx drawer init");
+        android.util.Log.d("FLX_INJECT","flx drawer init");
     }
     private void makeViewModelMatrix(){
         float[] transMatrix = new float[16];
@@ -49,144 +103,118 @@ public class FlxDrawer {
     }
     private void initProgramIfNot(){
         if (headProgram == null) {
-            String vCode =
-                    "attribute vec4 bshp0;\n" +
-                            "attribute vec4 bshp1;\n" +
-                            "attribute vec4 bshp2;\n" +
-                            "attribute vec4 bshp3;\n" +
-                            "attribute vec4 bshp4;\n" +
-                            "attribute vec4 speechBuff0;" +
-                            "attribute vec4 speechBuff1;" +
-                            "attribute vec4 speechBuff2;" +
-                            "attribute vec2 uvCoordinates;" +
+            commonBuffers = FlexatarCommon.bufferFactory();
+            makeViewModelMatrix();
 
-                            "uniform vec4 parSet0;" +
-                            "uniform vec4 parSet1;" +
-                            "uniform vec4 parSet2;" +
-                            "uniform vec4 parSet3;" +
-
-                            "uniform mat4 vmMatrix;" +
-                            "uniform mat4 zRotMatrix;" +
-
-                            "varying highp vec2 uv;" +
-
-                            "void main(void) {\n" +
-                            "uv = (uvCoordinates*vec2(1.0,-1.0) + vec2(1.0,1.0))*vec2(0.5,0.5);" +
-                            " vec2 speechBshp[5];" +
-                            " speechBshp[0] = speechBuff0.xy;" +
-                            " speechBshp[1] = speechBuff0.zw;" +
-                            " speechBshp[2] = speechBuff1.xy;" +
-                            " speechBshp[3] = speechBuff1.zw;" +
-                            " speechBshp[4] = speechBuff2.xy;" +
-
-                            "vec4 bshp[5];" +
-                            "bshp[0] = bshp0;" +
-                            "bshp[1] = bshp1;" +
-                            "bshp[2] = bshp2;" +
-                            "bshp[3] = bshp3;" +
-                            "bshp[4] = bshp4;" +
-
-                            "float weights[5];" +
-                            "weights[0] = parSet0.x;" +
-                            "weights[1] = parSet0.y;" +
-                            "weights[2] = parSet0.z;" +
-                            "weights[3] = parSet0.w;" +
-                            "weights[4] = parSet1.x;" +
-
-                            "float screenRatio = parSet1.y;" +
-                            "float xPos = parSet1.z;" +
-                            "float yPos = parSet1.w;" +
-                            "float scale = parSet2.x;" +
-
-                            " float speechWeights[5];" +
-                            " speechWeights[0] = parSet2.y;" +
-                            " speechWeights[1] = parSet2.z;" +
-                            " speechWeights[2] = parSet2.w;" +
-                            " speechWeights[3] = parSet3.x;" +
-                            " speechWeights[4] = parSet3.y;" +
-
-                            "vec4 result = vec4(0);" +
-                            "for (int i = 0; i < 5; i++) {" +
-                            "    result += weights[i]*bshp[i];" +
-                            "}" +
-
-                            "for (int i = 0; i < 5; i++) {" +
-                            "    result.xy += speechWeights[i]*speechBshp[i];" +
-                            "}" +
-                            "result = vmMatrix*result;" +
-                            "result.x = atan(result.x/result.z)*5.0;" +
-                            "result.y = atan(result.y/result.z)*5.0;" +
-                            "result.z = (1.0 - result.z)*0.01 +0.21;" +
-
-                            "result.y -= 4.0;" +
-                            "result = zRotMatrix*result;" +
-                            "result.y += 4.0;" +
-
-                            "result.x += xPos;" +
-                            "result.y -= yPos;" +
-                            "result.xy *= 0.8+scale;" +
-                            "result.y *= -screenRatio;" +
-//                    " result.xy *=0.1;"+
-                            "gl_Position = result;" +
-                            "}\n";
-            String fCode =
-
-                    "varying highp vec2 uv;" +
-                            "uniform sampler2D uSampler[5];" +
-                            "uniform highp vec4 parSet0;" +
-                            "uniform highp vec4 parSet1;" +
-                            "void main(void) {" +
-                            " highp float weights[5];" +
-                            " weights[0] = parSet0.x;" +
-                            " weights[1] = parSet0.y;" +
-                            " weights[2] = parSet0.z;" +
-                            " weights[3] = parSet0.w;" +
-                            " weights[4] = parSet1.x;" +
-                            " highp vec4 result = vec4(0);" +
-                            " for (int i = 0; i < 5; i++) {" +
-                            "     result += weights[i]*texture2D(uSampler[i], uv).bgra;" +
-                            " }" +
-                            " gl_FragColor = result;" +
-                            "}";
-
-            headProgram = new ShaderProgram(vCode, fCode);
+            headProgram = new ShaderProgram(ShaderLib.HEAD_SINGLE_VERTEX, ShaderLib.HEAD_SINGLE_FRAGMENT);
 
             headProgram.addUniform4f(PARAMETER_SET_0);
             headProgram.addUniform4f(PARAMETER_SET_1);
             headProgram.addUniform4f(PARAMETER_SET_2);
             headProgram.addUniform4f(PARAMETER_SET_3);
 
-            commonBuffers = FlexatarCommon.bufferFactory();
-
+            headProgram.textureArray("mLine",commonBuffers.mouthLineTexture,10);
             for (int i = 0; i < 3; i++) {
                 headProgram.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
             }
             headProgram.attribute("uvCoordinates", commonBuffers.uvVBO, 2);
 
-            makeViewModelMatrix();
+            headProgram.addUniform1f("opFactor");
             headProgram.addUniformMatrix4fv("vmMatrix");
             headProgram.addUniformMatrix4fv("zRotMatrix");
+            headProgram.addUniformMatrix4fv("extraRotMatrix");
             headProgram.use();
             headProgram.uniformMatrix4fv("vmMatrix", viewModelMatrix);
+
+            mouthProgram = new ShaderProgram(ShaderLib.MOUTH_SINGLE_VERTEX, ShaderLib.MOUTH_SINGLE_FRAGMENT);
+
+            mouthProgram.addUniform4f(PARAMETER_SET_0);
+            mouthProgram.addUniform4f(PARAMETER_SET_1);
+            mouthProgram.addUniform4f(PARAMETER_SET_2);
+            mouthProgram.addUniform4f(PARAMETER_SET_3);
+            mouthProgram.addUniformMatrix4fv("zRotMatrix");
+            mouthProgram.addUniform1i("isTop");
+            mouthProgram.addUniform1f("alpha");
+
+            mouthProgramAlt = new ShaderProgram(ShaderLib.MOUTH_SINGLE_VERTEX, ShaderLib.MOUTH_SINGLE_FRAGMENT);
+
+            mouthProgramAlt.addUniform4f(PARAMETER_SET_0);
+            mouthProgramAlt.addUniform4f(PARAMETER_SET_1);
+            mouthProgramAlt.addUniform4f(PARAMETER_SET_2);
+            mouthProgramAlt.addUniform4f(PARAMETER_SET_3);
+            mouthProgramAlt.addUniformMatrix4fv("zRotMatrix");
+            mouthProgramAlt.addUniform1i("isTop");
+            mouthProgramAlt.addUniform1f("alpha");
+
+            headProgramDual = new ShaderProgram(ShaderLib.HEAD_DUAL_VERTEX, ShaderLib.HEAD_DUAL_FRAGMENT);
+
+            headProgramDual.addUniform4f(PARAMETER_SET_0);
+            headProgramDual.addUniform4f(PARAMETER_SET_1);
+            headProgramDual.addUniform4f(PARAMETER_SET_2);
+            headProgramDual.addUniform4f(PARAMETER_SET_3);
+            headProgramDual.addUniform1f("opFactor");
+            headProgramDual.textureArray("mLine",commonBuffers.mouthLineTexture,10);
+
+            for (int i = 0; i < 3; i++) {
+                headProgramDual.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
+            }
+            headProgramDual.attribute("coordinates", commonBuffers.uvVBO, 2);
+            headProgramDual.addUniformMatrix4fv("vmMatrix");
+            headProgramDual.addUniformMatrix4fv("zRotMatrix");
+            headProgramDual.addUniformMatrix4fv("extraRotMatrix");
+            headProgramDual.use();
+            headProgramDual.uniformMatrix4fv("vmMatrix", viewModelMatrix);
+
+
         }
         if (flexatarData != FlexatarRenderer.currentFlxData) {
             releaseFlexatar();
+
+            if (flexatarData == null) {
+                flexatarDataAlt = FlexatarRenderer.altFlxData;
+                buffers2 = new GlBuffers(flexatarDataAlt);
+            }else{
+                buffers2.destroy();
+                flexatarDataAlt = flexatarData;
+                buffers2 = buffers1;
+            }
+
             flexatarData = FlexatarRenderer.currentFlxData;
             FlexatarData flxData = flexatarData;
-//            FlexatarData flx = headQueue.get(0);
+            GlBuffers flxGlBuffers = new GlBuffers(flxData);
+            buffers1 = flxGlBuffers;
+
+//            ======HEAD PART=======
             for (int i = 0; i < 5; i++) {
-                VBO bshpVbo = new VBO(flxData.headBB[i], GLES20.GL_ARRAY_BUFFER);
-                headBuffers[i] = bshpVbo;
-                headProgram.attribute("bshp" + i, bshpVbo, 4);
+                headProgram.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
+                headProgramDual.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
             }
-            headTexture = new TextureArray();
             for (int i = 0; i < 5; i++) {
-//                byte[] imgData = flxData.flxData.get("exp0").get("mandalaTextureBlurBkg").get(i);
-                headTexture.addTexture(flxData.headBitmaps[i]);
+                headProgram.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
+                headProgramDual.attribute("bshp" + i + "o", buffers2.headBuffers[i], 4);
             }
-            headProgram.textureArray(HEAD_TEXTURE_SAMPLER, headTexture, 0);
-//            animator = new FlexatarAnimator(flxData);
-//            headQueue.clear();
+            headProgram.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.headTexture, 0);
+            headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.headTexture, 0);
+            headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER_ALT, buffers2.headTexture, 5);
+            headProgramDual.addUniform1i("effectId");
+            headProgramDual.addUniform1f("mixWeight");
+
+//            ======MOUTH PART=======
+            for (int i = 0; i < 5; i++) {
+                mouthProgram.attribute("bshp" + i, flxGlBuffers.mouthBuffers[i], 2);
+            }
+            mouthProgram.attribute("coordinates", flxGlBuffers.mouthUvVbo, 2);
+            mouthIdxVbo = flxGlBuffers.mouthIdxVbo;
+            mouthProgram.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.mouthTexture, 0);
+
+            for (int i = 0; i < 5; i++) {
+                mouthProgramAlt.attribute("bshp" + i, buffers2.mouthBuffers[i], 2);
+            }
+            mouthProgramAlt.attribute("coordinates", buffers2.mouthUvVbo, 2);
+
+            mouthProgramAlt.textureArray(HEAD_TEXTURE_SAMPLER, buffers2.mouthTexture, 0);
+
+//            ======FRAMEBUFFER=====
 
             renderFrameBuffer = new int[1];
             renderTexture = new int[1];
@@ -200,15 +228,11 @@ public class FlxDrawer {
 
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 512, 512, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-
-//            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFrameBuffer[0]);
-//            GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, renderTexture[0], 0);
-
             int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
             if (status == GLES20.GL_FRAMEBUFFER_COMPLETE ){
-                Log.d("FlxDrawer","GL_FRAMEBUFFER_COMPLETE");
+                android.util.Log.d("FlxDrawer","GL_FRAMEBUFFER_COMPLETE");
             }else{
-                Log.d("FlxDrawer","GL_FRAMEBUFFER_FAIL");
+                android.util.Log.d("FlxDrawer","GL_FRAMEBUFFER_FAIL");
             }
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
@@ -217,7 +241,7 @@ public class FlxDrawer {
     }
     public void addHead(FlexatarData flx){
         headQueue.add(flx);
-            }
+    }
 
     public int drawToFrameBuffer(){
         FlexatarRenderer.startVoiceProcessingIfNotRunning();
@@ -244,22 +268,44 @@ public class FlxDrawer {
         return renderTexture[0];
     }
     public void draw(){
+
+        GLES20.glDisable(GLES20.GL_CULL_FACE);
         initProgramIfNot();
         FlexatarAnimator animator = FlexatarRenderer.animator;
-//        if (!animator.isActive){
-            animator.start();
-//        }
+        animator.start();
         InterUnit interUnit = animator.getInterUnit(flexatarData);
-//        Log.d("FlxDrawer","inter ready");
 
-        if (animator !=null && interUnit != null && animator.animUnit != null) {
+        if (interUnit != null && animator.animUnit != null) {
+
+
 //            Log.d("FlxDrawer","draw");
             float[] zRotMatrix = new float[16];
             Matrix.setIdentityM(zRotMatrix, 0);
-            Matrix.rotateM(zRotMatrix, 0, -animator.animUnit.rz / 3.14f * 180f, 0f, 0f, 1f);
+            float ang = animator.animUnit.rz / 3.14f * 180f;
+            Matrix.rotateM(zRotMatrix, 0, -ang, 0f, 0f, 1f);
 
-            headProgram.use();
-            headProgram.bind();
+            float[] zRotMatrixInv = new float[16];
+            Matrix.setIdentityM(zRotMatrixInv, 0);
+            Matrix.rotateM(zRotMatrixInv, 0, ang, 0f, 0f, 1f);
+            float[] extraRotMat = interUnit.calcExtraMatrix();
+            List<float[]> keyVtxList;
+            FlexatarData.MouthPivots[] mouthPivots = new FlexatarData.MouthPivots[2];
+            mouthPivots[0] = flexatarData.calcMouthPivots(interUnit);
+
+            float mouthMix =  FlexatarRenderer.effectsMixWeight;
+            if (FlexatarRenderer.effectID == 1){
+                mouthMix =   calcWeightByKeyUv(FlexatarRenderer.effectsMixWeight);
+            }
+            boolean isEffectsOn = FlexatarRenderer.isEffectsOn;
+            if (isEffectsOn) {
+                List<float[]> keyVtxList1 = flexatarData.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
+                List<float[]> keyVtxList2 = flexatarDataAlt.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
+                keyVtxList = keyVtxWeightedSum(keyVtxList1,keyVtxList2,mouthMix);
+                mouthPivots[1] =flexatarDataAlt.calcMouthPivots(interUnit);
+            }else{
+                keyVtxList = flexatarData.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
+            }
+
             float[] hw = interUnit.weights;
             int[] hi = interUnit.idx;
 
@@ -268,18 +314,76 @@ public class FlxDrawer {
                 hw5[hi[i]] = hw[i];
             }
             speechState = FlexatarRenderer.speechState;
-            headProgram.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
-            headProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
-            headProgram.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
-            headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], 0, 0);
-            headProgram.uniformMatrix4fv("zRotMatrix",zRotMatrix);
-            commonBuffers.idxVBO.bind();
-            GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
-            headProgram.unbind();
-            commonBuffers.idxVBO.unbind();
+            float opFactor = 0.03f + (-speechState[2] + speechState[3]) * 0.9f;
+//          ========MOUTH RENDER==========
+
+            GLES20.glEnable(GLES20.GL_BLEND);
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA,GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
+            drawMouth(mouthProgram,flexatarData,mouthPivots[0],hw5,keyVtxList,zRotMatrixInv,1f);
+            if (isEffectsOn) {
+
+                drawMouth(mouthProgramAlt, flexatarDataAlt, mouthPivots[1], hw5, keyVtxList, zRotMatrixInv,
+                        1f-mouthMix);
+            }
+
+//          ========HEAD RENDER==========
+
+            if (isEffectsOn) {
+                headProgramDual.use();
+                headProgramDual.bind();
+                headProgramDual.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
+                headProgramDual.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
+                headProgramDual.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
+                headProgramDual.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], 0, 0);
+                headProgramDual.uniform1i("effectId", FlexatarRenderer.effectID);
+                headProgramDual.uniform1f("mixWeight", FlexatarRenderer.effectsMixWeight);
+                headProgramDual.uniform1f("opFactor", opFactor);
+                headProgramDual.uniformMatrix4fv("zRotMatrix", zRotMatrix);
+                headProgramDual.uniformMatrix4fv("extraRotMatrix", extraRotMat);
+                commonBuffers.idxVBO.bind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+                headProgramDual.unbind();
+                commonBuffers.idxVBO.unbind();
+            }else{
+                headProgram.use();
+                headProgram.bind();
+                headProgram.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
+                headProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
+                headProgram.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
+                headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], 0, 0);
+                headProgram.uniformMatrix4fv("zRotMatrix",zRotMatrix);
+                headProgram.uniformMatrix4fv("extraRotMatrix",extraRotMat);
+                headProgram.uniform1f("opFactor", opFactor);
+                commonBuffers.idxVBO.bind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+                headProgram.unbind();
+                commonBuffers.idxVBO.unbind();
+            }
+
+            GLES20.glDisable(GLES20.GL_BLEND);
         }
+    }
 
-
+    private float calcWeightByKeyUv(float mixWeight){
+        double theta = mixWeight * 6.28;
+        float[] linePoint = {(float) Math.sin(theta), (float) Math.cos(theta),1.0f};
+        float[] curPoint = FlexatarCommon.uvKeyPoint;
+        float w = GLM.dotv3(GLM.cross(linePoint, curPoint), new float[]{0, 0, 1})/0.15f;
+        if (w<-1.0) w = -1;
+        if (w>1.0) w = 1;
+        w+=1.0;
+        w/=2.0;
+        return w;
+    }
+    private List<float[]> keyVtxWeightedSum(List<float[]> kv1,List<float[]> kv2,float weight){
+        List<float[]> keyVtxList = new ArrayList<>();
+        for (int i = 0; i < kv1.size(); i++) {
+            keyVtxList.add(
+                    GLM.add(GLM.mulS(kv1.get(i),weight),GLM.mulS(kv2.get(i),1f-weight))
+            );
+        }
+        return keyVtxList;
     }
     public void releaseFlexatar(){
         if (renderFrameBuffer!=null) {
@@ -287,13 +391,35 @@ public class FlxDrawer {
         }
         if (renderTexture!=null)
             GLES20.glDeleteTextures(1,renderTexture,0);
-        if (headTexture!=null)
+       /* if (headTexture!=null)
             headTexture.release();
         for (int i = 0; i < 5; i++) {
             if ( headBuffers[i]!=null)
                 headBuffers[i].destroy();
-        }
+        }*/
 
+    }
+    private void drawMouth(ShaderProgram mouthProgram,FlexatarData flexatarData,FlexatarData.MouthPivots mp,float[] hw5, List<float[]> keyVtxList,float[] zRotMatrixInv,float alpha){
+        mouthProgram.use();
+        mouthProgram.bind();
+        mouthIdxVbo.bind();
+        float mouthScale = 0.9f * (keyVtxList.get(5)[0] - keyVtxList.get(4)[0]) / mp.lipSize;
+        mouthProgram.uniform4f(PARAMETER_SET_3, flexatarData.mouthRatio, mouthScale, flexatarData.teethGap[0], flexatarData.teethGap[1]);
+        mouthProgram.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
+        mouthProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, keyVtxList.get(3)[0], keyVtxList.get(2)[1]);
+        mouthProgram.uniformMatrix4fv("zRotMatrix",zRotMatrixInv);
+        mouthProgram.uniform1f("alpha",alpha);
+        mouthProgram.uniform4f(PARAMETER_SET_2, mp.topPivot[0], mp.botPivot[1], mp.botPivot[0], mp.botPivot[1]);
+
+        mouthProgram.uniform1i("isTop", 0);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, flexatarData.mouthIdxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+
+        mouthProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, keyVtxList.get(1)[0], keyVtxList.get(0)[1]);
+        mouthProgram.uniform4f(PARAMETER_SET_2, mp.topPivot[0], mp.topPivot[1], mp.botPivot[0], mp.botPivot[1]);
+        mouthProgram.uniform1i("isTop", 1);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, flexatarData.mouthIdxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+        mouthProgram.unbind();
+        mouthIdxVbo.unbind();
     }
     public void release(){
         Log.d("FLX_INJECT","flx drawer release");
@@ -307,12 +433,7 @@ public class FlxDrawer {
             headProgram.release();
         if (commonBuffers!=null)
             commonBuffers.release();
-        if (headTexture!=null)
-            headTexture.release();
-        for (int i = 0; i < 5; i++) {
-            if ( headBuffers[i]!=null)
-                headBuffers[i].destroy();
-        }
+
 
     }
 }
