@@ -20,6 +20,7 @@ public:
 	void setNetworkType(NetworkType networkType) override;
 	void setMuteMicrophone(bool muteMicrophone) override;
 	void setFlexatarDelay1(bool flexatarDelay) override;
+	void setFlexatarAudioBufferCallback(std::function<void( float *,int )> callback) override;
 
 	void setVideoCapture(std::shared_ptr<VideoCaptureInterface> videoCapture) override;
 	void sendVideoDeviceUpdated() override;

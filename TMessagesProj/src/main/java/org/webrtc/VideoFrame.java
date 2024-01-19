@@ -107,7 +107,7 @@ public class VideoFrame implements RefCounted {
   public interface TextureBuffer extends Buffer {
     enum Type {
       OES(GLES11Ext.GL_TEXTURE_EXTERNAL_OES),
-      FLX(GLES11Ext.GL_TEXTURE_EXTERNAL_OES),
+      FLX(GLES20.GL_TEXTURE_2D),
       RGB(GLES20.GL_TEXTURE_2D);
 
       private final int glTarget;

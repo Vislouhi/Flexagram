@@ -30,6 +30,7 @@
 #include "rtc_base/race_checker.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
+#include "common_audio/resampler/include/resampler.h"
 
 namespace webrtc {
 class RtcEventLog;
@@ -98,6 +99,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                           int duration_ms) override;
   void SetMuted(bool muted) override;
   void SetFlexatarDelay1(bool flexatarDelay) override;
+  void SetFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
   webrtc::AudioSendStream::Stats GetStats(
       bool has_remote_tracks) const override;
@@ -184,7 +186,13 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   const std::unique_ptr<voe::ChannelSendInterface> channel_send_;
   std::vector<std::unique_ptr<AudioFrame>> delayedFramesList;
+
   bool flexatar_delay_ = false;
+  std::function<void(float *, int)> flexatarAudioBufferCallback_;
+    std::unique_ptr<webrtc::Resampler> _resampler;
+    uint32_t _resamplerFrequency = 0;
+    size_t _resamplerNumChannels = 0;
+
   RtcEventLog* const event_log_;
   const bool use_legacy_overhead_calculation_;
 

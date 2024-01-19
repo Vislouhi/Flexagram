@@ -41,6 +41,8 @@ public class FlxDrawer {
     private ShaderProgram headProgramDual;
     private ShaderProgram mouthProgramAlt;
 
+    private static Object flexatarLoadMutex = new Object();
+
     private static class GlBuffers{
         private VBO[] mouthBuffers = new VBO[5];
         public VBO[] headBuffers = new VBO[5];
@@ -102,141 +104,143 @@ public class FlxDrawer {
         Matrix.multiplyMM(viewModelMatrix, 0, transMatrix, 0, scaleMatrix, 0);
     }
     private void initProgramIfNot(){
-        if (headProgram == null) {
-            commonBuffers = FlexatarCommon.bufferFactory();
-            makeViewModelMatrix();
+        synchronized (flexatarLoadMutex) {
+            if (headProgram == null) {
+                commonBuffers = FlexatarCommon.bufferFactory();
+                makeViewModelMatrix();
 
-            headProgram = new ShaderProgram(ShaderLib.HEAD_SINGLE_VERTEX, ShaderLib.HEAD_SINGLE_FRAGMENT);
+                headProgram = new ShaderProgram(ShaderLib.HEAD_SINGLE_VERTEX, ShaderLib.HEAD_SINGLE_FRAGMENT);
 
-            headProgram.addUniform4f(PARAMETER_SET_0);
-            headProgram.addUniform4f(PARAMETER_SET_1);
-            headProgram.addUniform4f(PARAMETER_SET_2);
-            headProgram.addUniform4f(PARAMETER_SET_3);
+                headProgram.addUniform4f(PARAMETER_SET_0);
+                headProgram.addUniform4f(PARAMETER_SET_1);
+                headProgram.addUniform4f(PARAMETER_SET_2);
+                headProgram.addUniform4f(PARAMETER_SET_3);
 
-            headProgram.textureArray("mLine",commonBuffers.mouthLineTexture,10);
-            for (int i = 0; i < 3; i++) {
-                headProgram.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
+                headProgram.textureArray("mLine", commonBuffers.mouthLineTexture, 10);
+                for (int i = 0; i < 3; i++) {
+                    headProgram.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
+                }
+                headProgram.attribute("uvCoordinates", commonBuffers.uvVBO, 2);
+
+                headProgram.addUniform1f("opFactor");
+                headProgram.addUniformMatrix4fv("vmMatrix");
+                headProgram.addUniformMatrix4fv("zRotMatrix");
+                headProgram.addUniformMatrix4fv("extraRotMatrix");
+                headProgram.use();
+                headProgram.uniformMatrix4fv("vmMatrix", viewModelMatrix);
+
+                mouthProgram = new ShaderProgram(ShaderLib.MOUTH_SINGLE_VERTEX, ShaderLib.MOUTH_SINGLE_FRAGMENT);
+
+                mouthProgram.addUniform4f(PARAMETER_SET_0);
+                mouthProgram.addUniform4f(PARAMETER_SET_1);
+                mouthProgram.addUniform4f(PARAMETER_SET_2);
+                mouthProgram.addUniform4f(PARAMETER_SET_3);
+                mouthProgram.addUniformMatrix4fv("zRotMatrix");
+                mouthProgram.addUniform1i("isTop");
+                mouthProgram.addUniform1f("alpha");
+
+                mouthProgramAlt = new ShaderProgram(ShaderLib.MOUTH_SINGLE_VERTEX, ShaderLib.MOUTH_SINGLE_FRAGMENT);
+
+                mouthProgramAlt.addUniform4f(PARAMETER_SET_0);
+                mouthProgramAlt.addUniform4f(PARAMETER_SET_1);
+                mouthProgramAlt.addUniform4f(PARAMETER_SET_2);
+                mouthProgramAlt.addUniform4f(PARAMETER_SET_3);
+                mouthProgramAlt.addUniformMatrix4fv("zRotMatrix");
+                mouthProgramAlt.addUniform1i("isTop");
+                mouthProgramAlt.addUniform1f("alpha");
+
+                headProgramDual = new ShaderProgram(ShaderLib.HEAD_DUAL_VERTEX, ShaderLib.HEAD_DUAL_FRAGMENT);
+
+                headProgramDual.addUniform4f(PARAMETER_SET_0);
+                headProgramDual.addUniform4f(PARAMETER_SET_1);
+                headProgramDual.addUniform4f(PARAMETER_SET_2);
+                headProgramDual.addUniform4f(PARAMETER_SET_3);
+                headProgramDual.addUniform1f("opFactor");
+                headProgramDual.textureArray("mLine", commonBuffers.mouthLineTexture, 10);
+
+                for (int i = 0; i < 3; i++) {
+                    headProgramDual.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
+                }
+                headProgramDual.attribute("coordinates", commonBuffers.uvVBO, 2);
+                headProgramDual.addUniformMatrix4fv("vmMatrix");
+                headProgramDual.addUniformMatrix4fv("zRotMatrix");
+                headProgramDual.addUniformMatrix4fv("extraRotMatrix");
+                headProgramDual.use();
+                headProgramDual.uniformMatrix4fv("vmMatrix", viewModelMatrix);
+
+
             }
-            headProgram.attribute("uvCoordinates", commonBuffers.uvVBO, 2);
+            if (flexatarData != FlexatarRenderer.currentFlxData) {
+                releaseFlexatar();
 
-            headProgram.addUniform1f("opFactor");
-            headProgram.addUniformMatrix4fv("vmMatrix");
-            headProgram.addUniformMatrix4fv("zRotMatrix");
-            headProgram.addUniformMatrix4fv("extraRotMatrix");
-            headProgram.use();
-            headProgram.uniformMatrix4fv("vmMatrix", viewModelMatrix);
+                if (flexatarData == null) {
+                    flexatarDataAlt = FlexatarRenderer.altFlxData;
+                    buffers2 = new GlBuffers(flexatarDataAlt);
+                } else {
+                    buffers2.destroy();
+                    flexatarDataAlt = flexatarData;
+                    buffers2 = buffers1;
+                }
 
-            mouthProgram = new ShaderProgram(ShaderLib.MOUTH_SINGLE_VERTEX, ShaderLib.MOUTH_SINGLE_FRAGMENT);
-
-            mouthProgram.addUniform4f(PARAMETER_SET_0);
-            mouthProgram.addUniform4f(PARAMETER_SET_1);
-            mouthProgram.addUniform4f(PARAMETER_SET_2);
-            mouthProgram.addUniform4f(PARAMETER_SET_3);
-            mouthProgram.addUniformMatrix4fv("zRotMatrix");
-            mouthProgram.addUniform1i("isTop");
-            mouthProgram.addUniform1f("alpha");
-
-            mouthProgramAlt = new ShaderProgram(ShaderLib.MOUTH_SINGLE_VERTEX, ShaderLib.MOUTH_SINGLE_FRAGMENT);
-
-            mouthProgramAlt.addUniform4f(PARAMETER_SET_0);
-            mouthProgramAlt.addUniform4f(PARAMETER_SET_1);
-            mouthProgramAlt.addUniform4f(PARAMETER_SET_2);
-            mouthProgramAlt.addUniform4f(PARAMETER_SET_3);
-            mouthProgramAlt.addUniformMatrix4fv("zRotMatrix");
-            mouthProgramAlt.addUniform1i("isTop");
-            mouthProgramAlt.addUniform1f("alpha");
-
-            headProgramDual = new ShaderProgram(ShaderLib.HEAD_DUAL_VERTEX, ShaderLib.HEAD_DUAL_FRAGMENT);
-
-            headProgramDual.addUniform4f(PARAMETER_SET_0);
-            headProgramDual.addUniform4f(PARAMETER_SET_1);
-            headProgramDual.addUniform4f(PARAMETER_SET_2);
-            headProgramDual.addUniform4f(PARAMETER_SET_3);
-            headProgramDual.addUniform1f("opFactor");
-            headProgramDual.textureArray("mLine",commonBuffers.mouthLineTexture,10);
-
-            for (int i = 0; i < 3; i++) {
-                headProgramDual.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
-            }
-            headProgramDual.attribute("coordinates", commonBuffers.uvVBO, 2);
-            headProgramDual.addUniformMatrix4fv("vmMatrix");
-            headProgramDual.addUniformMatrix4fv("zRotMatrix");
-            headProgramDual.addUniformMatrix4fv("extraRotMatrix");
-            headProgramDual.use();
-            headProgramDual.uniformMatrix4fv("vmMatrix", viewModelMatrix);
-
-
-        }
-        if (flexatarData != FlexatarRenderer.currentFlxData) {
-            releaseFlexatar();
-
-            if (flexatarData == null) {
-                flexatarDataAlt = FlexatarRenderer.altFlxData;
-                buffers2 = new GlBuffers(flexatarDataAlt);
-            }else{
-                buffers2.destroy();
-                flexatarDataAlt = flexatarData;
-                buffers2 = buffers1;
-            }
-
-            flexatarData = FlexatarRenderer.currentFlxData;
-            FlexatarData flxData = flexatarData;
-            GlBuffers flxGlBuffers = new GlBuffers(flxData);
-            buffers1 = flxGlBuffers;
+                flexatarData = FlexatarRenderer.currentFlxData;
+                FlexatarData flxData = flexatarData;
+                GlBuffers flxGlBuffers = new GlBuffers(flxData);
+                buffers1 = flxGlBuffers;
 
 //            ======HEAD PART=======
-            for (int i = 0; i < 5; i++) {
-                headProgram.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
-                headProgramDual.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
-            }
-            for (int i = 0; i < 5; i++) {
-                headProgram.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
-                headProgramDual.attribute("bshp" + i + "o", buffers2.headBuffers[i], 4);
-            }
-            headProgram.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.headTexture, 0);
-            headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.headTexture, 0);
-            headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER_ALT, buffers2.headTexture, 5);
-            headProgramDual.addUniform1i("effectId");
-            headProgramDual.addUniform1f("mixWeight");
+                for (int i = 0; i < 5; i++) {
+                    headProgram.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
+                    headProgramDual.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
+                }
+                for (int i = 0; i < 5; i++) {
+                    headProgram.attribute("bshp" + i, flxGlBuffers.headBuffers[i], 4);
+                    headProgramDual.attribute("bshp" + i + "o", buffers2.headBuffers[i], 4);
+                }
+                headProgram.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.headTexture, 0);
+                headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.headTexture, 0);
+                headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER_ALT, buffers2.headTexture, 5);
+                headProgramDual.addUniform1i("effectId");
+                headProgramDual.addUniform1f("mixWeight");
 
 //            ======MOUTH PART=======
-            for (int i = 0; i < 5; i++) {
-                mouthProgram.attribute("bshp" + i, flxGlBuffers.mouthBuffers[i], 2);
-            }
-            mouthProgram.attribute("coordinates", flxGlBuffers.mouthUvVbo, 2);
-            mouthIdxVbo = flxGlBuffers.mouthIdxVbo;
-            mouthProgram.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.mouthTexture, 0);
+                for (int i = 0; i < 5; i++) {
+                    mouthProgram.attribute("bshp" + i, flxGlBuffers.mouthBuffers[i], 2);
+                }
+                mouthProgram.attribute("coordinates", flxGlBuffers.mouthUvVbo, 2);
+                mouthIdxVbo = flxGlBuffers.mouthIdxVbo;
+                mouthProgram.textureArray(HEAD_TEXTURE_SAMPLER, flxGlBuffers.mouthTexture, 0);
 
-            for (int i = 0; i < 5; i++) {
-                mouthProgramAlt.attribute("bshp" + i, buffers2.mouthBuffers[i], 2);
-            }
-            mouthProgramAlt.attribute("coordinates", buffers2.mouthUvVbo, 2);
+                for (int i = 0; i < 5; i++) {
+                    mouthProgramAlt.attribute("bshp" + i, buffers2.mouthBuffers[i], 2);
+                }
+                mouthProgramAlt.attribute("coordinates", buffers2.mouthUvVbo, 2);
 
-            mouthProgramAlt.textureArray(HEAD_TEXTURE_SAMPLER, buffers2.mouthTexture, 0);
+                mouthProgramAlt.textureArray(HEAD_TEXTURE_SAMPLER, buffers2.mouthTexture, 0);
 
 //            ======FRAMEBUFFER=====
 
-            renderFrameBuffer = new int[1];
-            renderTexture = new int[1];
-            GLES20.glGenFramebuffers(1, renderFrameBuffer, 0);
-            GLES20.glGenTextures(1, renderTexture, 0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, renderTexture[0]);
-            GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-            GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-            GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+                renderFrameBuffer = new int[1];
+                renderTexture = new int[1];
+                GLES20.glGenFramebuffers(1, renderFrameBuffer, 0);
+                GLES20.glGenTextures(1, renderTexture, 0);
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, renderTexture[0]);
+                GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
+                GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+                GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+                GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
 
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 512, 512, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-            int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-            if (status == GLES20.GL_FRAMEBUFFER_COMPLETE ){
-                android.util.Log.d("FlxDrawer","GL_FRAMEBUFFER_COMPLETE");
-            }else{
-                android.util.Log.d("FlxDrawer","GL_FRAMEBUFFER_FAIL");
+                GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 512, 512, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+                int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+                if (status == GLES20.GL_FRAMEBUFFER_COMPLETE) {
+                    android.util.Log.d("FlxDrawer", "GL_FRAMEBUFFER_COMPLETE");
+                } else {
+                    android.util.Log.d("FlxDrawer", "GL_FRAMEBUFFER_FAIL");
+                }
+                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
+
             }
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-
-
         }
     }
     public void addHead(FlexatarData flx){
@@ -244,7 +248,7 @@ public class FlxDrawer {
     }
 
     public int drawToFrameBuffer(){
-        FlexatarRenderer.startVoiceProcessingIfNotRunning();
+//        FlexatarRenderer.startVoiceProcessingIfNotRunning();
         initProgramIfNot();
 
         if (renderFrameBuffer!=null && flexatarData!=null) {

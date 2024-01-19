@@ -2995,6 +2995,15 @@ public:
             });
         }
     }
+    void setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+//        _flexatarDelay = flexatarDelay;
+        if (_outgoingAudioChannel) {
+            _threads->getWorkerThread()->BlockingCall([&]() {
+                _outgoingAudioChannel->media_channel()->SetFlexatarAudioBufferCallback(_outgoingAudioSsrc,
+                                                                          std::move(callback));
+            });
+        }
+    }
 
     void onUpdatedIsMuted() {
         if (_outgoingAudioChannel) {
@@ -3549,6 +3558,12 @@ void GroupInstanceCustomImpl::setIsMuted(bool isMuted) {
 void GroupInstanceCustomImpl::setFlexatarDelay1(bool flexatarDelay) {
     _internal->perform([flexatarDelay](GroupInstanceCustomInternal *internal) {
         internal->setFlexatarDelay1(flexatarDelay);
+    });
+}
+
+void GroupInstanceCustomImpl::setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+    _internal->perform([callback](GroupInstanceCustomInternal *internal) {
+        internal->setFlexatarAudioBufferCallback(callback);
     });
 }
 

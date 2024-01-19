@@ -26,6 +26,7 @@ public:
 	void setNetworkType(NetworkType networkType) override;
 	void setMuteMicrophone(bool muteMicrophone) override;
 	void setFlexatarDelay1(bool flexatarDelay) override;
+	void setFlexatarAudioBufferCallback(std::function<void( float *,int )> callback) override;
 	bool supportsVideo() override {
 		return true;
 	}

@@ -40,6 +40,9 @@ import org.webrtc.VideoFrame.TextureBuffer;
  * resources once the texture frame is released.
  */
 public class SurfaceTextureHelper {
+  private Timer timer;
+  private TextureBuffer.Type tetxureType = TextureBuffer.Type.OES;
+
   /**
    * Interface for monitoring texture buffers created from this SurfaceTexture. Since only one
    * texture buffer can exist at a time, this can be used to monitor for stuck frames.
@@ -277,30 +280,25 @@ public class SurfaceTextureHelper {
     });
   }
 
+  public void stopFrameTimer(){
+    timer.cancel();
+    timer.purge();
+  }
+
+  public void startFrameTimer(){
+    timer = new Timer();
+    TimerTask task = new TimerTask() {
+      @Override
+      public void run() {
+        forceFrame();
+      }
+    };
+    timer.scheduleAtFixedRate(task, 0, 40);
+  }
   /**
    * Forces a frame to be produced. If no new frame is available, the last frame is sent to the
    * listener again.
    */
-  public void startFrameTimer(){
-    Timer timer = new Timer();
-    TimerTask task = new TimerTask() {
-
-
-      @Override
-      public void run() {
-
-
-        handler.post(() -> {
-          hasPendingTexture = true;
-          tryDeliverTextureFrame();
-
-        });
-
-
-      }
-    };
-    timer.scheduleAtFixedRate(task, 0, 100);
-  }
   public void forceFrame() {
     handler.post(() -> {
       hasPendingTexture = true;
@@ -383,6 +381,9 @@ public class SurfaceTextureHelper {
     }
   }
 
+  public void setTextureType(TextureBuffer.Type tetxureType){
+    this.tetxureType = tetxureType;
+  }
   private void tryDeliverTextureFrame() {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("Wrong thread.");
@@ -408,17 +409,28 @@ public class SurfaceTextureHelper {
 
     final float[] transformMatrix = new float[16];
     surfaceTexture.getTransformMatrix(transformMatrix);
-    long timestampNs = surfaceTexture.getTimestamp();
-    if (timestampAligner != null) {
-      timestampNs = timestampAligner.translateTimestamp(timestampNs);
+    long timestampNs = TimestampAligner.getRtcTimeNanos();
+//    long timestampNs = surfaceTexture.getTimestamp();
+    if (tetxureType == TextureBuffer.Type.FLX){
+      timestampNs = System.nanoTime();
     }
+    if (timestampAligner != null) {
+      if (tetxureType == TextureBuffer.Type.FLX){
+        timestampNs = TimestampAligner.getRtcTimeNanos();
+      }
+      timestampNs = timestampAligner.translateTimestamp(timestampNs);
+
+    }
+//    Log.d("tryDeliverTextureFrame","textureWidth " +textureWidth +" textureHeight "+textureHeight + " oesTextureId "+oesTextureId);
     final VideoFrame.TextureBuffer buffer =
-        new TextureBufferImpl(textureWidth, textureHeight, TextureBuffer.Type.OES, oesTextureId,
+        new TextureBufferImpl(textureWidth, textureHeight, tetxureType, oesTextureId,
             RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix), handler,
             yuvConverter, textureRefCountMonitor);
     if (frameRefMonitor != null) {
       frameRefMonitor.onNewBuffer(buffer);
     }
+//    Log.d("tryDeliverTextureFrame","timestampNs " +timestampNs +" frameRotation "+frameRotation );
+//    long timestampInNanos = System.nanoTime();
     final VideoFrame frame = new VideoFrame(buffer, frameRotation, timestampNs);
 //    Log.d("FLX_INJECT","tryDeliverTextureFrame " + listener);
     listener.onFrame(frame);

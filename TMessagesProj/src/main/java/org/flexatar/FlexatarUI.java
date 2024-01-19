@@ -10,12 +10,9 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -30,24 +27,50 @@ import android.widget.TextView;
 import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.voip.VoIPService;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.SeekBar;
 import org.telegram.ui.Components.SeekBarView;
 import org.telegram.ui.Components.voip.HideEmojiTextView;
 import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 
 
 public class FlexatarUI {
-    public static class LinearLayoutSemiTransparent extends LinearLayout{
+    public static class FlexatarPanelLayout extends LinearLayout{
         private final RectF bgRect = new RectF();
         private final VoIPBackgroundProvider backgroundProvider;
         private Runnable onClose;
         public TextView switchToCameraButton;
+        private ImageView img1;
+        private ImageView img2;
+        private TextView[] effectTextViews;
+        public void setEffectTextViews(TextView[] effectTextViews){
+            this.effectTextViews=effectTextViews;
+        }
+        public void resetEffects(){
+            for (int j = 0; j < effectTextViews.length; j++) {
+                effectTextViews[j].setTextColor(Color.WHITE);
+            }
+            effectTextViews[0].setTextColor(Color.parseColor("#f7d26c"));
+            FlexatarRenderer.isEffectsOn = false;
+            FlexatarRenderer.effectID = 0;
+            FlexatarRenderer.isMorphEffect = false;
+        }
+        public void setImg1(ImageView img){
+            img1=img;
+        }
+        public void setImg2(ImageView img){
+            img2=img;
+        }
+        public ImageView getImg1(){
+            return img1;
+        }
+        public ImageView getImg2(){
+            return img2;
+        }
+        public void updateIcons(){
+            img1.setImageDrawable(new BitmapDrawable(this.getContext().getResources(), FlexatarRenderer.icons.get(chosenFirst)));
+            img2.setImageDrawable(new BitmapDrawable(this.getContext().getResources(), FlexatarRenderer.icons.get(chosenSecond)));
+        }
 
         public void setOnCloseListener(Runnable onClose){
             this.onClose=onClose;
@@ -56,7 +79,7 @@ public class FlexatarUI {
             if (onClose!=null)
                 onClose.run();
         }
-        public LinearLayoutSemiTransparent(Context context, VoIPBackgroundProvider backgroundProvider) {
+        public FlexatarPanelLayout(Context context, VoIPBackgroundProvider backgroundProvider) {
             super(context);
             this.backgroundProvider = backgroundProvider;
             backgroundProvider.attach(this);
@@ -83,7 +106,7 @@ public class FlexatarUI {
 //        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
 //        View popupView = inflater.inflate(R.layout.wait_popup_window, null);
-        LinearLayoutSemiTransparent popupView = makeFlexatarChoosePanel(context, bkgProvider);
+        FlexatarPanelLayout popupView = makeFlexatarEffectsPanel(context, bkgProvider);
         popupView.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
         PopupWindow popupWindow = new PopupWindow(
                 popupView,
@@ -108,15 +131,12 @@ public class FlexatarUI {
 
       return popupWindow;
     }
-    public static LinearLayoutSemiTransparent makeFlexatarChoosePanel(Context context, VoIPBackgroundProvider backgroundProvider){
-        ImageView icnFlx1= new ImageView(context);
-        ImageView icnFlx2 = new ImageView(context);
-
-        LinearLayoutSemiTransparent linearLayout = new LinearLayoutSemiTransparent(context,backgroundProvider);
-        linearLayout.setGravity(Gravity.CENTER);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        linearLayout.setPadding(0, 0, 0, AndroidUtilities.dp(0));
-
+    public interface FlexatarChooseListener{
+        void onChoose(ImageView icon);
+    }
+    public static HorizontalScrollView flexatarScrollView(Context context,FlexatarChooseListener onChooseListener){
+//        ImageView icnFlx1= new ImageView(context);
+//        ImageView icnFlx2 = new ImageView(context);
         HorizontalScrollView scrollView = new HorizontalScrollView(context);
         LinearLayout flxIconsLayout = new LinearLayout(context);
         flxIconsLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -136,7 +156,9 @@ public class FlexatarUI {
             flxIconsLayout.addView(icnFlx);
             int finalI = i;
             icnFlx.setOnClickListener((v) -> {
+
                 if (FlexatarUI.chosenFirst == finalI) return;
+                FlexatarUI.chosenSecond = FlexatarUI.chosenFirst;
                 FlexatarUI.chosenFirst = finalI;
                 FlexatarRenderer.altFlxData = FlexatarRenderer.currentFlxData;
                 FlexatarRenderer.currentFlxData = FlexatarRenderer.loadFlexatarByLink(FlexatarRenderer.flexatarLinks.get(FlexatarUI.chosenFirst));
@@ -144,13 +166,51 @@ public class FlexatarUI {
                 if (chosenEffect.equals("Morph")){
                     FlexatarRenderer.effectsMixWeight = 0;
                 }
+                if (onChooseListener != null)
+                    onChooseListener.onChoose(icnFlx);
+                /*
                 icnFlx2.setImageDrawable(icnFlx1.getDrawable());
-                icnFlx1.setImageDrawable(icnFlx.getDrawable());
+                icnFlx1.setImageDrawable(icnFlx.getDrawable());*/
             });
 
         }
         scrollView.addView(flxIconsLayout);
-        linearLayout.addView(scrollView);
+        return scrollView;
+    }
+    public static FlexatarPanelLayout makeFlexatarChoosePanel(Context context, VoIPBackgroundProvider backgroundProvider){
+        FlexatarRenderer.isEffectsOn = false;
+        FlexatarRenderer.effectID = 0;
+        FlexatarRenderer.isMorphEffect = false;
+
+        FlexatarPanelLayout linearLayout = new FlexatarPanelLayout(context,backgroundProvider);
+        linearLayout.setGravity(Gravity.CENTER);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+        int pad = AndroidUtilities.dp(12);
+        linearLayout.setPadding(pad, pad, pad, pad);
+
+
+        linearLayout.addView(flexatarScrollView(context,null));
+        return linearLayout;
+    }
+    public static FlexatarPanelLayout makeFlexatarEffectsPanel(Context context, VoIPBackgroundProvider backgroundProvider){
+        ImageView icnFlx1= new ImageView(context);
+        ImageView icnFlx2 = new ImageView(context);
+
+        FlexatarPanelLayout linearLayout = new FlexatarPanelLayout(context,backgroundProvider);
+        linearLayout.setImg1(icnFlx1);
+        linearLayout.setImg2(icnFlx2);
+
+        linearLayout.setGravity(Gravity.CENTER);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+        linearLayout.setPadding(0, 0, 0, AndroidUtilities.dp(0));
+
+
+
+        linearLayout.addView(flexatarScrollView(context,(icnFlx)->{
+            icnFlx2.setImageDrawable(icnFlx1.getDrawable());
+            icnFlx1.setImageDrawable(icnFlx.getDrawable());
+        }));
+//        linearLayout.addView(scrollView);
 //-------------------IMAGE PAIR LAYOUT-------------
         LinearLayout imgPairLayout = new LinearLayout(context);
         imgPairLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -250,7 +310,7 @@ public class FlexatarUI {
             });
             effectLayout.addView(tv);
         }
-
+        linearLayout.setEffectTextViews(effectTextViews);
 
 //        SeekBarView seekBar = new SeekBarView(context);
         seekBar.setReportChanges(true);
@@ -289,19 +349,19 @@ public class FlexatarUI {
 
         linearLayout.addView(bottomButtonsLayout);
 
-        TextView switchToCamera = new HideEmojiTextView(context, backgroundProvider);
-        switchToCamera.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
-        switchToCamera.setLayoutParams(layoutParams1);
-        bottomButtonsLayout.addView(switchToCamera,LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT, 12, 0, 0, 0));
-        linearLayout.switchToCameraButton = switchToCamera;
-        switchToCamera.setOnClickListener((v) -> {
-            FlexatarRenderer.isFlexatarRendering = !FlexatarRenderer.isFlexatarRendering;
-            VoIPService voipInstance = VoIPService.getSharedInstance();
-            if (voipInstance != null)
-                voipInstance.setFlexatarDelay(FlexatarRenderer.isFlexatarRendering);
-            switchToCamera.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
-
-        });
+//        TextView switchToCamera = new HideEmojiTextView(context, backgroundProvider);
+//        switchToCamera.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
+//        switchToCamera.setLayoutParams(layoutParams1);
+//        bottomButtonsLayout.addView(switchToCamera,LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT, 12, 0, 0, 0));
+//        linearLayout.switchToCameraButton = switchToCamera;
+//        switchToCamera.setOnClickListener((v) -> {
+//            FlexatarRenderer.isFlexatarRendering = !FlexatarRenderer.isFlexatarRendering;
+//            VoIPService voipInstance = VoIPService.getSharedInstance();
+//            if (voipInstance != null)
+//                voipInstance.setFlexatarDelay(FlexatarRenderer.isFlexatarRendering);
+//            switchToCamera.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
+//
+//        });
 
 
 

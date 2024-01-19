@@ -832,6 +832,9 @@ class VoiceMediaChannel : public MediaChannel, public Delayable {
                           bool enable,
                           const AudioOptions* options,
                           AudioSource* source) =0;
+    virtual  bool SetFlexatarAudioBufferCallback(uint32_t ssrc,
+                                                 std::function<void(float *, int)> callback) =0;
+
   // Set speaker output volume of the specified ssrc.
   virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
   // Set speaker output volume for future unsignaled streams.

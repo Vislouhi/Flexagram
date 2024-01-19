@@ -52,21 +52,21 @@ public class VideoFrameDrawer {
 //        drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
 //                viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
 
-        if ( flexatarTextureId == -1) {
+//        if ( flexatarTextureId == -1) {
           drawer.drawOes(buffer.getTextureId(), buffer.getWidth(), buffer.getHeight(), rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
                   viewportY, viewportWidth, viewportHeight, blur);
-        }else{
-
-          drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
-                  viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
-
-        }
+//        }else{
+//
+//          drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+//                  viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
+//
+//        }
         break;
-//      case FLX:
+      case FLX:
 //        Log.d("FLX_INJECT","drawFlx");
-//        drawer.drawOes(buffer.getTextureId(), buffer.getWidth(), buffer.getHeight(), rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
-//                viewportY, viewportWidth, viewportHeight, blur);
-//        break;
+        drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+                viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
+        break;
       case RGB:
 //        Log.d("FLX_INJECT","drawRgb");
 //        drawer.drawFlx( 512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
@@ -245,15 +245,24 @@ public class VideoFrameDrawer {
     }
 
     final boolean isTextureFrame = frame.getBuffer() instanceof VideoFrame.TextureBuffer;
+    boolean isFlexatar = false;
+    if (isTextureFrame)
+       isFlexatar = ((VideoFrame.TextureBuffer) frame.getBuffer()).getType() == VideoFrame.TextureBuffer.Type.FLX;
+
     renderMatrix.reset();
     renderMatrix.preTranslate(0.5f, 0.5f);
     if (!isTextureFrame) {
+
       renderMatrix.preScale(1f, -1f); // I420-frames are upside down
+    }
+    if (isFlexatar && !fromEncoder){
+      renderMatrix.preScale(1.3f, 1.3f);
     }
 
 //    renderMatrix.preRotate(frame.getRotation());
 
-    if (!frame.getIsFlexatar() || !FlexatarRenderer.isFlexatarRendering) {
+//    if (!frame.getIsFlexatar() || !isFlexatar) {
+    if ( !isFlexatar) {
 
       renderMatrix.preRotate(frame.getRotation());
     }else {
@@ -286,7 +295,8 @@ public class VideoFrameDrawer {
 //      }
       lastI420Frame = null;
       int flexatarTextureId = -1;
-      if (frame.getIsFlexatar() && FlexatarRenderer.isFlexatarRendering) {
+      if ( isFlexatar) {
+//      if (frame.getIsFlexatar() && isFlexatar) {
         if (flxDrawer == null) {
           flxDrawer = new FlxDrawer();
           flxDrawer.addHead(FlexatarRenderer.currentFlxData);

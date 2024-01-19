@@ -171,6 +171,9 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
     const AudioOptions* options,
             AudioSource* source) override;
 
+  bool SetFlexatarAudioBufferCallback(uint32_t ssrc,
+                                        std::function<void(float *, int)> callback) override;
+
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;

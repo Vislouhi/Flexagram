@@ -29,6 +29,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
@@ -56,6 +57,7 @@ import androidx.viewpager.widget.ViewPager;
 @TargetApi(21)
 public abstract class PrivateVideoPreviewDialog extends FrameLayout implements VoIPService.StateListener {
 
+    private final FlexatarUI.FlexatarPanelLayout flexatarPanelView;
     private boolean isDismissed;
     private float outProgress;
 
@@ -97,12 +99,20 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
                 currentPage = position;
                 pageOffset = positionOffset;
+                if (currentPage == (needScreencast ? 1 : 0)){
+                    flexatarPanelView.setVisibility(View.VISIBLE);
+                    flexatarPanelView.setEnabled(true);
+                }else {
+                    flexatarPanelView.setVisibility(View.GONE);
+                    flexatarPanelView.setEnabled(false);
+                }
+
                 updateTitlesLayout();
             }
 
             @Override
             public void onPageSelected(int i) {
-                Log.d("FLX_INJECT","onPageSelected "+i);
+
                 if (scrollState == ViewPager.SCROLL_STATE_IDLE) {
                     if (i <= (needScreencast ? 1 : 0)) {
                         currentTexturePage = 1;
@@ -252,13 +262,13 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             if (a == 0 && needScreencast) {
                 titles[a].setText(LocaleController.getString("VoipPhoneScreen", R.string.VoipPhoneScreen));
             } else if (a == 0 || a == 1 && needScreencast) {
-                titles[a].setText(LocaleController.getString("VoipFrontCamera", R.string.VoipFrontCamera));
-            } else if (a == 1 || a == 2 && needScreencast) {
-//                titles[a].setText("BaCK_CaM");
-                titles[a].setText(LocaleController.getString("VoipBackCamera", R.string.VoipBackCamera));
-            } else {
-//                TODO Add FLEXATAR to strings.xml
+                //                TODO Add FLEXATAR to strings.xml
                 titles[a].setText("FLEXATAR");
+            } else if (a == 1 || a == 2 && needScreencast) {
+                titles[a].setText(LocaleController.getString("VoipFrontCamera", R.string.VoipFrontCamera));
+            } else {
+                titles[a].setText(LocaleController.getString("VoipBackCamera", R.string.VoipBackCamera));
+
             }
             int num = a;
             titles[a].setOnClickListener(view -> viewPager.setCurrentItem(num, true));
@@ -310,6 +320,12 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             });
             addView(micIconView, LayoutHelper.createFrame(48, 48, Gravity.LEFT | Gravity.BOTTOM, 24, 0, 0, 136));
         }
+        VoIPBackgroundProvider bkgProvider = new VoIPBackgroundProvider();
+        bkgProvider.setHasVideo(true);
+        bkgProvider.setTotalSize(200,200);
+        flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context,bkgProvider);
+        addView(flexatarPanelView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 12, 100, 12, 0));
+
     }
 
     public void setBottomPadding(int padding) {
@@ -354,7 +370,7 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
 //            Log.d("FLX_INJECT","textureView invisible ");
 
         } else {
-            Log.d("FLX_INJECT","textureView visible ");
+//            Log.d("FLX_INJECT","textureView visible ");
             textureView.setVisibility(VISIBLE);
             if (currentPage + (needScreencast ? 0 : 1) == currentTexturePage) {
                 textureView.setTranslationX(-pageOffset * getMeasuredWidth());
@@ -383,28 +399,85 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
     }
 
     private void onFinishMoveCameraPage() {
+        Log.d("FLX_INJECT","onPageSelected "+currentTexturePage);
 
         VoIPService service = VoIPService.getSharedInstance();
         if (currentTexturePage == visibleCameraPage || service == null) {
             return;
         }
-        FlexatarRenderer.isFlexatarRendering = false;
+
         boolean currentFrontface = service.isFrontFaceCamera();
-        if (currentTexturePage == 1 && !currentFrontface || currentTexturePage == 2 && currentFrontface) {
+
+        if (currentTexturePage == 1){
             saveLastCameraBitmap();
-            cameraReady = false;
-            VoIPService.getSharedInstance().switchCamera();
-            textureView.setAlpha(0.0f);
+
+            VoIPService voipInstance = VoIPService.getSharedInstance();
+            {
+                cameraReady = false;
+                if (!voipInstance.isFlexatarCamera()) {
+                    voipInstance.switchToFlexatar(true);
+                }
+                textureView.setAlpha(0.0f);
+            }
+        }
+        if (currentTexturePage == 2){
+            saveLastCameraBitmap();
+
+            VoIPService voipInstance = VoIPService.getSharedInstance();
+            {
+                cameraReady = false;
+                if (voipInstance.isFlexatarCamera()) {
+                    voipInstance.switchToFlexatar(false);
+                }
+                if (!currentFrontface) {
+                    VoIPService.getSharedInstance().switchCamera();
+                }
+                textureView.setAlpha(0.0f);
+            }
         }
         if (currentTexturePage == 3){
             saveLastCameraBitmap();
-            FlexatarRenderer.isFlexatarRendering = true;
-            textureView.renderer.setIsFlexatar(true);
+
             VoIPService voipInstance = VoIPService.getSharedInstance();
-            if (voipInstance != null)
-                voipInstance.setFlexatarDelay(FlexatarRenderer.isFlexatarRendering);
-//            textureView.setAlpha(0.0f);
+            {
+                cameraReady = false;
+                if (voipInstance.isFlexatarCamera()) {
+                    voipInstance.switchToFlexatar(false);
+                }
+                if (currentFrontface){
+                    VoIPService.getSharedInstance().switchCamera();
+                }
+                textureView.setAlpha(0.0f);
+            }
         }
+
+
+//        VoIPService.getSharedInstance().switchCamera();
+        /*if (currentTexturePage == 1 && !currentFrontface || currentTexturePage == 2 && currentFrontface) {
+            Log.d("FLX_INJECT","currentTexturePage" + currentTexturePage);
+            Log.d("FLX_INJECT","visibleCameraPage" + visibleCameraPage);
+            saveLastCameraBitmap();
+//            if (visibleCameraPage == 1){
+
+//            }
+            cameraReady = false;
+            VoIPService.getSharedInstance().switchCamera();
+            textureView.setAlpha(0.0f);
+        }*/
+
+        /*if (currentTexturePage == 1){
+            saveLastCameraBitmap();
+//            FlexatarRenderer.isFlexatarRendering = true;
+//            textureView.renderer.setIsFlexatar(true);
+            VoIPService voipInstance = VoIPService.getSharedInstance();
+            cameraReady = false;
+            if (voipInstance != null) {
+                voipInstance.switchToFlexatar(true);
+                voipInstance.setFlexatarDelay(true);
+            }
+            textureView.setAlpha(0.0f);
+
+        }*/
         Log.d("FLX_INJECT","currentTexturePage "+currentTexturePage);
         visibleCameraPage = currentTexturePage;
     }

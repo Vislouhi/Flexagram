@@ -17,7 +17,6 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -33,7 +32,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
@@ -41,7 +39,6 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.support.LongSparseIntArray;
@@ -71,7 +68,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
     private final ImageView flexatarIcon;
     private PopupWindow flexatarUiPopupPanel;
     //    private final FlexatarUI.LinearLayoutSemiTransparent flexatarPanelView;
-    private FlexatarUI.LinearLayoutSemiTransparent icon1;
+    private FlexatarUI.FlexatarPanelLayout icon1;
     public boolean inFullscreenMode;
     public float progressToFullscreenMode;
     public long fullscreenPeerId;
@@ -229,6 +226,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
                 flexatarIcon.setVisibility(View.VISIBLE);
                 flexatarIcon.setEnabled(true);
             });
+//            VoIPService.getSharedInstance().setAudioListener();
 //            Log.d("FLX_INJECT","is my render view : " + fullscreenTextureView.participant.participant.self);
         });
         //        flexatar button inject end

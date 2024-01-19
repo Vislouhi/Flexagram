@@ -43,6 +43,7 @@ import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.util.Property;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -5241,8 +5242,12 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                 if (previewDialog == null) {
                     VoIPService voIPService = VoIPService.getSharedInstance();
                     if (voIPService != null) {
-                        voIPService.createCaptureDevice(false);
+                        Log.d("FLX_INJECT","createCaptureDevice newpreviewDialog");
+                        voIPService.switchToFlexatar(true);
+//                        voIPService.createCaptureDevice(false,true);
+
                     }
+                   Log.d("FLX_INJECT","newpreviewDialog");
                     previewDialog = new PrivateVideoPreviewDialog(context, true, VoIPService.getSharedInstance().getVideoState(true) != Instance.VIDEO_STATE_ACTIVE) {
                         @Override
                         public void onDismiss(boolean screencast, boolean apply) {
@@ -5270,7 +5275,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                         }
                     };
                     container.addView(previewDialog);
-                    if (voIPService != null && !voIPService.isFrontFaceCamera()) {
+                    if (voIPService != null && !voIPService.isFrontFaceCamera() && !voIPService.isFlexatarCamera()) {
                         voIPService.switchCamera();
                     }
                 }

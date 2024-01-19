@@ -343,9 +343,13 @@ std::vector<std::string> InstanceImplLegacy::GetVersions() {
 	return result;
 }
 
+    void
+    InstanceImplLegacy::setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+
+    }
 
 
-	template <>
+    template <>
 bool Register<InstanceImplLegacy>() {
 	return Meta::RegisterOne<InstanceImplLegacy>();
 }

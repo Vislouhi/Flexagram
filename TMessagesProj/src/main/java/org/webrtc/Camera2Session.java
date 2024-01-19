@@ -211,6 +211,7 @@ class Camera2Session implements CameraSession {
         events.onFrameCaptured(Camera2Session.this, modifiedFrame);
         modifiedFrame.release();
       });
+      surfaceTextureHelper.setTextureType(VideoFrame.TextureBuffer.Type.OES);
       Logging.d(TAG, "Camera device successfully started.");
       callback.onDone(Camera2Session.this);
     }

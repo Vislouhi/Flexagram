@@ -833,6 +833,51 @@ JNIEXPORT void JNICALL Java_org_telegram_messenger_voip_NativeInstance_setFlexat
 }
 
 extern "C"
+JNIEXPORT void JNICALL
+Java_org_telegram_messenger_voip_NativeInstance_setAudioListener(JNIEnv *env, jobject thiz,jboolean enabled) {
+
+    InstanceHolder *instance = getInstanceHolder(env, thiz);
+
+    std::shared_ptr<PlatformContext> platformContext = instance->_platformContext;
+
+
+
+    std::function<void( float *,int )> onFlexatarAudioBuffer;
+    if (enabled) {
+        onFlexatarAudioBuffer = [platformContext](const float *audioBuffer, int len) {
+            tgvoip::jni::DoWithJNI([platformContext, audioBuffer, len](JNIEnv *env) {
+
+                jfloatArray floatArray = env->NewFloatArray(len);
+
+                jfloat floatFill[len];
+                for (int i = 0; i < len; ++i) {
+                    floatFill[i] = audioBuffer[i];
+
+                }
+                env->SetFloatArrayRegion(floatArray, 0, len, floatFill);
+
+                jobject globalRef = ((AndroidContext *) platformContext.get())->getJavaInstance();
+                env->CallVoidMethod(globalRef,
+                                    env->GetMethodID(NativeInstanceClass, "onNativeAudioBuffer",
+                                                     "([F)V"), floatArray);
+                env->DeleteLocalRef(floatArray);
+            });
+        };
+    }
+
+    if (instance->nativeInstance != nullptr) {
+        instance->nativeInstance->setFlexatarAudioBufferCallback(onFlexatarAudioBuffer);
+//        __android_log_print(ANDROID_LOG_DEBUG, "FLX_INJECT", "nativeInstance setFlexatarDelay");
+    } else if (instance->groupNativeInstance != nullptr) {
+//        __android_log_print(ANDROID_LOG_DEBUG, "FLX_INJECT", "groupNativeInstance setFlexatarDelay");
+
+        instance->groupNativeInstance->setFlexatarAudioBufferCallback(onFlexatarAudioBuffer);
+    }
+//    env->CallVoidMethod(globalRef, env->GetMethodID(NativeInstanceClass, "onNativeAudioBuffer",
+//                                                    "([F)V"), env->NewStringUTF(successString));
+}
+
+extern "C"
 JNIEXPORT void JNICALL Java_org_telegram_messenger_voip_NativeInstance_setVolume(JNIEnv *env, jobject obj, jint ssrc, jdouble volume) {
     InstanceHolder *instance = getInstanceHolder(env, obj);
     if (instance->groupNativeInstance != nullptr) {
@@ -987,8 +1032,8 @@ extern "C"
 JNIEXPORT jlong JNICALL Java_org_telegram_messenger_voip_NativeInstance_createVideoCapturer(JNIEnv *env, jclass clazz, jobject localSink, jint type) {
     initWebRTC(env);
     std::unique_ptr<VideoCaptureInterface> capture;
-    if (type == 0 || type == 1) {
-        capture = tgcalls::VideoCaptureInterface::Create(StaticThreads::getThreads(), type == 1 ? "front" : "back", false, std::make_shared<AndroidContext>(env, nullptr, false));
+    if (type == 0 || type == 1 || type == 100) {
+        capture = tgcalls::VideoCaptureInterface::Create(StaticThreads::getThreads(), type == 100 ? "flexatar" : type==1 ? "front" : "back", false, std::make_shared<AndroidContext>(env, nullptr, false));
     } else {
         capture = tgcalls::VideoCaptureInterface::Create(StaticThreads::getThreads(), "screen", true, std::make_shared<AndroidContext>(env, nullptr, true));
     }
@@ -1135,3 +1180,4 @@ JNIEXPORT void JNICALL Java_org_telegram_messenger_voip_NativeInstance_onRequest
 }
 
 }
+

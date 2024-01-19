@@ -59,7 +59,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 
-import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
@@ -160,7 +159,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
     private int selectedRating;
 
     LinearLayout emojiLayout;
-    FlexatarUI.LinearLayoutSemiTransparent flexatarPanelView;
+    FlexatarUI.FlexatarPanelLayout flexatarPanelView;
     FrameLayout hideEmojiLayout;
     TextView hideEmojiTextView;
     RateCallLayout rateCallLayout;
@@ -278,6 +277,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
     private boolean zoomStarted;
     private boolean canZoomGesture;
     ValueAnimator zoomBackAnimator;
+    private boolean isFlexatarButtonAvailable = false;
     /* === pinch to zoom === */
 
     public static void show(Activity activity, int account) {
@@ -407,7 +407,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             return;
         }
         if (previewDialog != null) {
-            previewDialog.dismiss(false, false);
+            previewDialog.dismiss(false, false, false);
             return;
         }
         if (callingUserIsVideo && currentUserIsVideo && cameraForceExpanded) {
@@ -975,7 +975,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
 
 
 
-        flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context,backgroundProvider);
+        flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(context,backgroundProvider);
         flexatarPanelView.setVisibility(View.GONE);
 //        FlexatarRenderer.startVoiceProcessing();
 
@@ -1127,9 +1127,11 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         flexatarIcon.setAlpha(0f);
         flexatarIcon.setEnabled(false);
         flexatarIcon.setOnClickListener(view -> {
+//            VoIPService.getSharedInstance().setAudioListener();
 //            FlexatarRenderer.isFlexatarRendering = !FlexatarRenderer.isFlexatarRendering;
             flexatarPanelView.setVisibility(View.VISIBLE);
-            flexatarPanelView.switchToCameraButton.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
+            flexatarPanelView.updateIcons();
+//            flexatarPanelView.switchToCameraButton.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
             Log.d("FLX_BUTTON","on click");
         });
 //        Flexatar icon injection end
@@ -1873,7 +1875,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                     currentUserCameraFloatingLayout.setAlpha(0f);
                     currentUserCameraFloatingLayout.setVisibility(View.GONE);
                     if (previewDialog != null) {
-                        previewDialog.dismiss(false, false);
+                        previewDialog.dismiss(false,false, false);
                     }
                     notificationsLayout.animate().alpha(0f).setDuration(250).start();
                 } else {
@@ -2251,8 +2253,11 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             callingUserTitle.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             statusTextView.animate().alpha(1f).setDuration(150).translationY(0).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             speakerPhoneIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
-            flexatarIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
-            flexatarIcon.setEnabled(true);
+            if (isFlexatarButtonAvailable) {
+                flexatarIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+                flexatarIcon.setEnabled(true);
+            }
+
             backIcon.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             emojiLayout.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
             buttonsLayout.animate().alpha(1f).translationY(0).setDuration(150).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
@@ -2573,8 +2578,10 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                     setFrontalCameraAction(bottomSpeakerBtn, service, animated);
                     if (uiVisible) {
                         speakerPhoneIcon.animate().alpha(1f).start();
-                        flexatarIcon.animate().alpha(1f).start();
-                        flexatarIcon.setEnabled(true);
+                        if (isFlexatarButtonAvailable) {
+                            flexatarIcon.animate().alpha(1f).start();
+                            flexatarIcon.setEnabled(true);
+                        }
                     }
                 } else {
                     setSpeakerPhoneAction(bottomSpeakerBtn, service, animated);
@@ -2599,8 +2606,10 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 if (uiVisible) {
                     speakerPhoneIcon.setTag(1);
                     speakerPhoneIcon.animate().alpha(1f).start();
-                    flexatarIcon.animate().alpha(1f).start();
-                    flexatarIcon.setEnabled(true);
+                    if (isFlexatarButtonAvailable) {
+                        flexatarIcon.animate().alpha(1f).start();
+                        flexatarIcon.setEnabled(true);
+                    }
                 }
             } else {
                 setSpeakerPhoneAction(bottomSpeakerBtn, service, animated);
@@ -2798,7 +2807,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         if (previewDialog == null) {
             return;
         }
-        previewDialog.dismiss(true, true);
+        previewDialog.dismiss(true, false,true);
     }
 
     private void toggleCameraInput() {
@@ -2816,7 +2825,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             if (!currentUserIsVideo) {
                 if (Build.VERSION.SDK_INT >= 21) {
                     if (previewDialog == null) {
-                        service.createCaptureDevice(false);
+                        service.switchToFlexatar(true);
+//                        service.createCaptureDevice(false,true);
                         if (!service.isFrontFaceCamera()) {
                             service.switchCamera();
                         }
@@ -2825,8 +2835,10 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                         bottomVideoBtn.getLocationOnScreen(locVideoButton);
                         previewDialog = new PrivateVideoPreviewDialogNew(fragmentView.getContext(), locVideoButton[0], locVideoButton[1]) {
                             @Override
-                            public void onDismiss(boolean screencast, boolean apply) {
+                            public void onDismiss(boolean screencast,boolean flexatar, boolean apply) {
+                                isFlexatarButtonAvailable = flexatar;
                                 previewDialog = null;
+                                flexatarPanelView.resetEffects();
                                 VoIPService service = VoIPService.getSharedInstance();
                                 windowView.setLockOnScreen(false);
                                 if (apply) {
@@ -2835,6 +2847,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                                         service.requestVideoCall(false);
                                         service.setVideoState(false, Instance.VIDEO_STATE_ACTIVE);
                                         service.switchToSpeaker();
+
                                     }
                                     if (service != null) {
                                         setVideoAction(bottomVideoBtn, service, true);
@@ -2842,6 +2855,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                                 } else {
                                     if (service != null) {
                                         service.setVideoState(false, Instance.VIDEO_STATE_INACTIVE);
+                                        service.setFlexatarDelay(false);
                                     }
                                 }
                                 previousState = currentState;
@@ -2893,6 +2907,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             } else {
                 currentUserTextureView.saveCameraLastBitmap();
                 service.setVideoState(false, Instance.VIDEO_STATE_INACTIVE);
+                service.setFlexatarDelay(false);
                 if (Build.VERSION.SDK_INT >= 21) {
                     service.clearCamera();
                 }

@@ -882,6 +882,13 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     stream_->SetFlexatarDelay1(muted);
 //    muted_ = muted;
   }
+  void SetFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+    RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+    RTC_DCHECK(stream_);
+    stream_->SetFlexatarAudioBufferCallback(std::move(callback));
+//    muted_ = muted;
+  }
+
 
   bool muted() const {
     RTC_DCHECK_RUN_ON(&worker_thread_checker_);
@@ -1834,6 +1841,20 @@ bool WebRtcVoiceMediaChannel::SetFlexatarDelay1(uint32_t ssrc,
   it->second->SetFlexatarDelay1(enable);
   return true;
 }
+
+  bool WebRtcVoiceMediaChannel::SetFlexatarAudioBufferCallback(uint32_t ssrc,
+                                                               std::function<void(float *,
+                                                                                  int)> callback) {
+    RTC_DCHECK_RUN_ON(worker_thread_);
+    const auto it = send_streams_.find(ssrc);
+    if (it == send_streams_.end()) {
+      RTC_LOG(LS_WARNING) << "The specified ssrc " << ssrc << " is not in use.";
+      return false;
+    }
+//  send_streams_[ssrc]->SetFlexatarDelay(enable);
+    it->second->SetFlexatarAudioBufferCallback(callback);
+    return true;
+  }
 bool WebRtcVoiceMediaChannel::SetAudioSend(uint32_t ssrc,
                                            bool enable,
                                            const AudioOptions* options,
@@ -2543,4 +2564,6 @@ bool WebRtcVoiceMediaChannel::MaybeDeregisterUnsignaledRecvStream(
   }
   return false;
 }
+
+
 }  // namespace cricket

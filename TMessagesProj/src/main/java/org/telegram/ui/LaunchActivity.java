@@ -77,6 +77,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.exoplayer2.util.Log;
 import com.google.android.gms.common.api.Status;
 import com.google.common.primitives.Longs;
 import com.google.firebase.appindexing.Action;
@@ -84,6 +85,8 @@ import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.AssistActionBuilder;
 
 import org.flexatar.DataOps.AssetAccess;
+import org.flexatar.FlexatarCabinetActivity;
+import org.flexatar.FlexatarCameraCaptureFragment;
 import org.flexatar.FlexatarCommon;
 import org.flexatar.FlexatarRenderer;
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -649,6 +652,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     args.putInt("type", MediaActivity.TYPE_STORIES);
                     drawerLayoutContainer.closeDrawer(true);
                     presentFragment(new MediaActivity(args, null));
+                } else if (id == 17) {
+                    Log.d("FLX_INJECT","To flexatar cabinet");
+//                    presentFragment(new FlexatarCameraCaptureFragment());
+                    presentFragment(new FlexatarCabinetActivity());
+                    drawerLayoutContainer.closeDrawer(true);
                 }
             }
         });
@@ -5715,7 +5723,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 VoIPService service = VoIPService.getSharedInstance();
                 if (service != null) {
                     VideoCapturerDevice.mediaProjectionPermissionResultData = data;
-                    service.createCaptureDevice(true);
+                    service.createCaptureDevice(true,false);
                 }
             }
         } else if (requestCode == PLAY_SERVICES_REQUEST_CHECK_SETTINGS) {

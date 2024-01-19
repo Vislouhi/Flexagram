@@ -57,7 +57,9 @@ public class NativeAndroidVideoTrackSource {
    * expected to be called first and that the passed frame conforms to those parameters.
    */
   public void onFrameCaptured(VideoFrame frame) {
-    int rotation = FlexatarRenderer.isFlexatarRendering ? 270 : frame.getRotation();
+    final boolean isFlexatar = ((VideoFrame.TextureBuffer) frame.getBuffer()).getType() == VideoFrame.TextureBuffer.Type.FLX;
+
+    int rotation = isFlexatar ? 270 : frame.getRotation();
 
     nativeOnFrameCaptured(nativeAndroidVideoTrackSource, rotation,
         frame.getTimestampNs(), frame.getBuffer());

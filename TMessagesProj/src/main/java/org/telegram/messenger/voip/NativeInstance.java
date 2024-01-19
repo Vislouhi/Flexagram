@@ -1,5 +1,6 @@
 package org.telegram.messenger.voip;
 
+import org.flexatar.FlexatarRenderer;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
@@ -170,6 +171,11 @@ public class NativeInstance {
         requestCurrentTimeCallback.run(taskPtr);
     }
 
+    private void onNativeAudioBuffer(float[] result) {
+//        Log.d("onNativeAudioBuffer", Arrays.toString(result));
+        FlexatarRenderer.processSpeechAnimation(result);
+    }
+
     public native void setJoinResponsePayload(String payload);
     public native void prepareForStream(boolean isRtpStream);
     public native void resetGroupInstance(boolean set, boolean disconnect);
@@ -219,6 +225,8 @@ public class NativeInstance {
     public native void setMuteMicrophone(boolean muteMicrophone);
 
     public native void setFlexatarDelay1(boolean flexatarDelay);
+
+    public native void setAudioListener(boolean enabled);
     public native void setVolume(int ssrc, double volume);
     public native void setAudioOutputGainControlEnabled(boolean enabled);
     public native void setEchoCancellationStrength(int strength);

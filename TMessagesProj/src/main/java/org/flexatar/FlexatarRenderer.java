@@ -6,15 +6,20 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.util.Log;
+import android.media.audiofx.AcousticEchoCanceler;
 
 import androidx.core.app.ActivityCompat;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.flexatar.DataOps.AssetAccess;
+import org.flexatar.DataOps.Data;
 import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
+import org.telegram.messenger.voip.NativeInstance;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.ui.LaunchActivity;
 import org.webrtc.EglBase;
@@ -54,16 +59,18 @@ public class FlexatarRenderer {
 
 
     public static void makeIcons() {
-        String[] flxFileNames = {"char1t.p", "char2t.p", "char3t.p", "char4t.p", "char5t.p", "char6t.p", "char7t.p"};
+
+        String[] flxFileNames = {"leo.p","leo1.p","auth2.p","char1t.p", "char2t.p", "char3t.p", "char4t.p", "char5t.p", "char6t.p", "char7t.p"};
         icons = new ArrayList<>();
         flexatarLinks = new ArrayList<>();
         for (String fName : flxFileNames) {
             String flexatarLink = "flexatar/" + fName;
             flexatarLinks.add(flexatarLink);
-            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
-            LengthBasedFlxUnpack packages = new LengthBasedFlxUnpack(flxRaw);
-            FlexatarData flxData = new FlexatarData(packages);
-            byte[] previewImageData = flxData.flxData.get("exp0").get("PreviewImage").get(0);
+//            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
+//            LengthBasedFlxUnpack packages = new LengthBasedFlxUnpack(flxRaw);
+//            FlexatarData flxData = new FlexatarData(packages);
+//            byte[] previewImageData = flxData.flxData.get("exp0").get("PreviewImage").get(0);
+            byte[] previewImageData = Data.unpackPreviewImage(AssetAccess.context,flexatarLink);
             InputStream inputStream = new ByteArrayInputStream(previewImageData);
             icons.add(BitmapFactory.decodeStream(inputStream));
         }
@@ -84,7 +91,7 @@ public class FlexatarRenderer {
         altFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenSecond));
     }
 
-    public static boolean isFlexatarRendering = false;
+//    public static boolean isFlexatarRendering = false;
     public static boolean isVoiceProcessingNeed = false;
     private static Timer checkTmer;
     private static final Object mutexObject = new Object();
@@ -130,11 +137,54 @@ public class FlexatarRenderer {
             executor = null;
             isVoiceProcessingOn = false;
             isRecording = false;
-            isFlexatarRendering = false;
+//            isFlexatarRendering = false;
         }
+    }
+    private static List<float[]> audioToTF = new ArrayList<>();
+
+    private static float[] concatenateFloatArrays(List<float[]> arrays) {
+        // Calculate the total length of the concatenated array
+        int totalLength = 0;
+        for (float[] array : arrays) {
+            totalLength += array.length;
+        }
+
+        // Create the concatenated array
+        float[] resultArray = new float[totalLength];
+
+        // Copy individual arrays to the concatenated array
+        int currentIndex = 0;
+        for (float[] array : arrays) {
+            System.arraycopy(array, 0, resultArray, currentIndex, array.length);
+            currentIndex += array.length;
+        }
+
+        return resultArray;
+    }
+    private static Object processingMutex = new Object();
+    public static void processSpeechAnimation(float[] audioBuffer){
+//        Log.d("FLX_INJECT", "processSpeechAnimation");
+        synchronized (processingMutex) {
+            LaunchActivity context = LaunchActivity.instance;
+            SpeechAnimation.loadModels(context);
+            audioToTF.add(audioBuffer);
+            if (audioToTF.size() == 5) {
+                float[] buffer = concatenateFloatArrays(audioToTF);
+                if (buffer.length == 800)
+                    FlexatarRenderer.speechState = SpeechAnimation.processAudio(concatenateFloatArrays(audioToTF));
+                else
+                    Log.d("processSpeechAnimation", "incorect size");
+                audioToTF.clear();
+            }
+        }
+
+
+
     }
 
     public static void startVoiceProcessing() {
+//        VoIPService.getSharedInstance().setMicMute();
+        if(true) return;
         synchronized (mutexObject) {
             if (isVoiceProcessingOn) return;
             isVoiceProcessingOn = true;
@@ -145,13 +195,17 @@ public class FlexatarRenderer {
             }
 
             SpeechAnimation.loadModels(context);
-//        SpeechAnimation.checkModel();
+
             int bufferSizeInBytes = 800 * 2;
-            audioRecord = new AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
+            audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
+//            AcousticEchoCanceler canceler =  AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
+//            canceler.setEnabled(true);
+
             executor = Executors.newSingleThreadExecutor();
 
             short[] audioBuffer = new short[800];
             audioRecord.startRecording();
+
 
 
             executor.execute(() -> {
@@ -163,11 +217,11 @@ public class FlexatarRenderer {
                         break;
                     }
 
-                    if (VoIPService.getSharedInstance()!=null && !VoIPService.getSharedInstance().isMicMute()) {
+//                    if (VoIPService.getSharedInstance()!=null && !VoIPService.getSharedInstance().isMicMute()) {
                         FlexatarRenderer.speechState = SpeechAnimation.processAudio(VPUtil.shortToFloat(audioBuffer));
-                    }else{
-                        FlexatarRenderer.speechState = new float[]{0,0,0.05f,0,0};
-                    }
+//                    }else{
+//                        FlexatarRenderer.speechState = new float[]{0,0,0.05f,0,0};
+//                    }
 //                  Log.d("FLX_ANIM", Arrays.toString(FlexatarRenderer.speechState));
 
 

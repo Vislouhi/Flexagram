@@ -24,7 +24,9 @@ public:
     void setRequestedVideoAspect(float aspect) override;
 	void setNetworkType(NetworkType networkType) override;
 	void setMuteMicrophone(bool muteMicrophone) override;
+	void setFlexatarAudioBufferCallback(std::function<void( float *,int )> callback) override;
 	void setFlexatarDelay1(bool flexatarDelay) override;
+
 	bool supportsVideo() override {
 		return true;
 	}

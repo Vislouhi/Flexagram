@@ -1760,6 +1760,10 @@ void InstanceV2ReferenceImpl::stop(std::function<void(FinalState)> completion) {
     });
 }
 
+    void InstanceV2ReferenceImpl::setFlexatarAudioBufferCallback(
+            std::function<void(float *, int)> callback) {
+
+    }
 
 
     template <>

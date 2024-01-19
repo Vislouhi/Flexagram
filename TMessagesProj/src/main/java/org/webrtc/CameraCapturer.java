@@ -229,6 +229,8 @@ abstract class CameraCapturer implements CameraVideoCapturer {
     if (deviceNames.isEmpty()) {
       throw new RuntimeException("No cameras attached.");
     }
+    Log.d(TAG,this.cameraName);
+    Log.d(TAG,Arrays.toString(cameraEnumerator.getDeviceNames()));
     if (!deviceNames.contains(this.cameraName)) {
       throw new IllegalArgumentException(
           "Camera name " + this.cameraName + " does not match any known camera device.");

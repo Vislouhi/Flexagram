@@ -8,6 +8,7 @@ import android.media.projection.MediaProjection;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -17,6 +18,7 @@ import org.telegram.messenger.FileLog;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
+import org.webrtc.CameraFEnumerator;
 import org.webrtc.CameraVideoCapturer;
 import org.webrtc.CapturerObserver;
 import org.webrtc.EglBase;
@@ -137,6 +139,7 @@ public class VideoCapturerDevice {
             if (eglBase == null) {
                 return;
             }
+            Log.d("FLX_INJECT","deviceName "+ deviceName);
             nativePtr = ptr;
             if ("screen".equals(deviceName)) {
                 if (Build.VERSION.SDK_INT < 21) {
@@ -170,6 +173,56 @@ public class VideoCapturerDevice {
                         if (audioRecord != null) {
                             audioRecord.initDeviceAudioRecord(((ScreenCapturerAndroid) videoCapturer).getMediaProjection());
                         }
+                    });
+                }
+            }else if ("flexatar".equals(deviceName)) {
+                CameraEnumerator enumerator = CameraFEnumerator.isSupported(ApplicationLoader.applicationContext) ? new CameraFEnumerator(ApplicationLoader.applicationContext) : new Camera1Enumerator();
+                String[] names = enumerator.getDeviceNames();
+                String cameraName = names[0];
+                if (videoCapturer == null) {
+                    videoCapturer = enumerator.createCapturer(cameraName, new CameraVideoCapturer.CameraEventsHandler() {
+                        @Override
+                        public void onCameraError(String errorDescription) {
+
+                        }
+
+                        @Override
+                        public void onCameraDisconnected() {
+
+                        }
+
+                        @Override
+                        public void onCameraFreezed(String errorDescription) {
+
+                        }
+
+                        @Override
+                        public void onCameraOpening(String cameraName) {
+
+                        }
+
+                        @Override
+                        public void onFirstFrameAvailable() {
+                            AndroidUtilities.runOnUIThread(() -> {
+                                if (VoIPService.getSharedInstance() != null) {
+                                    VoIPService.getSharedInstance().onCameraFirstFrameAvailable();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onCameraClosed() {
+
+                        }
+                    });
+                    videoCapturerSurfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread", eglBase.getEglBaseContext());
+                    handler.post(() -> {
+                        if (videoCapturerSurfaceTextureHelper == null) {
+                            return;
+                        }
+                        nativeCapturerObserver = nativeGetJavaVideoCapturerObserver(nativePtr);
+                        videoCapturer.initialize(videoCapturerSurfaceTextureHelper, ApplicationLoader.applicationContext, nativeCapturerObserver);
+                        videoCapturer.startCapture(CAPTURE_WIDTH, CAPTURE_HEIGHT, CAPTURE_FPS);
                     });
                 }
             } else {

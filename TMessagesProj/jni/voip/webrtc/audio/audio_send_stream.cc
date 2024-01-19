@@ -409,6 +409,34 @@ void AudioSendStream::SendAudioData(std::unique_ptr<AudioFrame> audio_frame) {
 //  RTC_LOG(LS_INFO) << "ProcessAndEncodeAudio";
   // TODO pass delay parameter
 //  if(flexatar_delay_)
+  if (flexatarAudioBufferCallback_ && flexatar_delay_) {
+
+    if (_resamplerFrequency != audio_frame->samples_per_channel() || _resamplerNumChannels != audio_frame->num_channels()) {
+      _resamplerFrequency = audio_frame->samples_per_channel();
+      _resamplerNumChannels = audio_frame->num_channels();
+      _resampler = std::make_unique<webrtc::Resampler>();
+      if (_resampler->Reset(48000, 16000, audio_frame->num_channels()) == -1) {
+        _resampler = nullptr;
+      }
+    }
+
+    if (_resampler) {
+      size_t outLen = 0;
+      std::vector<int16_t> samplesToResample(audio_frame->data(), audio_frame->data() + audio_frame->samples_per_channel() * audio_frame->num_channels());
+      std::vector<int16_t> resampled(160 * audio_frame->num_channels());
+
+      _resampler->Push(samplesToResample.data(), samplesToResample.size(), resampled.data(), audio_frame->samples_per_channel() * audio_frame->num_channels(), outLen);
+      float* floatArray = new float[resampled.size()];
+      for (size_t i = 0; i < resampled.size(); ++i) {
+        floatArray[i] = static_cast<float>(resampled.at(i)) / 32767.0f;
+//        std::cout << floatArray[i] << " ";
+      }
+//      float dataArray[] = {static_cast<float>(audio_frame->num_channels()), static_cast<float>(audio_frame->samples_per_channel()), static_cast<float>(resampled.at(10))};
+      flexatarAudioBufferCallback_(floatArray, resampled.size());
+    }
+
+
+  }
 
   if(flexatar_delay_) {
     delayedFramesList.push_back(std::move(audio_frame));
@@ -420,6 +448,7 @@ void AudioSendStream::SendAudioData(std::unique_ptr<AudioFrame> audio_frame) {
 
     }
   }else {
+
     channel_send_->ProcessAndEncodeAudio(std::move(audio_frame));
   }
 }
@@ -445,7 +474,11 @@ void AudioSendStream::SetFlexatarDelay1(bool flexatarDelay) {
 // TODO pass flexatar delay
 }
 
+void AudioSendStream::SetFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  flexatarAudioBufferCallback_ = callback;
 
+}
 webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   return GetStats(true);
 }

@@ -2288,6 +2288,10 @@ void InstanceV2_4_0_0Impl::stop(std::function<void(FinalState)> completion) {
     });
 }
 
+    void InstanceV2_4_0_0Impl::setFlexatarAudioBufferCallback(
+            std::function<void(float *, int)> callback) {
+
+    }
 
 
     template <>

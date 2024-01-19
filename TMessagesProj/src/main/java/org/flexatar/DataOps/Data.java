@@ -1,5 +1,6 @@
 package org.flexatar.DataOps;
 
+import android.content.Context;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -7,7 +8,9 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -112,6 +115,44 @@ public class Data {
             throw new RuntimeException(e);
         }
 
+    }
+    public static byte[] unpackPreviewImage(Context context, String fileName){
+        try {
+//            FileInputStream fileInputStream = new FileInputStream(file);
+            InputStream fileInputStream;
+//            int size = 0;
+            try {
+                fileInputStream = context.getAssets().open(fileName);
+//                size = (int) fileInputStream.available();
+            } catch (IOException e) {
+                return null;
+            }
+            boolean isHeader = true;
+            String currentType = "";
+            while (true) {
+                byte[] buffer = new byte[8];
+                int bytesRead = fileInputStream.read(buffer, 0, 8);
+                if (bytesRead<=0) break;
+
+                int packetLength = dataToIntArray(buffer)[0];
+                buffer = new byte[packetLength];
+                bytesRead = fileInputStream.read(buffer, 0, packetLength);
+                if(isHeader) {
+                    String str = new String(buffer, StandardCharsets.UTF_8);
+                    JSONObject jsonObject = new JSONObject(str);
+                    currentType = jsonObject.getString("type");
+//                    Log.d("unpackPreviewImage", jsonObject.toString());
+                }
+                if (currentType.equals("PreviewImage")&&!isHeader){
+                    fileInputStream.close();
+                    return buffer;
+                }
+                isHeader = !isHeader;
+            }
+        } catch (IOException | JSONException e) {
+            return null;
+        }
+        return null;
     }
 
 }

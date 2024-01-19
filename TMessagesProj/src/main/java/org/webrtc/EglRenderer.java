@@ -214,7 +214,7 @@ public class EglRenderer implements VideoSink {
   public EglRenderer(String name, VideoFrameDrawer videoFrameDrawer) {
     this.name = name;
     this.frameDrawer = videoFrameDrawer;
-    Log.d("FLX_INJECT","eglname "+this.name);
+//    Log.d("FLX_INJECT","eglname "+this.name);
   }
 
   /**

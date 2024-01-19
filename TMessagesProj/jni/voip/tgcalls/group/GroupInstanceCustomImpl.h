@@ -32,6 +32,7 @@ public:
 
     void setIsMuted(bool isMuted);
     void setFlexatarDelay1(bool flexatarDelay);
+    void setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback);
     void setIsNoiseSuppressionEnabled(bool isNoiseSuppressionEnabled);
     void setVideoCapture(std::shared_ptr<VideoCaptureInterface> videoCapture);
     void setVideoSource(std::function<rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>()> getVideoSource);

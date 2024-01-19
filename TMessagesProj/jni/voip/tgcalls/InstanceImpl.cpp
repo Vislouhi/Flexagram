@@ -200,7 +200,11 @@ std::vector<std::string> InstanceImpl::GetVersions() {
     return result;
 }
 
-template <>
+    void InstanceImpl::setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+
+    }
+
+    template <>
 bool Register<InstanceImpl>() {
 	return Meta::RegisterOne<InstanceImpl>();
 }

@@ -17,6 +17,8 @@ import android.widget.TextView;
 
 import androidx.core.view.ViewCompat;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.ui.ActionBar.Theme;
@@ -136,6 +138,8 @@ public class GraySectionCell extends FrameLayout {
     }
 
     private int getThemedColor(int key) {
+        Log.d("resourcesProvider",""+resourcesProvider);
+        Log.d("resourcesProvider",""+Theme.getColor(key, resourcesProvider));
         return Theme.getColor(key, resourcesProvider);
     }
 }

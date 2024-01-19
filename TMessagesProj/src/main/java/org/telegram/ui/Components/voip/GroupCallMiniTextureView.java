@@ -1122,7 +1122,7 @@ public class GroupCallMiniTextureView extends FrameLayout implements GroupCallSt
                 hasVideoLocal = false;
 
                 textureView.renderer.setIsFlexatar(participant.participant.self);
-                Log.d("FLX_INJECT","setIsFlexatar" + participant.participant.self);
+//                Log.d("FLX_INJECT","setIsFlexatar" + participant.participant.self);
             }
 
             boolean skipNoStubTransition = animated && secondaryView != null && !showingInFullscreen && !hasVideoLocal;

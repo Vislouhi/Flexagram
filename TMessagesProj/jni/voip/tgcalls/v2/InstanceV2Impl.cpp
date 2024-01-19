@@ -145,6 +145,7 @@ public:
         _outgoingAudioChannel = _channelManager->CreateVoiceChannel(call, cricket::MediaConfig(), contentId, false, NativeNetworkingImpl::getDefaulCryptoOptions(), audioOptions);
         _threads->getNetworkThread()->BlockingCall([&]() {
             _outgoingAudioChannel->SetRtpTransport(rtpTransport);
+
         });
 
         std::vector<cricket::AudioCodec> codecs;
@@ -229,6 +230,18 @@ public:
                 });
             }
     }
+    void setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+        RTC_LOG(LS_INFO) << "setFlexatarAudioBufferCallback3";
+            float dataArray1[] = {3.0f, 4.0f, 5.0f};
+            callback(dataArray1,3);
+        _flexatarAudioBufferCallback=std::move(callback);
+
+        if (_outgoingAudioChannel) {
+            _threads->getWorkerThread()->BlockingCall([&]() {
+                _outgoingAudioChannel->media_channel()->SetFlexatarAudioBufferCallback(_ssrc, _flexatarAudioBufferCallback);
+            });
+        }
+    }
 
     uint32_t ssrc() const {
         return _ssrc;
@@ -266,6 +279,7 @@ private:
 
     bool _isMuted = true;
     bool _flexatarDelay = false;
+    std::function<void(float *, int)> _flexatarAudioBufferCallback;
 };
 
 namespace {
@@ -2063,14 +2077,32 @@ public:
     }
 
     void setFlexatarDelay1(bool flexatarDelay) {
-
-
             if (_outgoingAudioChannel) {
                 _outgoingAudioChannel->setFlexatarDelay1(flexatarDelay);
             }
-
-
     }
+    void setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+        RTC_LOG(LS_INFO) << "setFlexatarAudioBufferCallback2";
+        float dataArray[] = {1.0f, 2.0f, 3.0f};
+        callback(dataArray,3);
+        if (_outgoingAudioChannel) {
+            RTC_LOG(LS_INFO)
+            << "setFlexatarAudioBufferCallback2  _outgoingAudioChannel is set";
+        }else{
+            RTC_LOG(LS_INFO)
+            << "setFlexatarAudioBufferCallback3 _outgoingAudioChannel not set";
+        }
+        _flexatarAudioBufferCallback = callback;
+        if (_outgoingAudioChannel) {
+//            float dataArray1[] = {3.0f, 4.0f, 5.0f};
+//            callback(dataArray1,3);
+            _outgoingAudioChannel->setFlexatarAudioBufferCallback(std::move(callback));
+
+            // TODO flx audio
+        }
+    }
+
+
     void setMuteMicrophone(bool muteMicrophone) {
         if (_isMicrophoneMuted != muteMicrophone) {
             _isMicrophoneMuted = muteMicrophone;
@@ -2272,6 +2304,8 @@ private:
 
     absl::optional<std::string> _outgoingAudioChannelId;
     std::unique_ptr<OutgoingAudioChannel> _outgoingAudioChannel;
+    std::function<void(float *, int)> _flexatarAudioBufferCallback;
+
     bool _isMicrophoneMuted = false;
 
     std::vector<webrtc::SdpVideoFormat> _availableVideoFormats;
@@ -2356,6 +2390,13 @@ void InstanceV2Impl::setFlexatarDelay1(bool flexatarDelay) {
     });
 }
 
+void InstanceV2Impl::setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
+    RTC_LOG(LS_INFO) << "setFlexatarAudioBufferCallback1";
+    _internal->perform([callback](InstanceV2ImplInternal *internal) {
+        internal->setFlexatarAudioBufferCallback(callback);
+    });
+
+}
 void InstanceV2Impl::setIncomingVideoOutput(std::weak_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> sink) {
     _internal->perform([sink](InstanceV2ImplInternal *internal) {
         internal->setIncomingVideoOutput(sink);

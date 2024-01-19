@@ -12,6 +12,8 @@ package org.webrtc;
 
 import android.graphics.Matrix;
 import android.opengl.GLES20;
+import android.util.Log;
+
 import java.nio.ByteBuffer;
 
 import org.flexatar.FlexatarRenderer;
@@ -173,10 +175,12 @@ public class YuvConverter {
     final int viewportWidth = stride / 4;
 
     // Produce a frame buffer starting at top-left corner, not bottom-left.
+    boolean isFlexatar = preparedBuffer.getType() == TextureBuffer.Type.FLX;
     final Matrix renderMatrix = new Matrix();
 
     renderMatrix.preTranslate(0.5f, 0.5f);
-    if (FlexatarRenderer.isFlexatarRendering) {
+
+    if (isFlexatar) {
       renderMatrix.preRotate(270);
 
     }
@@ -184,17 +188,12 @@ public class YuvConverter {
     renderMatrix.preScale(1f, -1f);
     renderMatrix.preTranslate(-0.5f, -0.5f);
 
-    /*if (false) {
 
-//      renderMatrix.preRotate(frame.getRotation());
-    }else{
-      renderMatrix.preRotate(90);
-    }*/
 
     try {
       i420TextureFrameBuffer.setSize(viewportWidth, totalHeight);
 
-      if (flxDrawer == null &&  FlexatarRenderer.isFlexatarRendering){
+      if (flxDrawer == null &&  isFlexatar){
         flxDrawer = new FlxDrawer();
         flxDrawer.addHead(FlexatarRenderer.currentFlxData);
       }
@@ -205,8 +204,8 @@ public class YuvConverter {
       }else{
         flxDrawer.screenRatio = (float)  frame.getRotatedWidth() / (float) frame.getRotatedHeight();
       }*/
-
-      int flxRenderTextureId = FlexatarRenderer.isFlexatarRendering ? flxDrawer == null ? -1 : flxDrawer.drawToFrameBuffer() : -1;
+//      Log.d("FLX_INJECT","DRAW TO ENCODER");
+      int flxRenderTextureId = isFlexatar ? flxDrawer == null ? -1 : flxDrawer.drawToFrameBuffer() : -1;
 //      if (FlexatarRenderer.isFlexatarRendering){
 //        flxDrawer.drawToFB();
 //      }
