@@ -15,35 +15,33 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
+import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.style.ImageSpan;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewOutlineProvider;
-import android.view.ViewTreeObserver;
+
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
+
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
-import androidx.collection.LongSparseArray;
+
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ChatObject;
+
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.NotificationCenter;
+
 import org.telegram.messenger.R;
-import org.telegram.tgnet.ConnectionsManager;
+
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -53,27 +51,18 @@ import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
-import org.telegram.ui.Cells.CheckBoxCell;
-import org.telegram.ui.Cells.HeaderCell;
-import org.telegram.ui.Cells.LoadingCell;
-import org.telegram.ui.Cells.LocationCell;
-import org.telegram.ui.Cells.ProfileSearchCell;
-import org.telegram.ui.Cells.ShadowSectionCell;
-import org.telegram.ui.Cells.TextInfoPrivacyCell;
-import org.telegram.ui.ChatActivity;
-import org.telegram.ui.Components.CheckBox2;
-import org.telegram.ui.Components.CombinedDrawable;
+
 import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
-import org.telegram.ui.Components.ProgressButton;
+
 import org.telegram.ui.Components.RLottieImageView;
-import org.telegram.ui.Components.RecyclerListView;
+
 import org.telegram.ui.Components.voip.VoIPHelper;
-import org.telegram.ui.ContactsActivity;
+
 
 import java.util.ArrayList;
-import java.util.Iterator;
+
 
 public class FlexatarCabinetActivity extends BaseFragment  {
 
@@ -244,6 +233,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 if (id == -1) {
                     if (actionBar.isActionModeShowed()) {
                         hideActionMode(true);
+                        flexatarIconsView.removeCheckBoxes();
                     } else {
                         finishFragment();
                     }
@@ -255,10 +245,10 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             }
         });
 
-        ActionBarMenu menu = actionBar.createMenu();
-        otherItem = menu.addItem(10, R.drawable.ic_ab_other);
-        otherItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
-        otherItem.addSubItem(delete_all_calls, R.drawable.msg_delete, LocaleController.getString("DeleteAllCalls", R.string.DeleteAllCalls));
+//        ActionBarMenu menu = actionBar.createMenu();
+//        otherItem = menu.addItem(10, R.drawable.ic_ab_other);
+//        otherItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
+//        otherItem.addSubItem(delete_all_calls, R.drawable.msg_delete, LocaleController.getString("DeleteAllCalls", R.string.DeleteAllCalls));
 
         fragmentView = new FrameLayout(context);
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
@@ -278,59 +268,36 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         flexatarIconsView.setOnNewFlexatarChosenListener((l)->{
             presentFragment(new FlexatarCameraCaptureFragment());
         });
+        flexatarIconsView.setOnShowFlexatarListener((flexatarFile) -> {
 
+            FlexatarPreview flexatarPreview = new FlexatarPreview(context,flexatarFile);
+            flexatarPreview.setClickable(false);
+//            flexatarPreview.setOnClickListener((v) ->{
+//                frameLayout.removeView(v);
+//                FlexatarRenderer.animator.release();
+//            });
+            frameLayout.addView(flexatarPreview,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
+
+            /*Log.d("FLX_INJECT","flexatarFile " + flexatarFile.getName());
+            GLSurfaceView surfaceView = new GLSurfaceView(context);
+            surfaceView.setEGLContextClientVersion(2);
+            FlexatarViewRenderer renderer = new FlexatarViewRenderer();
+            renderer.drawer = new FlxDrawer();
+            surfaceView.setRenderer(renderer);
+
+            CardView cardview = new CardView(context);
+            cardview.setClickable(false);
+            cardview.setRadius(AndroidUtilities.dp(10));
+
+            cardview.addView(surfaceView,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT,Gravity.CENTER));
+
+            frameLayout.addView(cardview,LayoutHelper.createFrame(AndroidUtilities.dp(80),AndroidUtilities.dp(120),Gravity.CENTER));
+*/
+        });
         frameLayout.addView(flexatarIconsView);
 
-        if (loading) {
-            emptyView.showProgress();
-        } else {
-            emptyView.showTextView();
-        }
 
-        floatingButton = new ImageView(context);
-        floatingButton.setVisibility(View.VISIBLE);
-        floatingButton.setScaleType(ImageView.ScaleType.CENTER);
 
-        Drawable drawable = Theme.createSimpleSelectorCircleDrawable(AndroidUtilities.dp(56), Theme.getColor(Theme.key_chats_actionBackground), Theme.getColor(Theme.key_chats_actionPressedBackground));
-        if (Build.VERSION.SDK_INT < 21) {
-            Drawable shadowDrawable = context.getResources().getDrawable(R.drawable.floating_shadow).mutate();
-            shadowDrawable.setColorFilter(new PorterDuffColorFilter(0xff000000, PorterDuff.Mode.MULTIPLY));
-            CombinedDrawable combinedDrawable = new CombinedDrawable(shadowDrawable, drawable, 0, 0);
-            combinedDrawable.setIconSize(AndroidUtilities.dp(56), AndroidUtilities.dp(56));
-            drawable = combinedDrawable;
-        }
-        floatingButton.setBackgroundDrawable(drawable);
-        floatingButton.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chats_actionIcon), PorterDuff.Mode.MULTIPLY));
-        floatingButton.setImageResource(R.drawable.msg_filled_plus);
-        floatingButton.setContentDescription(LocaleController.getString("Call", R.string.Call));
-        if (Build.VERSION.SDK_INT >= 21) {
-            StateListAnimator animator = new StateListAnimator();
-            animator.addState(new int[]{android.R.attr.state_pressed}, ObjectAnimator.ofFloat(floatingButton, "translationZ", AndroidUtilities.dp(2), AndroidUtilities.dp(4)).setDuration(200));
-            animator.addState(new int[]{}, ObjectAnimator.ofFloat(floatingButton, "translationZ", AndroidUtilities.dp(4), AndroidUtilities.dp(2)).setDuration(200));
-            floatingButton.setStateListAnimator(animator);
-            floatingButton.setOutlineProvider(new ViewOutlineProvider() {
-                @SuppressLint("NewApi")
-                @Override
-                public void getOutline(View view, Outline outline) {
-                    outline.setOval(0, 0, AndroidUtilities.dp(56), AndroidUtilities.dp(56));
-                }
-            });
-        }
-//        frameLayout.addView(floatingButton, LayoutHelper.createFrame(Build.VERSION.SDK_INT >= 21 ? 56 : 60, Build.VERSION.SDK_INT >= 21 ? 56 : 60, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.BOTTOM, LocaleController.isRTL ? 14 : 0, 0, LocaleController.isRTL ? 0 : 14, 14));
-        floatingButton.setOnClickListener(v -> {
-//            presentFragment(contactsFragment);
-            /*Bundle args = new Bundle();
-            args.putBoolean("destroyAfterSelect", true);
-            args.putBoolean("returnAsResult", true);
-            args.putBoolean("onlyUsers", true);
-            args.putBoolean("allowSelf", false);
-            ContactsActivity contactsFragment = new ContactsActivity(args);
-            contactsFragment.setDelegate((user, param, activity) -> {
-                TLRPC.UserFull userFull = getMessagesController().getUserFull(user.id);
-                VoIPHelper.startCall(lastCallUser = user, false, userFull != null && userFull.video_calls_available, getParentActivity(), null, getAccountInstance());
-            });
-            presentFragment(contactsFragment);*/
-        });
         return fragmentView;
     }
 //    @Override
@@ -378,37 +345,13 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     private void showDeleteAlert(boolean all) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
-        if (all) {
-            builder.setTitle(LocaleController.getString("DeleteAllCalls", R.string.DeleteAllCalls));
-            builder.setMessage(LocaleController.getString("DeleteAllCallsText", R.string.DeleteAllCallsText));
-        } else {
-            builder.setTitle(LocaleController.getString("DeleteCalls", R.string.DeleteCalls));
-            builder.setMessage(LocaleController.getString("DeleteSelectedCallsText", R.string.DeleteSelectedCallsText));
-        }
-        final boolean[] checks = new boolean[]{false};
-        FrameLayout frameLayout = new FrameLayout(getParentActivity());
-        CheckBoxCell cell = new CheckBoxCell(getParentActivity(), 1);
-        cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-        cell.setText(LocaleController.getString("DeleteCallsForEveryone", R.string.DeleteCallsForEveryone), "", false, false);
-        cell.setPadding(LocaleController.isRTL ? AndroidUtilities.dp(8) : 0, 0, LocaleController.isRTL ? 0 : AndroidUtilities.dp(8), 0);
-        frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 8, 0, 8, 0));
-        cell.setOnClickListener(v -> {
-            CheckBoxCell cell1 = (CheckBoxCell) v;
-            checks[0] = !checks[0];
-            cell1.setChecked(checks[0], true);
-        });
-        builder.setView(frameLayout);
-        builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialogInterface, i) -> {
-            if (all) {
-//                deleteAllMessages(checks[0]);
-                calls.clear();
-                loading = false;
-                endReached = true;
-                otherItem.setVisibility(View.GONE);
 
-            } else {
-                getMessagesController().deleteMessages(new ArrayList<>(selectedIds), null, null, 0, checks[0], false);
-            }
+            builder.setTitle("Delete flexatars.");
+            builder.setMessage("Do you want to delete selected flexatars from local storage?");
+
+        builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialogInterface, i) -> {
+            flexatarIconsView.deleteSelectedFlexatars();
+            flexatarIconsView.removeCheckBoxes();
             hideActionMode(false);
         });
         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
@@ -455,7 +398,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         return false;
     }
 
-    private void createActionMode() {
+    public void createActionMode() {
         if (actionBar.actionModeIsExist(null)) {
             return;
         }
@@ -465,6 +408,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         selectedDialogsCountTextView.setTextSize(18);
         selectedDialogsCountTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
         selectedDialogsCountTextView.setTextColor(Theme.getColor(Theme.key_actionBarActionModeDefaultIcon));
+
         actionMode.addView(selectedDialogsCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, 72, 0, 0, 0));
         selectedDialogsCountTextView.setOnTouchListener((v, event) -> true);
 
@@ -473,7 +417,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
 
 
-    private void showOrUpdateActionMode() {
+    public void showOrUpdateActionMode() {
         boolean updateAnimated = false;
         if (actionBar.isActionModeShowed()) {
             if (selectedIds.isEmpty()) {
@@ -497,7 +441,10 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             animatorSet.setDuration(200);
             animatorSet.start();
         }
-        selectedDialogsCountTextView.setNumber(selectedIds.size(), updateAnimated);
+        selectedDialogsCountTextView.setNumber(flexatarIconsView.getCheckedCount(), updateAnimated);
+    }
+    public void setCheckedFlexatarsCount(){
+        selectedDialogsCountTextView.setNumber(flexatarIconsView.getCheckedCount(), true);
     }
 
     private void hideFloatingButton(boolean hide) {

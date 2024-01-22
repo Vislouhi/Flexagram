@@ -25,6 +25,7 @@ import org.telegram.ui.LaunchActivity;
 import org.webrtc.EglBase;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,19 +61,27 @@ public class FlexatarRenderer {
 
     public static void makeIcons() {
 
-        String[] flxFileNames = {"leo.p","leo1.p","auth2.p","char1t.p", "char2t.p", "char3t.p", "char4t.p", "char5t.p", "char6t.p", "char7t.p"};
+        String[] flxFileNames = {"android.p","leo.p","leo1.p","auth2.p","char1t.p", "char2t.p", "char3t.p", "char4t.p", "char5t.p", "char6t.p", "char7t.p"};
+        String[] flxFileTypes = {"user","user","user","user","builtin", "builtin", "builtin", "builtin", "builtin", "builtin", "builtin"};
+
         icons = new ArrayList<>();
-        flexatarLinks = new ArrayList<>();
-        for (String fName : flxFileNames) {
+//        flexatarLinks = new ArrayList<>();
+//        FlexatarStorageManager.clearStorage(AssetAccess.context);
+        for (int i = 0; i < flxFileNames.length; i++) {
+            String fName = flxFileNames[flxFileNames.length - i - 1];
+            String fType = flxFileTypes[flxFileNames.length - i - 1];
+//        }
+//        for (String fName : flxFileNames) {
             String flexatarLink = "flexatar/" + fName;
-            flexatarLinks.add(flexatarLink);
-//            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
+//            flexatarLinks.add(flexatarLink);
+            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
+            FlexatarStorageManager.addToStorage(AssetAccess.context,flxRaw,fType+"___"+fName.split("\\.")[0]);
 //            LengthBasedFlxUnpack packages = new LengthBasedFlxUnpack(flxRaw);
 //            FlexatarData flxData = new FlexatarData(packages);
 //            byte[] previewImageData = flxData.flxData.get("exp0").get("PreviewImage").get(0);
-            byte[] previewImageData = Data.unpackPreviewImage(AssetAccess.context,flexatarLink);
-            InputStream inputStream = new ByteArrayInputStream(previewImageData);
-            icons.add(BitmapFactory.decodeStream(inputStream));
+//            byte[] previewImageData = Data.unpackPreviewImage(AssetAccess.context,flexatarLink);
+//            InputStream inputStream = new ByteArrayInputStream(previewImageData);
+//            icons.add(BitmapFactory.decodeStream(inputStream));
         }
     }
 
@@ -87,8 +96,15 @@ public class FlexatarRenderer {
         animator = new FlexatarAnimator();
         FlexatarCommon.prepare();
         makeIcons();
-        currentFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenFirst));
-        altFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenSecond));
+        File[] flexatarFiles = FlexatarStorageManager.getFlexatarFileList(AssetAccess.context);
+        if (FlexatarUI.chosenFirst == null){
+            FlexatarUI.chosenFirst = flexatarFiles[0];
+            FlexatarUI.chosenSecond = flexatarFiles[1];
+        }
+        currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst)));
+        altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));
+//        currentFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenFirst));
+//        altFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenSecond));
     }
 
 //    public static boolean isFlexatarRendering = false;

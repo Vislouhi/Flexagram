@@ -23,6 +23,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -89,6 +90,7 @@ import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarCameraCaptureFragment;
 import org.flexatar.FlexatarCommon;
 import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlexatarStorageManager;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -342,6 +344,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 //        Flexatar load static data
         AssetAccess.context = instance;
         FlexatarRenderer.init();
+        FlexatarStorageManager.createFlexatarStorage(instance);
 
 
 

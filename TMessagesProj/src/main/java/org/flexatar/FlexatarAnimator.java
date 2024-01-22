@@ -60,7 +60,7 @@ public class FlexatarAnimator {
                     public void run() {
 
                         float tx = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[0];
-                        float ty = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[1] + 0.2f;
+                        float ty = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[1] + 0.0f;
                         float sc = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[2];
                         float rx = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[3];
                         float ry = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[4];

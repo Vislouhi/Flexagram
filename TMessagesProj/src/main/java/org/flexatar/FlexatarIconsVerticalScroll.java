@@ -14,9 +14,15 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.drawable.RoundedBitmapDrawable;
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 
 import com.google.android.exoplayer2.util.Log;
 
+import org.checkerframework.checker.units.qual.A;
+import org.flexatar.DataOps.AssetAccess;
+import org.flexatar.DataOps.FlexatarData;
+import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,11 +32,13 @@ import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.CheckBoxCell;
 import org.telegram.ui.Cells.DividerCell;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Components.LayoutHelper;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,13 +46,23 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
     private final TextCell textCellNewFlxByPhoto;
     private final LinearLayout flxIconsLayout;
     private final Context context;
-    private final BaseFragment parentFragment;
+    private final FlexatarCabinetActivity parentFragment;
     private GraySectionCell dividerCellFlexatarInProgress;
+    private List<FlexatarCell> flexatarCells;
+    private int checkedCount = 1;
+    private OnShowFlexatarListener onShowFlexatarListener;
 
+    public interface OnShowFlexatarListener{
+        void onShowFlexatar(File flexatarFile);
+    }
+
+    public void setOnShowFlexatarListener(OnShowFlexatarListener onShowFlexatarListener){
+        this.onShowFlexatarListener = onShowFlexatarListener;
+    }
     public void setOnNewFlexatarChosenListener(OnClickListener newByPhotoListener){
         textCellNewFlxByPhoto.setOnClickListener(newByPhotoListener);
     }
-    public FlexatarIconsVerticalScroll(Context context, BaseFragment parentFragment) {
+    public FlexatarIconsVerticalScroll(Context context, FlexatarCabinetActivity parentFragment) {
         super(context);
         this.parentFragment=parentFragment;
         this.context=context;
@@ -70,29 +88,58 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
         GraySectionCell dividerCell = new GraySectionCell(context);
         dividerCell.setText("Flexatars available for calls");
         flxIconsLayout.addView(dividerCell);
+        flexatarCells = new ArrayList<>();
+        File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
+        for (int i = 0; i < flexatarsInLocalStorage.length; i++) {
+            File flexatarFile = flexatarsInLocalStorage[i];
+            Bitmap iconBitmap = FlexatarStorageManager.getPreviewBitmap(flexatarFile);
+            RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
+            dr.setCornerRadius(AndroidUtilities.dp(8));
+            FlexatarCell flexatarCell = new FlexatarCell(context, dr,flexatarFile);
+            flexatarCell.setOnClickListener((v) ->{
+                FlexatarCell cell = (FlexatarCell) v;
+                if(parentFragment.getActionBar().isActionModeShowed() && !cell.isBuiltin()) {
 
-        for (int i = 0; i < FlexatarRenderer.icons.size(); i++) {
-            ImageView icnFlx = new ImageView(context);
-            icnFlx.setContentDescription("flexatar button");
-            icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
-            icnFlx.setPadding(AndroidUtilities.dp(4), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
-            Bitmap iconBitmap = FlexatarRenderer.icons.get(i);
-            icnFlx.setImageDrawable(new BitmapDrawable(context.getResources(),iconBitmap));
-            float ratio = (float)iconBitmap.getHeight()/(float)iconBitmap.getWidth();
-            float imageWidth = 150;
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth * ratio));
-            layoutParams.gravity = Gravity.CENTER;
-            icnFlx.setLayoutParams(layoutParams);
-//            icnFlx.requestLayout();
-            flxIconsLayout.addView(icnFlx);
-            int finalI = i;
-            icnFlx.setOnClickListener((v) -> {
-
-
+                    checkedCount += cell.isChecked() ? -1 : 1;
+                    cell.setChecked(!cell.isChecked(), true);
+                    parentFragment.setCheckedFlexatarsCount();
+                }else{
+                    onShowFlexatarListener.onShowFlexatar(flexatarFile);
+                }
             });
+            flexatarCell.setOnLongClickListener((v) ->{
+                if(!parentFragment.getActionBar().isActionModeShowed()) {
+                    parentFragment.showOrUpdateActionMode();
+                    parentFragment.getActionBar().showActionMode();
+                    makeCheckBoxes();
+                    FlexatarCell cell = (FlexatarCell) v;
+                    checkedCount = cell.isBuiltin() ? 0 : 1;
+                    if (!cell.isBuiltin())
+                        cell.setChecked(true, true);
+                    parentFragment.setCheckedFlexatarsCount();
+                }
+                return true;
+            });
+            flexatarCells.add(flexatarCell);
+            flxIconsLayout.addView(flexatarCell,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER,0,2,0,2));
 
         }
 
+    }
+    public int getCheckedCount(){
+
+        return checkedCount;
+    }
+    private void makeCheckBoxes(){
+        for (FlexatarCell flexatarCell:flexatarCells)
+            flexatarCell.addCheckbox();
+    }
+
+    public void removeCheckBoxes(){
+        for (FlexatarCell flexatarCell:flexatarCells) {
+            flexatarCell.removeCheckbox();
+            flexatarCell.setChecked(false,false);
+        }
     }
 
     List<FlexatarProgressCell> flexatarsInProgress = new ArrayList<>();
@@ -201,5 +248,42 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
 //        if (button != null) {
 //            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
 //        }
+    }
+
+    public void deleteSelectedFlexatars() {
+        List<FlexatarCell> newFlexatarCells = new ArrayList<>();
+        for(FlexatarCell flexatarCell : flexatarCells){
+            if (flexatarCell.isChecked()) {
+                flexatarCell.deleteFlexatarFile();
+                flxIconsLayout.removeView(flexatarCell);
+
+            }else{
+                newFlexatarCells.add(flexatarCell);
+            }
+        }
+        flexatarCells = newFlexatarCells;
+        File[] flexatarFiles = FlexatarStorageManager.getFlexatarFileList(context);
+        boolean found = false;
+        for (File f : flexatarFiles){
+            if (f.getName().equals(FlexatarUI.chosenFirst.getName())){
+                found = true;
+            }
+        }
+        if (!found){
+            FlexatarUI.chosenFirst = FlexatarUI.chosenSecond.getName().equals(flexatarFiles[0].getName()) ? flexatarFiles[1] : flexatarFiles[0];
+            FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst)));
+
+        }
+        found = false;
+        for (File f : flexatarFiles){
+            if (f.getName().equals(FlexatarUI.chosenSecond.getName())){
+                found = true;
+            }
+        }
+        if (!found){
+            FlexatarUI.chosenSecond = FlexatarUI.chosenFirst.getName().equals(flexatarFiles[0].getName()) ? flexatarFiles[1] : flexatarFiles[0];
+            FlexatarRenderer.altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));
+
+        }
     }
 }

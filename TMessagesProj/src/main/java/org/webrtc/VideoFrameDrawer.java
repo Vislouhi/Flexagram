@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 
 import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlxDrawer;
+import org.flexatar.FlxDrawerNew;
 
 import java.nio.ByteBuffer;
 
@@ -29,7 +30,7 @@ import java.nio.ByteBuffer;
  */
 public class VideoFrameDrawer {
   public static final String TAG = "VideoFrameDrawer";
-  private FlxDrawer flxDrawer;
+  private FlxDrawerNew flxDrawer;
 
   /**
    * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb
@@ -290,16 +291,15 @@ public class VideoFrameDrawer {
     }
 
     if (isTextureFrame) {
-//      if (fromEncoder){
-//        Log.d("FLX_RNDMAT", frame.getRotatedWidth() +" " + frame.getRotatedHeight());
-//      }
+
       lastI420Frame = null;
       int flexatarTextureId = -1;
       if ( isFlexatar) {
 //      if (frame.getIsFlexatar() && isFlexatar) {
         if (flxDrawer == null) {
-          flxDrawer = new FlxDrawer();
-          flxDrawer.addHead(FlexatarRenderer.currentFlxData);
+          flxDrawer = new FlxDrawerNew();
+          flxDrawer.setIsStaticControlBind(true);
+
         }
         if (fromEncoder) {
           flxDrawer.screenRatio = (float) renderWidth / (float) renderHeight;

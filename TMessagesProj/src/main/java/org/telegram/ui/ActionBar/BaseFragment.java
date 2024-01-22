@@ -685,6 +685,30 @@ public abstract class BaseFragment {
         }
         return null;
     }
+    public Dialog showDialog(Dialog dialog, boolean allowInTransition,boolean canceledOnTouchOutside, final Dialog.OnDismissListener onDismissListener) {
+        if (dialog == null || parentLayout == null || parentLayout.isTransitionAnimationInProgress() || parentLayout.isSwipeInProgress() || !allowInTransition && parentLayout.checkTransitionAnimation()) {
+            return null;
+        }
+
+        try {
+            visibleDialog = dialog;
+            visibleDialog.setCanceledOnTouchOutside(canceledOnTouchOutside);
+            visibleDialog.setOnDismissListener(dialog1 -> {
+                if (onDismissListener != null) {
+                    onDismissListener.onDismiss(dialog1);
+                }
+                onDialogDismiss((Dialog) dialog1);
+                if (dialog1 == visibleDialog) {
+                    visibleDialog = null;
+                }
+            });
+            visibleDialog.show();
+            return visibleDialog;
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return null;
+    }
 
     protected void onDialogDismiss(Dialog dialog) {
 

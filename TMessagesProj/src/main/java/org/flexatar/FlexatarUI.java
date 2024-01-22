@@ -25,13 +25,19 @@ import android.widget.TextView;
 
 
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.drawable.RoundedBitmapDrawable;
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 
+import org.flexatar.DataOps.FlexatarData;
+import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SeekBarView;
 import org.telegram.ui.Components.voip.HideEmojiTextView;
 import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
+
+import java.io.File;
 
 
 public class FlexatarUI {
@@ -68,8 +74,14 @@ public class FlexatarUI {
             return img2;
         }
         public void updateIcons(){
-            img1.setImageDrawable(new BitmapDrawable(this.getContext().getResources(), FlexatarRenderer.icons.get(chosenFirst)));
-            img2.setImageDrawable(new BitmapDrawable(this.getContext().getResources(), FlexatarRenderer.icons.get(chosenSecond)));
+            Bitmap iconBitmap1 = FlexatarStorageManager.getPreviewBitmap(chosenFirst);
+            RoundedBitmapDrawable dr1 = RoundedBitmapDrawableFactory.create(getContext().getResources(), iconBitmap1);
+            dr1.setCornerRadius(AndroidUtilities.dp(8));
+            img1.setImageDrawable(dr1);
+            Bitmap iconBitmap2 = FlexatarStorageManager.getPreviewBitmap(chosenSecond);
+            RoundedBitmapDrawable dr2 = RoundedBitmapDrawableFactory.create(getContext().getResources(), iconBitmap2);
+            dr2.setCornerRadius(AndroidUtilities.dp(8));
+            img2.setImageDrawable(dr2);
         }
 
         public void setOnCloseListener(Runnable onClose){
@@ -95,8 +107,8 @@ public class FlexatarUI {
     }
 
     private static String chosenEffect = "No";
-    public static int chosenFirst = 0;
-    static int chosenSecond = 1;
+    public static File chosenFirst;
+    public static File chosenSecond;
 
 
     public static PopupWindow panelPopup(Context context,View location){
@@ -141,14 +153,20 @@ public class FlexatarUI {
         LinearLayout flxIconsLayout = new LinearLayout(context);
         flxIconsLayout.setOrientation(LinearLayout.HORIZONTAL);
 
-        for (int i = 0; i < FlexatarRenderer.icons.size(); i++) {
+        File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
+        for (int i = 0; i < flexatarsInLocalStorage.length; i++) {
+            File flexatarFile = flexatarsInLocalStorage[i];
+            Bitmap iconBitmap = FlexatarStorageManager.getPreviewBitmap(flexatarFile);
+            RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
+            dr.setCornerRadius(AndroidUtilities.dp(8));
+
             ImageView icnFlx = new ImageView(context);
             icnFlx.setContentDescription("flexatar button");
             icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
             icnFlx.setPadding(AndroidUtilities.dp(4), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
 //            icnFlx.setImageResource(R.drawable.calls_flexatar);
-            Bitmap iconBitmap = FlexatarRenderer.icons.get(i);
-            icnFlx.setImageDrawable(new BitmapDrawable(context.getResources(),iconBitmap));
+//            Bitmap iconBitmap = FlexatarRenderer.icons.get(i);
+            icnFlx.setImageDrawable(dr);
             float ratio = (float)iconBitmap.getHeight()/(float)iconBitmap.getWidth();
             float imageWidth = 70;
             icnFlx.setLayoutParams(new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth*ratio)));
@@ -157,11 +175,14 @@ public class FlexatarUI {
             int finalI = i;
             icnFlx.setOnClickListener((v) -> {
 
-                if (FlexatarUI.chosenFirst == finalI) return;
+                if (FlexatarUI.chosenFirst.getName().equals(flexatarFile.getName())) return;
                 FlexatarUI.chosenSecond = FlexatarUI.chosenFirst;
-                FlexatarUI.chosenFirst = finalI;
+                FlexatarUI.chosenFirst = flexatarFile;
                 FlexatarRenderer.altFlxData = FlexatarRenderer.currentFlxData;
-                FlexatarRenderer.currentFlxData = FlexatarRenderer.loadFlexatarByLink(FlexatarRenderer.flexatarLinks.get(FlexatarUI.chosenFirst));
+                byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarFile);
+//                FlexatarData flexatarData =
+                FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(flxBytes));
+//                FlexatarRenderer.currentFlxData = FlexatarRenderer.loadFlexatarByLink(FlexatarRenderer.flexatarLinks.get(FlexatarUI.chosenFirst));
 
                 if (chosenEffect.equals("Morph")){
                     FlexatarRenderer.effectsMixWeight = 0;
@@ -221,8 +242,11 @@ public class FlexatarUI {
             icnFlx.setContentDescription("flexatar button");
             icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
             icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
-            Bitmap iconBitmap = FlexatarRenderer.icons.get(chosenFirst);
-            icnFlx.setImageDrawable(new BitmapDrawable(context.getResources(), iconBitmap));
+
+            Bitmap iconBitmap = FlexatarStorageManager.getPreviewBitmap(chosenFirst);
+            RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
+            dr.setCornerRadius(AndroidUtilities.dp(8));
+            icnFlx.setImageDrawable(dr);
             float ratio = (float)iconBitmap.getHeight()/(float)iconBitmap.getWidth();
             float imageWidth = 40;
             icnFlx.setLayoutParams(new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth*ratio)));
@@ -234,8 +258,10 @@ public class FlexatarUI {
             icnFlx.setContentDescription("flexatar button");
             icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
             icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
-            Bitmap iconBitmap = FlexatarRenderer.icons.get(chosenSecond);
-            icnFlx.setImageDrawable(new BitmapDrawable(context.getResources(), iconBitmap));
+            Bitmap iconBitmap = FlexatarStorageManager.getPreviewBitmap(chosenSecond);
+            RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
+            dr.setCornerRadius(AndroidUtilities.dp(8));
+            icnFlx.setImageDrawable(dr);
             float ratio = (float)iconBitmap.getHeight()/(float)iconBitmap.getWidth();
             float imageWidth = 40;
             icnFlx.setLayoutParams(new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth*ratio)));

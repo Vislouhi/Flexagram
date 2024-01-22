@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.Set;
 
 public class ValueStorage {
-    private static final String PREF_STORAGE_NAME = "FlexatarStorage";
+    static final String PREF_STORAGE_NAME = "FlexatarStorage";
     private static final String DONT_SHOW_FLEXATAR_PHOTO_INSTRUCTIONS = "flexatarPhotoInst";
     private static final String MAKE_FLEXATAR_TICKETS = "flexatarTickets";
     private static Object ticketMutex = new Object();

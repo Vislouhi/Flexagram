@@ -1,17 +1,22 @@
 package org.flexatar;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
@@ -76,6 +82,13 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
     private ImageView faceHintView;
     private View overlayView;
     private int imageRotation = 0;
+    private int initialOrientationMode;
+    private View orangeBarView;
+    private FrameLayout frameLayout;
+
+    private float barTopMargin = 0f;
+    private float barBottomMargin = 0f;
+
 
     public void finishPage(){
         lifecycleRegistry.setCurrentState(Lifecycle.State.DESTROYED);
@@ -83,18 +96,68 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         finishFragment();
     }
     private void makeUI(){
-        FrameLayout frameLayout = (FrameLayout) fragmentView;
+        frameLayout = (FrameLayout) fragmentView;
         frameLayout.setBackgroundColor(Color.BLACK);
 //        frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         mPreviewView = new PreviewView(context);
+        mPreviewView.setScaleType(PreviewView.ScaleType.FIT_CENTER);
+        orangeBarView = new View(context);
+        mPreviewView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(
+                    View view, int left, int top, int right, int bottom,
+                    int oldLeft, int oldTop, int oldRight, int oldBottom) {
+
+                int width = right - left;
+                int height = bottom - top;
+
+                Log.d("FLX_INJECT","New width: " + width + ", New height: " + height +" left " +left + " top " + top);
+                if (width != 0 && height != 0){
+//                    Log.d("FLX_INJECT","add view bar");
+                    frameLayout.post(new Runnable() {
+                        @Override
+                        public void run() {
+//                            orangeBarView.setLayoutParams(new ViewGroup.LayoutParams(
+//                                    width,
+//                                    height));
+                            int width1 = (int)(0.3f * (float)width);
+                            int height1 = (int)(0.02f * (float)width);
+
+                            barTopMargin = 2f/3f - (float)height1/(float)height/2f;
+                            barBottomMargin = 2f/3f + (float)height1/(float)height/2f;
+
+                            int left1 = left + width/2 - width1/2;
+                            int top1 = top + (int)(barTopMargin * (float)height);
+                            int h = (int)(barBottomMargin * (float)height)-(int)(barTopMargin * (float)height);
+
+                            frameLayout.removeView(orangeBarView);
+                            FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(
+                                    width1,
+                                    h);
+                            p.gravity = Gravity.TOP | Gravity.LEFT;
+                            p.setMargins(left1,top1,0,0);
+                            orangeBarView.setBackgroundColor(Color.YELLOW);
+                            orangeBarView.setEnabled(false);
+                            orangeBarView.setVisibility(View.INVISIBLE);
+                            frameLayout.addView(orangeBarView,p);
+                        }
+                    });
+                }
+            }
+        });
+        /*{
+            @Override
+            protected void onLayout(boolean changed, int left, int top, int right, int bottom){
+                super.onLayout(changed,left,top,right,bottom);
+//                Log.d()
+            }
+        };*/
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT);
         layoutParams.setMargins(AndroidUtilities.dp(12),AndroidUtilities.dp(12),AndroidUtilities.dp(12),AndroidUtilities.dp(12));
         mPreviewView.setLayoutParams(layoutParams);
 
         frameLayout.addView(mPreviewView);
-        lifecycleRegistry = new LifecycleRegistry(this);
-        lifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
-        lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+
 
         takePhotoButton = new ImageView(context);
         takePhotoButton.setImageDrawable(context.getResources().getDrawable(R.drawable.camera_btn));
@@ -133,12 +196,48 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         overlayView.setBackgroundColor(Color.WHITE);
         overlayView.setAlpha(0.0f);
         overlayView.setEnabled(false);
-//        overlayView.setVisibility(View.GONE);
+
+
         frameLayout.addView(overlayView);
+       /* mPreviewView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+
+                mPreviewView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+
+               frameLayout.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        int width = mPreviewView.getWidth();
+                        int height = mPreviewView.getHeight();
+
+                        int[] locationOnScreen = new int[2];
+                        mPreviewView.getLocationOnScreen(locationOnScreen);
+
+                        int xOnScreen = locationOnScreen[0];
+                        int yOnScreen = locationOnScreen[1];
+                        Log.d("FLX_INJECT","xOnScreen "+xOnScreen+" yOnScreen "+yOnScreen + " width " +width +" height "+height);
+
+                    }
+                });
+//                return true;
+            }
+        });*/
+
+//        overlayView.setVisibility(View.GONE);
+
         showStartUpAlert(false);
     }
+    @SuppressLint("SourceLockedOrientationActivity")
     @Override
     public View createView(Context context) {
+        lifecycleRegistry = new LifecycleRegistry(this);
+        lifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
+        lifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+
+        initialOrientationMode = LaunchActivity.instance.getRequestedOrientation();
+        LaunchActivity.instance.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         this.context=context;
         actionBar.setBackButtonDrawable(new BackDrawable(false));
         actionBar.setAllowOverlayTitle(true);
@@ -164,6 +263,13 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
         return fragmentView;
     }
+    @Override
+    public void onFragmentDestroy() {
+
+        super.onFragmentDestroy();
+        LaunchActivity.instance.setRequestedOrientation(initialOrientationMode);
+
+    }
     private void startCamera() {
 
         final ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(context);
@@ -187,6 +293,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
 
         Preview preview = new Preview.Builder()
+                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                 .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
@@ -199,6 +306,10 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), new ImageAnalysis.Analyzer() {
             @Override
             public void analyze(@NonNull ImageProxy image) {
+                if (needTakePhoto) {
+                    needTakePhoto = false;
+                    Log.d("FLX_INJECT", "ImageProxy width " + image.getWidth() + " height " + image.getHeight());
+                }
                 image.close();
             }
         });
@@ -208,7 +319,10 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
 
         imageCapture = builder
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .setTargetRotation(AndroidUtilities.findActivity(context).getWindowManager().getDefaultDisplay().getRotation())
+                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+
                 .build();
 
         preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
@@ -220,12 +334,16 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
     private int hintCounter = 0;
     private List<byte[]> imagesCollector = new ArrayList<>();
+    private boolean needTakePhoto = false;
+    private boolean isMouthDone = false;
     private void takePhoto() {
+        needTakePhoto = true;
 //        findViewById(R.id.photo_frame).setVisibility(View.VISIBLE);
 //        findViewById(R.id.image_capture_button).setEnabled(false);
         overlayView.setEnabled(true);
         overlayView.animate().alpha(0.5f).setDuration(250).start();
-
+        orangeBarView.setVisibility(View.INVISIBLE);
+//        orangeBarView.setVisibility(View.VISIBLE);
 //        overlayView.setVisibility(View.VISIBLE);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -254,6 +372,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
                         ByteArrayInputStream inputStream = new ByteArrayInputStream(imgAsBytes);
                         Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                        Log.d("FLX_INJECT", "photo width " + bitmap.getWidth() + " height " + bitmap.getHeight());
 
                         int w = bitmap.getWidth();
                         int h = bitmap.getHeight();
@@ -271,6 +390,9 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream);
                         FlexatarCameraCaptureFragment.this.imagesCollector.add(byteArrayOutputStream.toByteArray());
 
+//                        int pos = (int) ((float)bitmap.getHeight() * barTopMargin);
+//                        Bitmap bitmap1 = drawRectangleOverBitmap(bitmap,0,pos,bitmap.getWidth(),pos+20);
+//                        faceHintView.setImageBitmap(bitmap1);
 //                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(FlxCaptureActivity.this, "Image Saved successfully", Toast.LENGTH_SHORT).show());
 
                     } catch (Exception e) {
@@ -280,7 +402,12 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
                 }
                 if (hintCounter == faceHints.size()) {
-                    sendImagesToMakeFlexatar();
+                    if (isMouthDone) {
+                        sendImagesToMakeFlexatar();
+                    }else{
+                        showStartMouthCaptureAlert();
+                    }
+//
                 }
             }
 
@@ -342,16 +469,45 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
         AlertDialog alertDialog = builder.create();
         showDialog(alertDialog);
-        TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
-        if (button != null) {
-            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
-        }
+
+    }
+
+    public void showStartMouthCaptureAlert(){
+
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+
+
+        builder.setTitle("Make mouth (optional)");
+        builder.setMessage("1. Bite the orange bar taking first picture.\n" +
+                "2. Keep mouth opened. \n" +
+                "3. Take photos turning your head as assistant shows.");
+
+
+
+
+            builder.setPositiveButton("Continue", (dialogInterface, i) -> {
+                hintCounter = 0;
+                faceHintView.setImageResource(faceHints.get(hintCounter));
+                isMouthDone = true;
+                orangeBarView.setVisibility(View.VISIBLE);
+            });
+
+            builder.setNegativeButton("Skip", (dialogInterface, i) -> {
+                sendImagesToMakeFlexatar();
+            });
+
+        AlertDialog alertDialog = builder.create();
+        showDialog(alertDialog,true,false,null);
+
     }
 
     public void sendImagesToMakeFlexatar(){
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("rotation", imageRotation);
+            jsonObject.put("teeth_top", barTopMargin);
+            jsonObject.put("teeth_bottom", barBottomMargin);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -359,7 +515,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 //        Data sendData = new Data(imagesCollector.get(0));
         Data sendData = new Data(jsonObject.toString());
         sendData = sendData.encodeLengthHeader().add(sendData);
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < imagesCollector.size(); i++) {
             Data cData = new Data(imagesCollector.get(i));
             cData = cData.encodeLengthHeader().add(cData);
             sendData = sendData.add(cData);
@@ -368,6 +524,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         ValueStorage.addTicket(context, UUID.randomUUID().toString());
 
         JSONArray tickets = ValueStorage.getTickets(context);
+        FlexatarStorageManager.dataToFile(sendData.value,FlexatarStorageManager.makeFileInFlexatarStorage(context,"input.bin"));
         Log.d("FLX_INJECT", "addTicket : " + tickets + " " + tickets.length());
 //        ExecutorService executor = Executors.newSingleThreadExecutor();
 //        Data finalSendData = sendData;
@@ -375,5 +532,24 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 //                    FlexatarServerAccess.makeFlexatarRequest(finalSendData.value);
 //                });
         finishPage();
+    }
+    public static Bitmap drawRectangleOverBitmap(Bitmap originalBitmap, int left, int top, int right, int bottom) {
+        // Create a copy of the original bitmap to avoid modifying it directly
+        Bitmap bitmapWithRectangle = Bitmap.createBitmap(originalBitmap.getWidth(), originalBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+
+        // Create a Canvas to draw on the new bitmap
+        Canvas canvas = new Canvas(bitmapWithRectangle);
+        canvas.drawBitmap(originalBitmap, 0, 0, null);
+
+        // Create a Paint for drawing the rectangle
+        Paint paint = new Paint();
+        paint.setColor(Color.RED); // Set the color of the rectangle
+        paint.setStyle(Paint.Style.STROKE); // Set the style to stroke (outline)
+        paint.setStrokeWidth(5); // Set the width of the stroke
+
+        // Draw the rectangle on the Canvas
+        canvas.drawRect(left, top, right, bottom, paint);
+
+        return bitmapWithRectangle;
     }
 }

@@ -41,7 +41,7 @@ public class FlxDrawer {
     private ShaderProgram headProgramDual;
     private ShaderProgram mouthProgramAlt;
 
-    private static Object flexatarLoadMutex = new Object();
+    private static final Object flexatarLoadMutex = new Object();
 
     private static class GlBuffers{
         private VBO[] mouthBuffers = new VBO[5];
@@ -91,6 +91,11 @@ public class FlxDrawer {
         }
     }
     public FlxDrawer(){
+        android.util.Log.d("FLX_INJECT","flx drawer init");
+    }
+    private FlexatarData fixedFlexatar;
+    public FlxDrawer(FlexatarData fixedFlexatar){
+        this.fixedFlexatar = fixedFlexatar;
         android.util.Log.d("FLX_INJECT","flx drawer init");
     }
     private void makeViewModelMatrix(){
@@ -242,6 +247,10 @@ public class FlxDrawer {
 
             }
         }
+    }
+
+    private void loadNewFlexatar(){
+
     }
     public void addHead(FlexatarData flx){
         headQueue.add(flx);
