@@ -9,7 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.RectF;
-import android.graphics.drawable.BitmapDrawable;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -74,11 +73,11 @@ public class FlexatarUI {
             return img2;
         }
         public void updateIcons(){
-            Bitmap iconBitmap1 = FlexatarStorageManager.getPreviewBitmap(chosenFirst);
+            Bitmap iconBitmap1 = FlexatarStorageManager.getFlexatarMetaData(chosenFirst).previewImage;
             RoundedBitmapDrawable dr1 = RoundedBitmapDrawableFactory.create(getContext().getResources(), iconBitmap1);
             dr1.setCornerRadius(AndroidUtilities.dp(8));
             img1.setImageDrawable(dr1);
-            Bitmap iconBitmap2 = FlexatarStorageManager.getPreviewBitmap(chosenSecond);
+            Bitmap iconBitmap2 = FlexatarStorageManager.getFlexatarMetaData(chosenSecond).previewImage;;
             RoundedBitmapDrawable dr2 = RoundedBitmapDrawableFactory.create(getContext().getResources(), iconBitmap2);
             dr2.setCornerRadius(AndroidUtilities.dp(8));
             img2.setImageDrawable(dr2);
@@ -131,13 +130,17 @@ public class FlexatarUI {
         Point size = new Point();
         display.getSize(size);
         int width = Math.min(size.x, size.y);
-        popupWindow.setWidth(width-AndroidUtilities.dp(24));
+
+        int windowWidth = width - AndroidUtilities.dp(24);
+        int xOffset = AndroidUtilities.dp(12);
+
+        popupWindow.setWidth(windowWidth);
         popupView.setOnCloseListener(() -> {
             popupWindow.dismiss();
             Log.d("FLX_INJECT","popup dismissed");
         });
-
-        popupWindow.showAtLocation(location, Gravity.CENTER, 0, 0);
+        popupWindow.showAsDropDown(location, xOffset, AndroidUtilities.dp(48));
+//        popupWindow.showAtLocation(location, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, AndroidUtilities.dp(46));
 
 
 
@@ -156,7 +159,7 @@ public class FlexatarUI {
         File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
         for (int i = 0; i < flexatarsInLocalStorage.length; i++) {
             File flexatarFile = flexatarsInLocalStorage[i];
-            Bitmap iconBitmap = FlexatarStorageManager.getPreviewBitmap(flexatarFile);
+            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(flexatarFile).previewImage;;
             RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
             dr.setCornerRadius(AndroidUtilities.dp(8));
 
@@ -243,7 +246,7 @@ public class FlexatarUI {
             icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
             icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
 
-            Bitmap iconBitmap = FlexatarStorageManager.getPreviewBitmap(chosenFirst);
+            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(chosenFirst).previewImage;;
             RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
             dr.setCornerRadius(AndroidUtilities.dp(8));
             icnFlx.setImageDrawable(dr);
@@ -258,7 +261,7 @@ public class FlexatarUI {
             icnFlx.setContentDescription("flexatar button");
             icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
             icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
-            Bitmap iconBitmap = FlexatarStorageManager.getPreviewBitmap(chosenSecond);
+            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(chosenSecond).previewImage;;
             RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
             dr.setCornerRadius(AndroidUtilities.dp(8));
             icnFlx.setImageDrawable(dr);

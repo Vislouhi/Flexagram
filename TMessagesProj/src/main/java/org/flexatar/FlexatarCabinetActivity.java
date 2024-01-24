@@ -67,7 +67,7 @@ import java.util.ArrayList;
 public class FlexatarCabinetActivity extends BaseFragment  {
 
 //    private FlexatarCabinetActivity.ListAdapter listViewAdapter;
-    private FlexatarCabinetActivity.EmptyTextProgressView emptyView;
+//    private FlexatarCabinetActivity.EmptyTextProgressView emptyView;
     private LinearLayoutManager layoutManager;
 //    private RecyclerListView listView;
     private ImageView floatingButton;
@@ -111,15 +111,16 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     private static final int delete_all_calls = 1;
     private static final int delete = 2;
     private FlexatarIconsVerticalScroll flexatarIconsView;
+    private FlexatarPreview flexatarPreview;
 
-    private static class EmptyTextProgressView extends FrameLayout {
+/*    private static class EmptyTextProgressView extends FrameLayout {
 
         private TextView emptyTextView1;
         private TextView emptyTextView2;
         private View progressView;
         private RLottieImageView imageView;
 
-        public EmptyTextProgressView(Context context) {
+        *//*public EmptyTextProgressView(Context context) {
             this(context, null);
         }
 
@@ -166,7 +167,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             emptyTextView2.setAlpha(0f);
 
             setOnTouchListener((v, event) -> true);
-        }
+        }*//*
 
         public void showProgress() {
             imageView.animate().alpha(0f).setDuration(150).start();
@@ -187,7 +188,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         public boolean hasOverlappingRendering() {
             return false;
         }
-    }
+    }*/
 
 
 
@@ -223,6 +224,9 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 //        redDrawable.setBounds(0, 0, redDrawable.getIntrinsicWidth(), redDrawable.getIntrinsicHeight());
 //        redDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_fill_RedNormal), PorterDuff.Mode.MULTIPLY));
 //        iconMissed = new ImageSpan(redDrawable, ImageSpan.ALIGN_BOTTOM);
+        fragmentView = new FrameLayout(context);
+        fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+        FrameLayout frameLayout = (FrameLayout) fragmentView;
 
         actionBar.setBackButtonDrawable(new BackDrawable(false));
         actionBar.setAllowOverlayTitle(true);
@@ -231,11 +235,15 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             @Override
             public void onItemClick(int id) {
                 if (id == -1) {
-                    if (actionBar.isActionModeShowed()) {
-                        hideActionMode(true);
-                        flexatarIconsView.removeCheckBoxes();
+                    if (flexatarPreview != null && frameLayout.indexOfChild(flexatarPreview) != -1) {
+                        frameLayout.removeView(flexatarPreview);
                     } else {
-                        finishFragment();
+                        if (actionBar.isActionModeShowed()) {
+                            hideActionMode(true);
+                            flexatarIconsView.removeCheckBoxes();
+                        } else {
+                            finishFragment();
+                        }
                     }
                 } else if (id == delete_all_calls) {
                     showDeleteAlert(true);
@@ -250,16 +258,14 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 //        otherItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
 //        otherItem.addSubItem(delete_all_calls, R.drawable.msg_delete, LocaleController.getString("DeleteAllCalls", R.string.DeleteAllCalls));
 
-        fragmentView = new FrameLayout(context);
-        fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
-        FrameLayout frameLayout = (FrameLayout) fragmentView;
+
 
         flickerLoadingView = new FlickerLoadingView(context);
         flickerLoadingView.setViewType(FlickerLoadingView.CALL_LOG_TYPE);
         flickerLoadingView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         flickerLoadingView.showDate(false);
-        emptyView = new FlexatarCabinetActivity.EmptyTextProgressView(context, flickerLoadingView);
-        frameLayout.addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+//        emptyView = new FlexatarCabinetActivity.EmptyTextProgressView(context, flickerLoadingView);
+//        frameLayout.addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         flexatarIconsView = new FlexatarIconsVerticalScroll(context,this);
         flexatarIconsView.setLayoutParams(new LinearLayout.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
@@ -270,29 +276,12 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         });
         flexatarIconsView.setOnShowFlexatarListener((flexatarFile) -> {
 
-            FlexatarPreview flexatarPreview = new FlexatarPreview(context,flexatarFile);
+            flexatarPreview = new FlexatarPreview(context,flexatarFile,this);
             flexatarPreview.setClickable(false);
-//            flexatarPreview.setOnClickListener((v) ->{
-//                frameLayout.removeView(v);
-//                FlexatarRenderer.animator.release();
-//            });
+
             frameLayout.addView(flexatarPreview,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
 
-            /*Log.d("FLX_INJECT","flexatarFile " + flexatarFile.getName());
-            GLSurfaceView surfaceView = new GLSurfaceView(context);
-            surfaceView.setEGLContextClientVersion(2);
-            FlexatarViewRenderer renderer = new FlexatarViewRenderer();
-            renderer.drawer = new FlxDrawer();
-            surfaceView.setRenderer(renderer);
 
-            CardView cardview = new CardView(context);
-            cardview.setClickable(false);
-            cardview.setRadius(AndroidUtilities.dp(10));
-
-            cardview.addView(surfaceView,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT,Gravity.CENTER));
-
-            frameLayout.addView(cardview,LayoutHelper.createFrame(AndroidUtilities.dp(80),AndroidUtilities.dp(120),Gravity.CENTER));
-*/
         });
         frameLayout.addView(flexatarIconsView);
 
@@ -300,11 +289,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
         return fragmentView;
     }
-//    @Override
-//    public void onResume() {
-//
-//        super.onResume();
-//    }
+
     private void showPlusFlexatarAlert(boolean all) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
         builder.setTitle("Choose");
@@ -527,8 +512,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_actionBarDefaultSelector));
 
 
-        themeDescriptions.add(new ThemeDescription(emptyView, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{FlexatarCabinetActivity.EmptyTextProgressView.class}, new String[]{"emptyTextView1"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
-        themeDescriptions.add(new ThemeDescription(emptyView, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{FlexatarCabinetActivity.EmptyTextProgressView.class}, new String[]{"emptyTextView2"}, null, null, null, Theme.key_emptyListPlaceholder));
+//        themeDescriptions.add(new ThemeDescription(emptyView, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{FlexatarCabinetActivity.EmptyTextProgressView.class}, new String[]{"emptyTextView1"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
+//        themeDescriptions.add(new ThemeDescription(emptyView, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{FlexatarCabinetActivity.EmptyTextProgressView.class}, new String[]{"emptyTextView2"}, null, null, null, Theme.key_emptyListPlaceholder));
 
 
         themeDescriptions.add(new ThemeDescription(floatingButton, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_chats_actionIcon));

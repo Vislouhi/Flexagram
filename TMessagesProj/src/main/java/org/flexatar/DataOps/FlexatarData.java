@@ -371,4 +371,40 @@ public class FlexatarData {
 
     }
 
+    public static byte[] removeMouth(LengthBasedFlxUnpack dataLB){
+        String currentPartName = "exp0";
+        Data flxData = null;
+        for (int i = 0; i < dataLB.hPacks.size(); i++) {
+            String headerName = dataLB.hPacks.get(i);
+            byte[] headerBody = dataLB.hPacksByte.get(i);
+            byte[] body = dataLB.bPacks.get(i);
+
+            if (headerName.equals("Delimiter")) {
+                String str = new String(body, StandardCharsets.UTF_8);
+                try {
+                    JSONObject jsonObject = new JSONObject(str);
+                    currentPartName = jsonObject.getString("type");
+
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (!currentPartName.equals("mouth") && !currentPartName.equals("end")) {
+                if (flxData == null) {
+                    flxData = new Data(headerBody);
+                    flxData = flxData.encodeLengthHeader().add(flxData);
+
+                }else {
+                    Data header = new Data(headerBody);
+                    header = header.encodeLengthHeader().add(header);
+                    flxData = flxData.add(header);
+                }
+                Data bodyData = new Data(body);
+                bodyData = bodyData.encodeLengthHeader().add(bodyData);
+                flxData = flxData.add(bodyData);
+            }
+        }
+        return flxData.value;
+    }
+
 }

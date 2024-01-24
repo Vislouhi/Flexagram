@@ -1,39 +1,26 @@
 package org.flexatar;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.TextView;
 
-import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.RoundedBitmapDrawable;
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 
 import com.google.android.exoplayer2.util.Log;
 
-import org.checkerframework.checker.units.qual.A;
-import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.AlertDialog;
-import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Cells.CheckBoxCell;
-import org.telegram.ui.Cells.DividerCell;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Components.LayoutHelper;
@@ -92,10 +79,9 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
         File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
         for (int i = 0; i < flexatarsInLocalStorage.length; i++) {
             File flexatarFile = flexatarsInLocalStorage[i];
-            Bitmap iconBitmap = FlexatarStorageManager.getPreviewBitmap(flexatarFile);
-            RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
-            dr.setCornerRadius(AndroidUtilities.dp(8));
-            FlexatarCell flexatarCell = new FlexatarCell(context, dr,flexatarFile);
+
+
+            FlexatarCell flexatarCell = new FlexatarCell(context,flexatarFile);
             flexatarCell.setOnClickListener((v) ->{
                 FlexatarCell cell = (FlexatarCell) v;
                 if(parentFragment.getActionBar().isActionModeShowed() && !cell.isBuiltin()) {

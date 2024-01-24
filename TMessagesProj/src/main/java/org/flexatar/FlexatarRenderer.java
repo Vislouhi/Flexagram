@@ -61,12 +61,12 @@ public class FlexatarRenderer {
 
     public static void makeIcons() {
 
-        String[] flxFileNames = {"android.p","leo.p","leo1.p","auth2.p","char1t.p", "char2t.p", "char3t.p", "char4t.p", "char5t.p", "char6t.p", "char7t.p"};
-        String[] flxFileTypes = {"user","user","user","user","builtin", "builtin", "builtin", "builtin", "builtin", "builtin", "builtin"};
+        String[] flxFileNames = {"android1.p","android.p","leo.p","leo1.p","auth2.p","char1t.p", "char2t.p", "char3t.p", "char4t.p", "char5t.p", "char6t.p", "char7t.p"};
+        String[] flxFileTypes = {"user","user","user","user","user","builtin", "builtin", "builtin", "builtin", "builtin", "builtin", "builtin"};
 
         icons = new ArrayList<>();
 //        flexatarLinks = new ArrayList<>();
-//        FlexatarStorageManager.clearStorage(AssetAccess.context);
+        FlexatarStorageManager.clearStorage(AssetAccess.context);
         for (int i = 0; i < flxFileNames.length; i++) {
             String fName = flxFileNames[flxFileNames.length - i - 1];
             String fType = flxFileTypes[flxFileNames.length - i - 1];

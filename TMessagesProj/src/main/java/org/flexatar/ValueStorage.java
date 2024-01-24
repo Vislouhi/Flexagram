@@ -8,27 +8,33 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
 
 public class ValueStorage {
     static final String PREF_STORAGE_NAME = "FlexatarStorage";
     private static final String DONT_SHOW_FLEXATAR_PHOTO_INSTRUCTIONS = "flexatarPhotoInst";
+    private static final String DONT_SHOW_MOUTH_PHOTO_INSTRUCTIONS = "mouthPhotoInst";
     private static final String MAKE_FLEXATAR_TICKETS = "flexatarTickets";
     private static Object ticketMutex = new Object();
     public static boolean checkIfDontShowFlexatarPhotoInstructions(Context context){
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
         return sharedPreferences.getBoolean(DONT_SHOW_FLEXATAR_PHOTO_INSTRUCTIONS, false);
     }
-    public static void setfDontShowFlexatarPhotoInstructions(Context context){
+    public static boolean checkIfDontShowMouthPhotoInstructions(Context context){
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(DONT_SHOW_MOUTH_PHOTO_INSTRUCTIONS, false);
+    }
+    public static void setDontShowFlexatarPhotoInstructions(Context context){
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean(DONT_SHOW_FLEXATAR_PHOTO_INSTRUCTIONS, true);
+        editor.apply();
+    }
+    public static void setDontShowMouthPhotoInstructions(Context context){
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(DONT_SHOW_MOUTH_PHOTO_INSTRUCTIONS, true);
         editor.apply();
     }
     public static synchronized void clearAllTickets(Context context){

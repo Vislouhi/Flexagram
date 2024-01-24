@@ -20,6 +20,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 
 public class FlexatarStorageManager {
@@ -101,13 +103,23 @@ public class FlexatarStorageManager {
         }
 
     }
-    public static Bitmap getPreviewBitmap( File file){
+    public static class FlexatarMetaData {
+        public Bitmap previewImage;
+        public String date;
+        public String name;
+
+    }
+    public static FlexatarMetaData getFlexatarMetaData(File file){
         try {
+            boolean isBuiltin = file.getName().startsWith("builtin");
             FileInputStream fileInputStream = new FileInputStream(file);
 
 
             boolean isHeader = true;
             String currentType = "";
+            String name = "";
+            String date = "";
+
             while (true) {
                 byte[] buffer = new byte[8];
                 int bytesRead = fileInputStream.read(buffer, 0, 8);
@@ -122,10 +134,30 @@ public class FlexatarStorageManager {
                     currentType = jsonObject.getString("type");
 //                    Log.d("unpackPreviewImage", jsonObject.toString());
                 }
+                if (currentType.equals("Info")&&!isHeader){
+                    String str = new String(buffer, StandardCharsets.UTF_8);
+                    JSONObject jsonObject = new JSONObject(str);
+                    name = jsonObject.has("name") ? jsonObject.getString("name") : "No Name";
+
+                    String noDate = "";
+                    if (!isBuiltin) {
+                        LocalDateTime currentDateTime = LocalDateTime.now();
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                        noDate = currentDateTime.format(formatter);
+                    }
+                    date = jsonObject.has("date") ? jsonObject.getString("date") : noDate;
+                    Log.d("FLX_INJECT",jsonObject.toString());
+                }
                 if (currentType.equals("PreviewImage")&&!isHeader){
                     fileInputStream.close();
-
-                    return BitmapFactory.decodeStream(new ByteArrayInputStream(buffer));
+                    Bitmap bitmapOrig = BitmapFactory.decodeStream(new ByteArrayInputStream(buffer));
+                    Bitmap bitmap = Bitmap.createScaledBitmap(bitmapOrig, (int)(bitmapOrig.getWidth()*0.5f), (int)(bitmapOrig.getHeight()*0.5f), false);
+                    FlexatarMetaData flexatarMetaData = new FlexatarMetaData();
+                    flexatarMetaData.previewImage = bitmap;
+                    flexatarMetaData.name = name;
+                    flexatarMetaData.date = date;
+                    bitmapOrig.recycle();
+                    return flexatarMetaData;
                 }
                 isHeader = !isHeader;
             }
@@ -163,7 +195,10 @@ public class FlexatarStorageManager {
 
         File rootDir = context.getFilesDir();
         File flexatarStorageFolder = new File(rootDir,FLEXATAR_STORAGE_FOLDER);
-        for(File f : flexatarStorageFolder.listFiles()) f.delete();
+        for(File f : flexatarStorageFolder.listFiles()) {
+            if (f.getName().startsWith("user") || f.getName().startsWith("builtin"))
+                f.delete();
+        }
     }
 
     public static byte[] dataFromFile(File trgFile){
@@ -187,9 +222,13 @@ public class FlexatarStorageManager {
     }
 
     public static void dataToFile( byte[] byteArray, File file) {
+        if(file.exists()){
+            file.delete();
+        }
         try (FileOutputStream fos = new FileOutputStream(file)) {
             // Write the byte array to the file
             fos.write(byteArray);
+            fos.close();
             Log.d("FLX_INJECT","Byte array written to file successfully.");
         } catch (IOException e) {
 //            System.err.println("Error writing byte array to file: " + e.getMessage());

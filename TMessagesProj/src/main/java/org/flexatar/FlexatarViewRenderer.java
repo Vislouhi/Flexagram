@@ -3,6 +3,8 @@ package org.flexatar;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
+import com.google.android.exoplayer2.util.Log;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -10,13 +12,14 @@ public class FlexatarViewRenderer implements GLSurfaceView.Renderer{
     public FlxDrawerNew drawer;
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-
+        Log.d("FLX_INJECT","onSurfaceCreated ");
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl10, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
         drawer.screenRatio = (float) width/ (float)height;
+        Log.d("FLX_INJECT","drawer.screenRatio "+drawer.screenRatio);
     }
 
     @Override

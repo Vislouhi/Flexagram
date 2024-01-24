@@ -114,6 +114,7 @@ public class FlxDrawerNew {
 
     private void initCommonBuffers() {
         if (commonBuffers == null) {
+            FlexatarRenderer.speechState = new float[]{0, 0, 0.05f, 0, 0};
             commonBuffers = FlexatarCommon.bufferFactory();
             makeViewModelMatrix();
         }

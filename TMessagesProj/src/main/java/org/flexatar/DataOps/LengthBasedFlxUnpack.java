@@ -11,6 +11,7 @@ import java.util.List;
 public class LengthBasedFlxUnpack {
 
     public List<String> hPacks = new ArrayList<>();
+    public List<byte[]> hPacksByte = new ArrayList<>();
     public List<byte[]> bPacks = new ArrayList<>();
     public LengthBasedFlxUnpack(byte[] data){
         int offset = 0;
@@ -24,6 +25,7 @@ public class LengthBasedFlxUnpack {
             if (cntr%2 == 1){
                 bPacks.add(body);
             }else{
+                hPacksByte.add(body);
                 String str = new String(body, StandardCharsets.UTF_8);
                 try {
                     JSONObject jsonObject = new JSONObject(str);

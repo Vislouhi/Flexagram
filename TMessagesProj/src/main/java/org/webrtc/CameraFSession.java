@@ -33,6 +33,7 @@ public class CameraFSession  implements CameraSession{
 //    private static final Histogram camera2ResolutionHistogram = Histogram.createEnumeration(
 //            "WebRTC.Android.Camera2.Resolution", CameraEnumerationAndroid.COMMON_RESOLUTIONS.size());
     static String TAG = "CameraFSession";
+    private final OrientationHelper orientationHelper;
 
     private static enum SessionState { RUNNING, STOPPED }
     private final Handler cameraThreadHandler;
@@ -217,7 +218,7 @@ public class CameraFSession  implements CameraSession{
                                 (TextureBufferImpl) frame.getBuffer(),
                                 /* mirror= */ false,
                                 /* rotation= */ 180),
-                                /* rotation= */ 180, frame.getTimestampNs());
+                                /* rotation= */ getFrameOrientation(), frame.getTimestampNs());
                 events.onFrameCaptured(CameraFSession.this, modifiedFrame);
                 modifiedFrame.release();
             });
@@ -271,12 +272,13 @@ public class CameraFSession  implements CameraSession{
 //        this.width = width;
 //        this.height = height;
 //        this.framerate = framerate;
-//        this.orientationHelper = new OrientationHelper();
+        this.orientationHelper = new OrientationHelper();
 
         Logging.d(TAG, "Opening camera " + cameraId);
         events.onCameraOpening();
         CameraStateCallback cameraStateCallback = new CameraStateCallback();
         cameraStateCallback.onOpened(null);
+        orientationHelper.start();
 
 
 //        start();
@@ -298,7 +300,9 @@ public class CameraFSession  implements CameraSession{
         checkIsOnCameraThread();
 
         surfaceTextureHelper.stopListening();
-
+        if (orientationHelper != null) {
+            orientationHelper.stop();
+        }
         Logging.d(TAG, "Stop done");
     }
     private void checkIsOnCameraThread() {
@@ -318,5 +322,11 @@ public class CameraFSession  implements CameraSession{
         } else {
             events.onCameraError(this, error);
         }
+    }
+    private int getFrameOrientation() {
+        int rotation = orientationHelper.getOrientation();
+        OrientationHelper.cameraOrientation = rotation;
+
+        return  (180 + rotation) % 360;
     }
 }
