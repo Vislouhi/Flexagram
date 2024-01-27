@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--    flexatar locale-->
+    <string name="FlexatarMenuName">Flexatar</string>
+    <!--    telegram locale-->
     <string name="AppName">Flexatar تيليجرام</string>
     <string name="AppNameBeta">Flexatar Telegram</string>
     <string name="LanguageName">العربية</string>

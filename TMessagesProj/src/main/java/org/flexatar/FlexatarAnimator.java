@@ -97,8 +97,11 @@ public class FlexatarAnimator {
             }
         }
     }
+    public static final Object mandalaTriangleMutex = new Object();
     public InterUnit getInterUnit(FlexatarData flxData){
-        return InterUnit.makeInterUnit(point,flxData.mandalaTriangles,flxData.mandalaFaces,flxData.mandalaBorder);
+        synchronized (mandalaTriangleMutex) {
+            return InterUnit.makeInterUnit(point, flxData.mandalaTriangles, flxData.mandalaFaces, flxData.mandalaBorder);
+        }
     }
     public void release(){
         synchronized (mutexObject) {

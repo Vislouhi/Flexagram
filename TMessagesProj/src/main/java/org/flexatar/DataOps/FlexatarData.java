@@ -7,6 +7,7 @@ import android.opengl.Matrix;
 import android.util.Log;
 
 import org.flexatar.AnimationUnit;
+import org.flexatar.FlexatarAnimator;
 import org.flexatar.FlexatarCommon;
 import org.flexatar.GLM;
 import org.flexatar.InterUnit;
@@ -21,13 +22,16 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class FlexatarData {
-    private final LengtBasedDict mouthData;
-    public final float mouthRatio;
+    private LengtBasedDict mouthData;
+    public float mouthRatio;
+    private  String name;
+    private  String date;
     public Map<String, Map<String, List<byte[]>>> flxData = new HashMap<>();
     public int mouthVtxCount;
     public ByteBuffer mouthUvBB;
@@ -36,9 +40,14 @@ public class FlexatarData {
     public List<byte[]> mouthBlendshapes;
     public ByteBuffer[] mouthBlendshapeBB;
     public float[][][] lipAnchors;
+    public float[][][] lipAnchorsModified;
     public float[] lipSize;
     public float[] teethGap;
     public Bitmap[] mouthBitmaps;
+    private float[] trianglesFloat;
+    private int[] mandalaBorderIdx;
+    private float[] lipSizeModified;
+    public float headRotationAmplitude = 1;
 
     public FlexatarData(LengthBasedFlxUnpack dataLB){
         String currentPartName = "exp0";
@@ -112,8 +121,21 @@ public class FlexatarData {
         repackMandalaBlendshape();
         makeMandalaVtx();
         prepareGlBuffers();
-    }
 
+        String str = new String(this.flxData.get("exp0").get("Info").get(0), StandardCharsets.UTF_8);
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = new JSONObject(str);
+            this.name = jsonObject.has("name") ? jsonObject.getString("name") : "No Name";
+            this.date = jsonObject.has("date") ? jsonObject.getString("date") : "";
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    public String getName(){
+        return name;
+    }
     public ByteBuffer[] headBB = new ByteBuffer[5];
     public Bitmap[] headBitmaps = new Bitmap[5];
     public List<List<float[]>> mouthPoints;
@@ -166,7 +188,16 @@ public class FlexatarData {
                 }
             }
         }
+        lipAnchorsModified = new float[5][2][2];
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 2; j++) {
+                for (int k = 0; k <2; k++) {
+                    lipAnchorsModified[i][j][k] = lipAnchorsFlat[i*2*2 + j*2 + k];
+                }
+            }
+        }
         lipSize = Data.dataToFloatArray(mouthData.dict.get("lip_size"));
+        lipSizeModified = Arrays.copyOf(lipSize, lipSize.length);
         float[] teethGapRaw = Data.dataToFloatArray(mouthData.dict.get("teeth_gap"));
         teethGap = new float[2];
         teethGap[0] = 1f - teethGapRaw[1];
@@ -230,7 +261,7 @@ public class FlexatarData {
     public float[][][] mandalaBorder;
     public int[] mandalaFaces;
     private void makeMandalaVtx(){
-        float[] trianglesFloat = Data.dataToFloatArray(this.flxData.get("exp0").get("mandalaCheckpoints").get(0));
+        trianglesFloat = Data.dataToFloatArray(this.flxData.get("exp0").get("mandalaCheckpoints").get(0));
         int[] mandalaFaces = Data.dataToIntArray(this.flxData.get("exp0").get("mandalaFaces").get(0));
         this.mandalaFaces = mandalaFaces;
         int vtxInFace = 3;
@@ -246,7 +277,7 @@ public class FlexatarData {
 //
             }
         }
-        int[] mandalaBorderIdx = Data.dataToIntArray(this.flxData.get("exp0").get("mandalaBorder").get(0));
+        mandalaBorderIdx = Data.dataToIntArray(this.flxData.get("exp0").get("mandalaBorder").get(0));
         mandalaBorder = new float[mandalaBorderIdx.length][2][vtxSize];
         for (int i = 0; i < mandalaBorderIdx.length - 1; i++) {
             for (int j = 0; j < vtxSize; j++) {
@@ -278,6 +309,48 @@ public class FlexatarData {
         return false;
     }
 
+    public void setHeadRotationAmplitude(float amplitude) {
+        headRotationAmplitude = amplitude;
+        int vtxInFace = 3;
+        int facesCount = mandalaFaces.length/vtxInFace;
+        int vtxSize = 2;
+        synchronized (FlexatarAnimator.mandalaTriangleMutex) {
+            float [] newTriangleFloat = new float[trianglesFloat.length];
+            for (int j = 0; j < 5; j++) {
+                for (int k = 0; k < vtxSize; k++) {
+//                    Log.d("FLX_INJECT" , "triangle points" + trianglesFloat[j*vtxSize + k]);
+                    newTriangleFloat[j*vtxSize + k] = (trianglesFloat[j*vtxSize + k] - (k==0 ? 0.5f : 0.45f))*amplitude + (k==0 ? 0.5f : 0.45f);
+
+
+                }
+//
+            }
+
+
+            for (int i = 0; i < facesCount; i++) {
+                for (int j = 0; j < vtxInFace; j++) {
+                    for (int k = 0; k < vtxSize; k++) {
+                        mandalaTriangles[i][j][k] = newTriangleFloat[mandalaFaces[i*vtxInFace+j]*vtxSize+k];
+                    }
+//
+                }
+            }
+            mandalaBorder = new float[mandalaBorderIdx.length][2][vtxSize];
+            for (int i = 0; i < mandalaBorderIdx.length - 1; i++) {
+                for (int j = 0; j < vtxSize; j++) {
+                    mandalaBorder[i][0][j] = newTriangleFloat[mandalaBorderIdx[i]*2+j];
+                    mandalaBorder[i][1][j] = newTriangleFloat[mandalaBorderIdx[i+1]*2+j];
+                }
+
+            }
+            int lastIdx = mandalaBorderIdx.length - 1;
+            for (int j = 0; j < vtxSize; j++) {
+                mandalaBorder[lastIdx][0][j] = newTriangleFloat[mandalaBorderIdx[lastIdx] * 2 + j];
+                mandalaBorder[lastIdx][1][j] = newTriangleFloat[mandalaBorderIdx[0] * 2 + j];
+            }
+        }
+    }
+
     public static class MouthPivots {
         public float[] topPivot = {0f,0f};
         public float[] botPivot = {0f,0f};
@@ -295,6 +368,43 @@ public class FlexatarData {
         }
     }
 
+    public float topXCorrectionMouth = 0f;
+    public float topYCorrectionMouth = 0f;
+    public float botXCorrectionMouth = 0f;
+    public float botYCorrectionMouth = 0f;
+    public float sizeCorrectionMouth = 0f;
+
+    public void correctMouthSize(float v){
+        sizeCorrectionMouth = v;
+        for (int i = 0; i < 5; i++) {
+            lipSizeModified[i] = lipSize[i] + v;
+        }
+    }
+    public void correctTopHorizontalLipAnchor(float v){
+        topXCorrectionMouth = v;
+        for (int i = 0; i < 5; i++) {
+            lipAnchorsModified[i][0][0] = lipAnchors[i][0][0] + v;
+        }
+    }
+    public void correctTopVerticalLipAnchor(float v){
+        topYCorrectionMouth = v;
+        for (int i = 0; i < 5; i++) {
+            lipAnchorsModified[i][0][1] = lipAnchors[i][0][1] + v;
+        }
+    }
+
+    public void correctBotHorizontalLipAnchor(float v){
+        botXCorrectionMouth = v;
+        for (int i = 0; i < 5; i++) {
+            lipAnchorsModified[i][1][0] = lipAnchors[i][1][0] + v;
+        }
+    }
+    public void correctBotVerticalLipAnchor(float v){
+        botYCorrectionMouth = v;
+        for (int i = 0; i < 5; i++) {
+            lipAnchorsModified[i][1][1] = lipAnchors[i][1][1] + v;
+        }
+    }
     public MouthPivots calcMouthPivots(InterUnit interUnit){
         return calcMouthPivots(this, interUnit);
         /*float[] topPivot = {0f,0f};
@@ -322,9 +432,9 @@ public class FlexatarData {
         for (int i = 0; i < 3; i++) {
             int idx = interUnit.idx[i];
             float w = interUnit.weights[i];
-            topPivot = GLM.addv2(GLM.mulSv2(flxData.lipAnchors[idx][0],w),topPivot);
-            botPivot = GLM.addv2(GLM.mulSv2(flxData.lipAnchors[idx][1],w),botPivot);
-            lipSizeLoc += w * flxData.lipSize[idx];
+            topPivot = GLM.addv2(GLM.mulSv2(flxData.lipAnchorsModified[idx][0],w),topPivot);
+            botPivot = GLM.addv2(GLM.mulSv2(flxData.lipAnchorsModified[idx][1],w),botPivot);
+            lipSizeLoc += w * flxData.lipSizeModified[idx];
         }
         return new MouthPivots(topPivot,botPivot,lipSizeLoc);
     }

@@ -3301,7 +3301,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	}
 	public void switchToFlexatar(boolean isFlexatar){
 		if (captureDevice[CAPTURE_DEVICE_CAMERA]!=0 ) {
-			tgVoip[CAPTURE_DEVICE_CAMERA].clearVideoCapturer();
+//			tgVoip[CAPTURE_DEVICE_CAMERA].clearVideoCapturer();
 			NativeInstance.destroyVideoCapturer(captureDevice[CAPTURE_DEVICE_CAMERA]);
 			captureDevice[CAPTURE_DEVICE_CAMERA] = 0;
 			videoState[CAPTURE_DEVICE_CAMERA] = Instance.VIDEO_STATE_INACTIVE;

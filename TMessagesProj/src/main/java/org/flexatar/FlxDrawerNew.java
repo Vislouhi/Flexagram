@@ -36,6 +36,7 @@ public class FlxDrawerNew {
     private int[] renderFrameBuffer;
     public int[] renderTexture;
     private float[] speechState = {0,0,0.05f,0,0};
+
     public void setSpeechState(float[] speechState){
         this.speechState=speechState;
     }
@@ -49,6 +50,14 @@ public class FlxDrawerNew {
     }
     public void setMixWeight(float mixWeight){
         this.mixWeight=mixWeight;
+    }
+
+    public void setHeadRotationAmplitude(float amplitude) {
+        flexatarData.setHeadRotationAmplitude(amplitude);
+    }
+
+    public FlexatarData getFlexatarData() {
+        return flexatarData;
     }
 
 
@@ -405,7 +414,7 @@ public class FlxDrawerNew {
         mouthProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, keyVtxList.get(3)[0], keyVtxList.get(2)[1]);
         mouthProgram.uniformMatrix4fv("zRotMatrix", zRotMatrixInv);
         mouthProgram.uniform1f("alpha", alpha);
-        mouthProgram.uniform4f(PARAMETER_SET_2, mp.topPivot[0], mp.botPivot[1], mp.botPivot[0], mp.botPivot[1]);
+        mouthProgram.uniform4f(PARAMETER_SET_2, mp.botPivot[0], mp.botPivot[1], mp.botPivot[0], mp.botPivot[1]);
 
         mouthProgram.uniform1i("isTop", 0);
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, flexatarData.mouthIdxCount, GLES20.GL_UNSIGNED_SHORT, 0);

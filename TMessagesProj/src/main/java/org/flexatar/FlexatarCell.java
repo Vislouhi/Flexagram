@@ -33,11 +33,19 @@ public class FlexatarCell extends RelativeLayout {
     private final float imageWidth;
     private final File flexatarFile;
     private final String flexatarType;
+    private final TextView nameTextView;
+    private final FlexatarStorageManager.FlexatarMetaData flexatarMetaData;
     private CheckBoxCell checkBoxCell;
 
+    public File getFlexatarFile(){
+        return flexatarFile;
+    }
+    public void setName(String name){
+        nameTextView.setText(name);
+    }
     public FlexatarCell(@NonNull Context context,  File flexatarFile) {
         super(context);
-        FlexatarStorageManager.FlexatarMetaData flexatarMetaData = FlexatarStorageManager.getFlexatarMetaData(flexatarFile);
+        flexatarMetaData = FlexatarStorageManager.getFlexatarMetaData(flexatarFile,true);
         Bitmap iconBitmap = flexatarMetaData.previewImage;
         RoundedBitmapDrawable drawable = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
 
@@ -85,7 +93,7 @@ public class FlexatarCell extends RelativeLayout {
         textContenLayoutParams.setMargins(0,0,0,0);
         addView(textContentLayout,textContenLayoutParams);
 
-        TextView nameTextView = new TextView(context);
+        nameTextView = new TextView(context);
         nameTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
         nameTextView.setText(flexatarMetaData.name);
         nameTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
@@ -125,5 +133,9 @@ public class FlexatarCell extends RelativeLayout {
 
     public void deleteFlexatarFile() {
         FlexatarStorageManager.deleteFromStorage(getContext(),flexatarFile);
+    }
+
+    public FlexatarStorageManager.FlexatarMetaData getMetaData() {
+        return  flexatarMetaData;
     }
 }

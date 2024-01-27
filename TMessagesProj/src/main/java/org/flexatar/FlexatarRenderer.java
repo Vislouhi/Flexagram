@@ -14,11 +14,16 @@ import android.media.audiofx.AcousticEchoCanceler;
 import androidx.core.app.ActivityCompat;
 
 import com.google.android.exoplayer2.util.Log;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.Data;
 import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.voip.NativeInstance;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.ui.LaunchActivity;
@@ -29,9 +34,11 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -93,6 +100,25 @@ public class FlexatarRenderer {
     }
 
     public static void init() {
+        FirebaseApp.initializeApp(ApplicationLoader.applicationContext);
+        FirebaseCrashlytics.getInstance().setUserId("user123456789");
+        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false);
+
+        /*JSONObject flexatarLocaleData = LocaleDicts.getLocaleData(ApplicationLoader.applicationContext, "uk");
+        Log.d("FLX_INJECT",flexatarLocaleData.toString());
+        Iterator<String> keys = flexatarLocaleData.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            try {
+                String value = flexatarLocaleData.getString(key);
+                Log.d("FLX_INJECT","key " +key);
+                Log.d("FLX_INJECT","value " +value);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+
+//            writer.write(String.format("<string name=\"%1$s\">%2$s</string>\n", key, value));
+        }*/
         animator = new FlexatarAnimator();
         FlexatarCommon.prepare();
         makeIcons();
@@ -101,6 +127,8 @@ public class FlexatarRenderer {
             FlexatarUI.chosenFirst = flexatarFiles[0];
             FlexatarUI.chosenSecond = flexatarFiles[1];
         }
+        Log.d("FLX_INJECT","FlexatarUI.chosenFirst" + FlexatarUI.chosenFirst);
+        Log.d("FLX_INJECT","FlexatarUI.chosenFirst.length " + FlexatarUI.chosenFirst.length());
         currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst)));
         altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));
 //        currentFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenFirst));

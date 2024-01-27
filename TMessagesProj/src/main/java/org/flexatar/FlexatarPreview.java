@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -22,14 +23,23 @@ import org.checkerframework.checker.units.qual.A;
 import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.TextCell;
+import org.telegram.ui.Cells.TextCheckCell;
+import org.telegram.ui.Cells.TextDetailCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SeekBarView;
 import org.telegram.ui.Components.voip.HideEmojiTextView;
 import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FlexatarPreview extends FrameLayout {
     private final FlxDrawerNew drawer;
@@ -37,6 +47,8 @@ public class FlexatarPreview extends FrameLayout {
     private final LengthBasedFlxUnpack unpackedFlexatar;
     private final BaseFragment parentFragment;
     private final byte[] flxData;
+    private final FlexatarData flexatarData;
+    private final FlexatarCell flexatarCell;
 
     private boolean isMouthOpened = false;
     private LinearLayout layout;
@@ -46,17 +58,25 @@ public class FlexatarPreview extends FrameLayout {
     private SeekBarView seekBar;
     private ImageView saveButton;
     private boolean isCalibrateMode = false;
-
-    public FlexatarPreview(@NonNull Context context, File flexatarFile, BaseFragment parentFragment) {
+    private Theme.ResourcesProvider resourcesProvider;
+    private ScrollView controlsScrollView;
+    private String newName = null;
+    private boolean[] mouthCalibrationChanged = {false,false,false,false,false};
+    private boolean isHeadAmplitudeChanged;
+    public FlexatarCell getFlexatarCell(){
+        return flexatarCell;
+    }
+    public FlexatarPreview(@NonNull Context context, FlexatarCell flexatarCell, BaseFragment parentFragment) {
         super(context);
+        this.flexatarCell=flexatarCell;
         this.parentFragment = parentFragment;
         int currentOrientation = getResources().getConfiguration().orientation;
 
-        byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarFile);
+        byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarCell.getFlexatarFile());
         flxData = flxBytes;
-        Log.d("FLX_INJECT",""+flxBytes);
+//        Log.d("FLX_INJECT",""+flxBytes);
         unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
-        FlexatarData flexatarData = new FlexatarData(unpackedFlexatar);
+        flexatarData = new FlexatarData(unpackedFlexatar);
 //        FlexatarRenderer.currentFlxData = flexatarData;
         View overlayView = new View(context);
 //        overlayView.setLayoutParams(new ViewGroup.LayoutParams(
@@ -119,180 +139,174 @@ public class FlexatarPreview extends FrameLayout {
         cardVieParameters.topMargin = isPortrait ? AndroidUtilities.dp(24) : 0;
         cardVieParameters.leftMargin = isPortrait ? 0:AndroidUtilities.dp(24) ;
         cardview.setLayoutParams(cardVieParameters);
+        if (controlsScrollView == null) return;
+        LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, isPortrait ? 12 : 0, 0, 0);
+        controlsScrollView.setLayoutParams(layoutParams);
 
     }
     private void makeLayout(int orientation){
         boolean isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT;
+        makeCardviewParameters(orientation);
+        LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, isPortrait ? 12 : 0, 0, 0);
 
         layout = new LinearLayout(getContext());
         layout.setOrientation(isPortrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
         addView(layout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
-
-        makeCardviewParameters(orientation);
         layout.addView(cardview);
-
+        controlsScrollView = new ScrollView(getContext());
         LinearLayout controlsLayout = new LinearLayout(getContext());
         controlsLayout.setOrientation(LinearLayout.VERTICAL);
-        layout.addView(controlsLayout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
+        controlsLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        controlsScrollView.addView(controlsLayout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
+        layout.addView(controlsScrollView,layoutParams);
 
-        LinearLayout mouthActionsButtons = new LinearLayout(getContext());
-        mouthActionsButtons.setOrientation(LinearLayout.HORIZONTAL);
-        controlsLayout.addView(mouthActionsButtons,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,26,0,0));
+        resourcesProvider = parentFragment.getResourceProvider();
 
-        LinearLayout.LayoutParams mouthActionsButtonsLayoutParams = new LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1
-        );
-        mouthActionsButtonsLayoutParams.leftMargin = AndroidUtilities.dp(3);
-        mouthActionsButtonsLayoutParams.rightMargin = AndroidUtilities.dp(3);
-
-        TextView calibrateMouthButton = new TextView(getContext());
-        calibrateMouthButton.setText("Calibrate mouth");
-        calibrateMouthButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-        calibrateMouthButton.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        calibrateMouthButton.setGravity(Gravity.CENTER);
-//        calibrateMouthButton.setPadding(AndroidUtilities.dp(24),AndroidUtilities.dp(4),AndroidUtilities.dp(24),AndroidUtilities.dp(4));
-        calibrateMouthButton.setTextColor(Color.WHITE);
-        mouthActionsButtons.addView(calibrateMouthButton,mouthActionsButtonsLayoutParams);
-        calibrateMouthButton.setOnClickListener((v)->{
-            isCalibrateMode = !isCalibrateMode;
-            toggleMouthEdit(isCalibrateMode);
-            calibrateMouthButton.setText(isCalibrateMode ? "Close mouth" : "Calibrate mouth");
-            if (isCalibrateMode)
-                openMouth();
-            else
-                closeMouth();
+        TextDetailCell changeNameCell = new TextDetailCell(getContext(),resourcesProvider, true);
+        changeNameCell.setContentDescriptionValueFirst(true);
+        changeNameCell.setTextAndValue(flexatarData.getName(), LocaleController.getString("FlexatarName", R.string.ViewInstructions), true);
+        changeNameCell.valueTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText2));
+        controlsLayout.addView(changeNameCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
+        changeNameCell.setOnClickListener(v->{
+            parentFragment.showDialog(
+                AlertDialogs.askFlexatarNameDialog(getContext(),name -> {
+                    if (name.isEmpty()) name = "No Name";
+                    newName = name;
+                    changeNameCell.setTextAndValue(name, LocaleController.getString("FlexatarName", R.string.ViewInstructions), true);
+                })
+            );
         });
 
-        TextView makeMouthButton = new TextView(getContext());
-        makeMouthButton.setText("Make mouth");
-        makeMouthButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-        makeMouthButton.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        makeMouthButton.setGravity(Gravity.CENTER);
-//        makeMouthButton.setPadding(AndroidUtilities.dp(24),AndroidUtilities.dp(4),AndroidUtilities.dp(24),AndroidUtilities.dp(4));
-        makeMouthButton.setTextColor(Color.WHITE);
-
-        mouthActionsButtons.addView(makeMouthButton,mouthActionsButtonsLayoutParams);
-        mouthActionsButtons.setOnClickListener((v) ->{
+        TextCell makeMouthByPhotoCell = new TextCell(getContext());
+        makeMouthByPhotoCell.setTextAndIcon(LocaleController.getString("MouthByPhoto", R.string.MouthByPhoto), R.drawable.msg_addphoto, true);
+        controlsLayout.addView(makeMouthByPhotoCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
+        makeMouthByPhotoCell.setOnClickListener(v->{
             ((FrameLayout)getParent()).removeView(this);
-//            this.parentFragment.presentFragment(new FlexatarCameraCaptureFragment(flxData));
             this.parentFragment.presentFragment(new FlexatarCameraCaptureFragment(FlexatarData.removeMouth(unpackedFlexatar)));
 
         });
 
+        FlexatarCalibrationCell headAmplitudeCell = new FlexatarCalibrationCell(getContext(), LocaleController.getString("HeadRotationAmp", R.string.HeadRotationAmp));
+        controlsLayout.addView(headAmplitudeCell.getHeaderCell(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
+        controlsLayout.addView(headAmplitudeCell.getSeekBar(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,38,Gravity.TOP|Gravity.CENTER_HORIZONTAL,54,12,54,0));
+        headAmplitudeCell.setProgress(1f);
+        headAmplitudeCell.setOnDragListener((progress) -> {
+            Log.d("FLX_INJECT", "head amp progress" + (progress ));
+            isHeadAmplitudeChanged = true;
+            drawer.setHeadRotationAmplitude((3f -  2f * progress));
+        });
 
-        parameterToEditLayout = new LinearLayout(getContext());
-        String[] buttonNames = {"Top X", "Top Y","Bottom X","Bottom Y"};
-        LinearLayout.LayoutParams switchEditButtonLayoutParams = new LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1
-        );
-        switchEditButtonLayoutParams.leftMargin = AndroidUtilities.dp(3);
-        switchEditButtonLayoutParams.rightMargin = AndroidUtilities.dp(3);
-        selectedEdit = 0;
-        TextView[] selects = new TextView[buttonNames.length];
-        for (int i = 0; i < buttonNames.length; i++) {
+        List<View> mouthCalibrationViews = new ArrayList<>();
+        TextCheckCell isMouthCalibrationOnCell = new TextCheckCell(getContext());
+        isMouthCalibrationOnCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        isMouthCalibrationOnCell.setTextAndValueAndCheck(LocaleController.getString("CalibrateTeeth", R.string.CalibrateTeeth), LocaleController.getString("CalibrateTeethInfo", R.string.CalibrateTeethInfo), false, true, true);
+        controlsLayout.addView(isMouthCalibrationOnCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
+        isMouthCalibrationOnCell.setOnClickListener((v)->{
+            isMouthCalibrationOnCell.setChecked(!isMouthCalibrationOnCell.isChecked());
+            if (isMouthCalibrationOnCell.isChecked()){
+                openMouth();
+                for(View view : mouthCalibrationViews){
+                    view.setVisibility(View.VISIBLE);
+                    view.setEnabled(true);
+                }
+            }else{
+                closeMouth();
+                for(View view : mouthCalibrationViews){
+                    view.setVisibility(View.INVISIBLE);
+                    view.setEnabled(false);
+                }
+            }
+        });
 
-            String name = buttonNames[i];
+        TextCheckCell isFlexatarSpeakingCell = new TextCheckCell(getContext());
+        mouthCalibrationViews.add(isFlexatarSpeakingCell);
+        isFlexatarSpeakingCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        isFlexatarSpeakingCell.setTextAndValueAndCheck(LocaleController.getString("ToggleSpeechAnimation", R.string.ToggleSpeechAnimation), LocaleController.getString("ToggleSpeechAnimationInfo", R.string.ToggleSpeechAnimationInfo), false, true, true);
+        controlsLayout.addView(isFlexatarSpeakingCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
+        isFlexatarSpeakingCell.setOnClickListener((v)->{
+            isFlexatarSpeakingCell.setChecked(!isFlexatarSpeakingCell.isChecked());
+            if (isFlexatarSpeakingCell.isChecked()){
+//                openMouth();
+            }else{
+//                closeMouth();
+            }
+        });
 
-            TextView tv = new TextView(getContext());
-            selects[i] = tv;
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-            tv.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-            tv.setTextColor(Color.WHITE);
-            if (i == 0)
-                tv.setTextColor(Color.parseColor("#f7d26c"));
 
-            tv.setLayoutParams(switchEditButtonLayoutParams);
-            tv.setText(name);
-            tv.setGravity(Gravity.CENTER);
-            parameterToEditLayout.addView(tv);
+        String[] calibrationHeaderNames = {
+                LocaleController.getString("TopTeethHorizontalPos", R.string.TopTeethHorizontalPos),
+                LocaleController.getString("TopTeethVerticalPos", R.string.TopTeethVerticalPos),
+                LocaleController.getString("BottomTeethHorizontalPos", R.string.BottomTeethHorizontalPos),
+                LocaleController.getString("BottomTeethVerticalPos", R.string.BottomTeethVerticalPos),
+                LocaleController.getString("TeethSize", R.string.TeethSize),
 
+        };
+
+        for (int i = 0; i < calibrationHeaderNames.length; i++) {
+            FlexatarCalibrationCell calibrationCell = new FlexatarCalibrationCell(getContext(), calibrationHeaderNames[i]);
+            mouthCalibrationViews.add(calibrationCell.getHeaderCell());
+            mouthCalibrationViews.add(calibrationCell.getSeekBar());
+
+            controlsLayout.addView(calibrationCell.getHeaderCell(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
+            controlsLayout.addView(calibrationCell.getSeekBar(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,38,Gravity.TOP|Gravity.CENTER_HORIZONTAL,54,12,54,0));
             int finalI = i;
-            tv.setOnClickListener((v)->{
-                selects[selectedEdit].setTextColor(Color.WHITE);
-                selectedEdit = finalI;
-                selects[selectedEdit].setTextColor(Color.parseColor("#f7d26c"));
-            });
+            calibrationCell.setOnDragListener((progress -> {
+//                Log.d("FLX_INJECT", "mout cb "+ progress);
+                mouthCalibrationChanged[finalI] = true;
+                if (finalI == 3)
+                    drawer.getFlexatarData().correctBotVerticalLipAnchor((progress - 0.5f) * 0.05f);
+                else if (finalI == 0)
+                    drawer.getFlexatarData().correctTopHorizontalLipAnchor((progress - 0.5f) * 0.15f);
+                else if (finalI == 1)
+                    drawer.getFlexatarData().correctTopVerticalLipAnchor((progress - 0.5f) * 0.05f);
+                else if (finalI == 2)
+                    drawer.getFlexatarData().correctBotHorizontalLipAnchor((progress - 0.5f) * 0.15f);
+                else if (finalI == 4)
+                    drawer.getFlexatarData().correctMouthSize(- (progress - 0.5f) * 0.2f);
+
+            }));
         }
-        controlsLayout.addView(parameterToEditLayout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,26,0,0));
 
-        seekBar = new SeekBarView(getContext());
-        seekBar.setReportChanges(true);
-        int stepCount = 30;
-        seekBar.setSeparatorsCount(stepCount);
-        seekBar.setProgress(0.5f);
-
-        seekBar.setDelegate(new SeekBarView.SeekBarViewDelegate() {
-            @Override
-            public void onSeekBarDrag(boolean stop, float progress) {
-
-            }
-
-            @Override
-            public void onSeekBarPressed(boolean pressed) {
-            }
-
-            @Override
-            public CharSequence getContentDescription() {
-                return "No";
-            }
-
-            @Override
-            public int getStepsCount() {
-                return stepCount;
-            }
-        });
-        LinearLayout.LayoutParams seekBarLayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,AndroidUtilities.dp(36) );
-        seekBarLayoutParameters.gravity = Gravity.CENTER_HORIZONTAL;
-        seekBarLayoutParameters.topMargin = AndroidUtilities.dp(26);
-        controlsLayout.addView(seekBar,seekBarLayoutParameters);
-
-        LinearLayout saveExitLayout = new LinearLayout(getContext());
-        saveExitLayout.setOrientation(LinearLayout.HORIZONTAL);
-        controlsLayout.addView(saveExitLayout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.BOTTOM,0,26,0,26));
-
-        int buttonSize = 48;
-        LinearLayout.LayoutParams saveExitLayoutParams = new LinearLayout.LayoutParams(
-                0,
-                AndroidUtilities.dp(buttonSize),
-                1
-        );
-
-        saveButton = new ImageView(getContext());
-        saveButton.setImageResource(R.drawable.background_selected);
-        saveButton.setOnClickListener((v)->{
-            ((FrameLayout)getParent()).removeView(this);
-        });
-        saveExitLayout.addView(saveButton,saveExitLayoutParams);
-
-        ImageView closeButton = new ImageView(getContext());
-        closeButton.setImageResource(R.drawable.msg_cancel);
-        closeButton.setOnClickListener((v)->{
-            ((FrameLayout)getParent()).removeView(this);
-        });
-
-        saveExitLayout.addView(closeButton,saveExitLayoutParams);
-        toggleMouthEdit(isCalibrateMode);
-
-
-    }
-    private void toggleMouthEdit(boolean visible){
-            int visibility = visible ? View.VISIBLE :View.GONE;
-            saveButton.setVisibility(visibility);
-            saveButton.setEnabled(visible);
-            seekBar.setVisibility(visibility);
-            seekBar.setEnabled(visible);
-            parameterToEditLayout.setVisibility(visibility);
-//            parameterToEditLayout.setEnabled(visible);
-            setEnabledRecursive(parameterToEditLayout,visible);
-
-
-
+        for(View view : mouthCalibrationViews){
+            view.setVisibility(View.INVISIBLE);
+            view.setEnabled(false);
+        }
     }
 
+    public FlexatarStorageManager.FlexatarMetaData getNewMetaData(){
+        FlexatarStorageManager.FlexatarMetaData metaData = new FlexatarStorageManager.FlexatarMetaData();
+
+        boolean hasChanges = false;
+        hasChanges = hasChanges || (newName != null);
+        metaData.name = newName;
+
+        if (atLeastOneTrue(mouthCalibrationChanged)){
+            metaData.mouthCalibration = new float[]{
+                drawer.getFlexatarData().topXCorrectionMouth,
+                drawer.getFlexatarData().topYCorrectionMouth,
+                drawer.getFlexatarData().botXCorrectionMouth,
+                drawer.getFlexatarData().botYCorrectionMouth,
+                drawer.getFlexatarData().sizeCorrectionMouth
+            };
+            hasChanges = true;
+        }
+        if (isHeadAmplitudeChanged){
+            metaData.amplitude = drawer.getFlexatarData().headRotationAmplitude;
+            hasChanges = true;
+        }
+        if (hasChanges)
+            return metaData;
+        else
+            return null;
+    }
+    private static boolean atLeastOneTrue(boolean[] array) {
+        for (boolean element : array) {
+            if (element) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void openMouth(){
         drawer.setSpeechState(new float[]{0,0,-0.8f,0,0});
@@ -310,5 +324,8 @@ public class FlexatarPreview extends FrameLayout {
                 setEnabledRecursive(child, enabled);
             }
         }
+    }
+    public int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 }

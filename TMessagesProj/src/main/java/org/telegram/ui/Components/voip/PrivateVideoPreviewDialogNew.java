@@ -249,6 +249,7 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
             positiveButton.setForeground(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(8), Color.TRANSPARENT, ColorUtils.setAlphaComponent(Theme.getColor(Theme.key_voipgroup_nameText), (int) (255 * 0.3f))));
         }
         positiveButton.setPadding(0, AndroidUtilities.dp(12), 0, AndroidUtilities.dp(12));
+
         positiveButton.setOnClickListener(view -> {
             if (isDismissed) {
                 return;

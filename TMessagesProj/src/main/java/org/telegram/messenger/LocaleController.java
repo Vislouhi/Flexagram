@@ -18,10 +18,14 @@ import android.content.res.Configuration;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.util.Xml;
 
 import androidx.annotation.StringRes;
 
+import org.flexatar.LocaleDicts;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.telegram.messenger.time.FastDateFormat;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -41,6 +45,7 @@ import java.util.Currency;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -346,6 +351,7 @@ public class LocaleController {
             LocaleInfo locale = otherLanguages.get(a);
             languages.add(locale);
             languagesDict.put(locale.getKey(), locale);
+//            Log.d("FLX_INJECT","otherLanguages key"+ locale.getKey());
         }
 
         for (int a = 0; a < remoteLanguages.size(); a++) {
@@ -360,6 +366,8 @@ public class LocaleController {
             } else {
                 languages.add(locale);
                 languagesDict.put(locale.getKey(), locale);
+
+                Log.d("FLX_INJECT","remoteLanguages key"+ locale.getKey());
             }
         }
 
@@ -374,6 +382,7 @@ public class LocaleController {
                 unofficialLanguages.set(a, existingLocale);
             } else {
                 languagesDict.put(locale.getKey(), locale);
+//                Log.d("FLX_INJECT","unofficialLanguages key"+ locale.getKey());
             }
         }
 
@@ -2323,13 +2332,27 @@ public class LocaleController {
                     values.remove(string.key);
                 }
             }
+            JSONObject flexatarLocaleData = LocaleDicts.getLocaleData(ApplicationLoader.applicationContext, localeInfo.shortName);
+            Log.d("FLX_INJECT", "localeInfo.shortName "+localeInfo.shortName);
             FileLog.d("save locale file to " + finalFile);
             BufferedWriter writer = new BufferedWriter(new FileWriter(finalFile));
             writer.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
             writer.write("<resources>\n");
             for (HashMap.Entry<String, String> entry : values.entrySet()) {
+//                Log.d("FLX_INJECT",localeInfo.shortName + " locale key " + entry.getKey()+" locale value " +entry.getValue());
                 writer.write(String.format("<string name=\"%1$s\">%2$s</string>\n", entry.getKey(), entry.getValue()));
             }
+
+            Log.d("FLX_INJECT","Writing flexatar locale");
+            Iterator<String> keys = flexatarLocaleData.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                String value = flexatarLocaleData.getString(key);
+                writer.write(String.format("<string name=\"%1$s\">%2$s</string>\n", key, value));
+                Log.d("FLX_INJECT",localeInfo.shortName + " locale key " + key+" locale value " + value);
+            }
+
+
             writer.write("</resources>");
             writer.close();
             boolean hasBase = localeInfo.hasBaseLang();

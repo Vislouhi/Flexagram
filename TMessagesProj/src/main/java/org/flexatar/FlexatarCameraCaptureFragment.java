@@ -11,6 +11,7 @@ import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.util.Size;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,15 +59,20 @@ import org.telegram.ui.LaunchActivity;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class FlexatarCameraCaptureFragment extends BaseFragment implements LifecycleOwner{
 
+    private boolean isTryOut = false;
     private byte[] flexatarBody;
     private Context context;
     private PreviewView mPreviewView;
@@ -85,6 +91,9 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
     private float barTopMargin = 0f;
     private float barBottomMargin = 0f;
+    private ImageView flxPhotoHelperView;
+    private boolean flxPhotoHelperRotated;
+    private Timer flxPhotoHelperTmer;
 
     public FlexatarCameraCaptureFragment(){
         super();
@@ -95,12 +104,28 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         super();
         this.flexatarBody=flexatarBody;
     }
+    public FlexatarCameraCaptureFragment(boolean isTryOut) {
+        super();
+        this.isTryOut=isTryOut;
+    }
 
     public void finishPage(){
+        flxPhotoHelperTmer.cancel();
+        flxPhotoHelperTmer.purge();
         lifecycleRegistry.setCurrentState(Lifecycle.State.DESTROYED);
         cameraProvider.unbindAll();
         finishFragment();
     }
+    private int[] photoHelperRes = {
+            R.drawable.flx_photo_helper_front,
+            R.drawable.flx_photo_helper_left,
+            R.drawable.flx_photo_helper_front,
+            R.drawable.flx_photo_helper_right,
+            R.drawable.flx_photo_helper_front,
+            R.drawable.flx_photo_helper_up,
+            R.drawable.flx_photo_helper_front,
+            R.drawable.flx_photo_helper_down,
+    };
     private void makeUI(){
         frameLayout = (FrameLayout) fragmentView;
         frameLayout.setBackgroundColor(Color.BLACK);
@@ -109,6 +134,33 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         mPreviewView.setScaleType(PreviewView.ScaleType.FIT_CENTER);
         mPreviewView.setVisibility(View.INVISIBLE);
         orangeBarView = new View(context);
+
+        flxPhotoHelperView = new ImageView(context);
+        flxPhotoHelperView.setImageResource(R.drawable.flx_photo_helper_front);
+
+        flxPhotoHelperTmer = new Timer();
+
+        flxPhotoHelperRotated = false;
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                frameLayout.post(()->{
+                    flxPhotoHelperRotated = !flxPhotoHelperRotated;
+                    if (flxPhotoHelperRotated){
+                        if (hintCounter < photoHelperRes.length)
+                            flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
+                    }else{
+//                        if (hintCounter < photoHelperRes.length)
+//                            flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
+                        flxPhotoHelperView.setImageResource(photoHelperRes[0]);
+                    }
+                });
+//                Log.d("FLX_INJECT","timePassed "+timePassed);
+            }
+        };
+        flxPhotoHelperTmer.scheduleAtFixedRate(task, 0, 1000);
+
+//        hintCounter
         mPreviewView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(
@@ -121,6 +173,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 Log.d("FLX_INJECT","New width: " + width + ", New height: " + height +" left " +left + " top " + top);
                 if (width != 0 && height != 0){
 //                    Log.d("FLX_INJECT","add view bar");
+                    float barPosition = 0.60f;
                     frameLayout.post(new Runnable() {
                         @Override
                         public void run() {
@@ -130,8 +183,8 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                             int width1 = (int)(0.3f * (float)width);
                             int height1 = (int)(0.02f * (float)width);
 
-                            barTopMargin = 2f/3f - (float)height1/(float)height/2f;
-                            barBottomMargin = 2f/3f + (float)height1/(float)height/2f;
+                            barTopMargin = barPosition - (float)height1/(float)height/2f;
+                            barBottomMargin = barPosition + (float)height1/(float)height/2f;
 
                             int left1 = left + width/2 - width1/2;
                             int top1 = top + (int)(barTopMargin * (float)height);
@@ -147,11 +200,30 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                             orangeBarView.setEnabled(false);
                             if (flexatarBody == null)
                                 orangeBarView.setVisibility(View.INVISIBLE);
-                            frameLayout.addView(orangeBarView,p);
+                            if (frameLayout.indexOfChild(orangeBarView) == -1)
+                                frameLayout.addView(orangeBarView,p);
+                            else
+                                orangeBarView.setLayoutParams(p);
+
+                            FrameLayout.LayoutParams photoHelperLayoutParams = new FrameLayout.LayoutParams(
+                                    width,
+                                    height);
+                            photoHelperLayoutParams.gravity = Gravity.TOP | Gravity.LEFT;
+                            photoHelperLayoutParams.setMargins(left,top,0,0);
+                            if (frameLayout.indexOfChild(flxPhotoHelperView) == -1)
+                                frameLayout.addView(flxPhotoHelperView,photoHelperLayoutParams);
+                            else
+                                flxPhotoHelperView.setLayoutParams(photoHelperLayoutParams);
+
+
 //                            mPreviewView.setVisibility(View.VISIBLE);
                         }
                     });
-                    frameLayout.postDelayed(()->{mPreviewView.setVisibility(View.VISIBLE);},500);
+                    frameLayout.postDelayed(()->{
+
+                        mPreviewView.setVisibility(View.VISIBLE);
+
+                        },500);
                 }
             }
         });
@@ -197,7 +269,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         faceHintViewParams.gravity = Gravity.LEFT | Gravity.TOP;
         faceHintViewParams.setMargins(AndroidUtilities.dp(6),AndroidUtilities.dp(12),AndroidUtilities.dp(12),AndroidUtilities.dp(120));
         faceHintView.setLayoutParams(faceHintViewParams);
-        frameLayout.addView(faceHintView);
+//        frameLayout.addView(faceHintView);
 
         overlayView = new View(context);
         overlayView.setLayoutParams(new ViewGroup.LayoutParams(
@@ -211,10 +283,10 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         frameLayout.addView(overlayView);
 
         if (flexatarBody == null) {
-            showStartUpAlert(false);
+//            showStartUpAlert(false);
         }else{
 
-            showHelpMouthCaptureAlert();
+//            showHelpMouthCaptureAlert();
             isMouthDone = true;
             orangeBarView.setVisibility(View.VISIBLE);
         }
@@ -231,7 +303,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         this.context=context;
         actionBar.setBackButtonDrawable(new BackDrawable(false));
         actionBar.setAllowOverlayTitle(true);
-        actionBar.setTitle("Flexatar Capture");
+        actionBar.setTitle(LocaleController.getString("FlexatarCapture", R.string.FlexatarCapture));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -311,8 +383,8 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         imageCapture = builder
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .setTargetRotation(AndroidUtilities.findActivity(context).getWindowManager().getDefaultDisplay().getRotation())
-                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
-
+//                .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+                .setTargetResolution(new Size(720,720 * 4 / 3))
                 .build();
 
         preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
@@ -350,6 +422,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 hintCounter += 1;
                 if (hintCounter<faceHints.size()) {
                     faceHintView.setImageResource(faceHints.get(hintCounter));
+//                    flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
                 }
                 if (hintCounter%2 == 0 || hintCounter == 1) {
                     try {
@@ -364,18 +437,19 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                         Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                         Log.d("FLX_INJECT", "photo width " + bitmap.getWidth() + " height " + bitmap.getHeight());
 
-                        int w = bitmap.getWidth();
-                        int h = bitmap.getHeight();
-                        int nw = 720;
-                        int nh = h * nw / w;
-                        if (w>h){
-                            nh = 720;
-                            nw = w * nh / h;
+//                        int w = bitmap.getWidth();
+//                        int h = bitmap.getHeight();
+//                        int nw = 720;
+//                        int nh = h * nw / w;
+//                        if (w>h){
+//                            nh = 720;
+//                            nw = w * nh / h;
+//
+//                        }
+//
+//
+//                        bitmap = Bitmap.createScaledBitmap(bitmap, nw, nh, false);
 
-                        }
-
-
-                        bitmap = Bitmap.createScaledBitmap(bitmap, nw, nh, false);
                         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream);
                         FlexatarCameraCaptureFragment.this.imagesCollector.add(byteArrayOutputStream.toByteArray());
@@ -426,10 +500,9 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
 
-            builder.setTitle("Instructions");
-            builder.setMessage("1. Take photos turning your head as assistant shows.\n" +
-                               "2. Don't turn your head too mach. \n" +
-                               "3. Keep your mouth closed.");
+            builder.setTitle(LocaleController.getString("Instructions", R.string.Instructions));
+            builder.setMessage(LocaleController.getString("MakeFlexatarHelp", R.string.MakeFlexatarHelp));
+
 
 
         if (!force) {
@@ -438,7 +511,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
             CheckBoxCell cell = new CheckBoxCell(getParentActivity(), 1);
             cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-            cell.setText("Don't show again.", "", false, false);
+            cell.setText(LocaleController.getString("DontShowAgain", R.string.DontShowAgain), "", false, false);
             cell.setPadding(LocaleController.isRTL ? AndroidUtilities.dp(8) : 0, 0, LocaleController.isRTL ? 0 : AndroidUtilities.dp(8), 0);
             frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 8, 0, 8, 0));
             cell.setOnClickListener(v -> {
@@ -447,11 +520,11 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 cell1.setChecked(checks[0], true);
             });
             builder.setView(frameLayout);
-            builder.setPositiveButton("OK", (dialogInterface, i) -> {
+            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
                 if (checks[0]) ValueStorage.setDontShowFlexatarPhotoInstructions(context);
             });
         }else{
-            builder.setPositiveButton("OK", (dialogInterface, i) -> {
+            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
 
             });
         }
@@ -468,22 +541,20 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
 
-        builder.setTitle("Make mouth (optional)");
-        builder.setMessage("1. Bite the orange bar taking first picture.\n" +
-                "2. Keep mouth opened. \n" +
-                "3. Take photos turning your head as assistant shows.");
+        builder.setTitle(LocaleController.getString("MakeMouthTitle", R.string.MakeMouthTitle));
+        builder.setMessage(LocaleController.getString("MakeFlexatarMouthHelp", R.string.MakeFlexatarMouthHelp));
 
 
 
 
-            builder.setPositiveButton("Continue", (dialogInterface, i) -> {
+            builder.setPositiveButton(LocaleController.getString("Continue", R.string.Continue), (dialogInterface, i) -> {
                 hintCounter = 0;
                 faceHintView.setImageResource(faceHints.get(hintCounter));
                 isMouthDone = true;
                 orangeBarView.setVisibility(View.VISIBLE);
             });
 
-            builder.setNegativeButton("Skip", (dialogInterface, i) -> {
+            builder.setNegativeButton(LocaleController.getString("ActionSkip", R.string.ActionSkip), (dialogInterface, i) -> {
                 askFlexatarName();
             });
 
@@ -499,10 +570,8 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
 
-        builder.setTitle("Make Mouth");
-        builder.setMessage("1. Bite the orange bar taking first picture.\n" +
-                "2. Keep mouth opened. \n" +
-                "3. Take photos turning your head as assistant shows.");
+        builder.setTitle(LocaleController.getString("MakeMouthTitle1", R.string.MakeMouthTitle1));
+        builder.setMessage(LocaleController.getString("MakeFlexatarMouthHelp", R.string.MakeFlexatarMouthHelp));
 
 
         final boolean[] checks = new boolean[]{false};
@@ -510,7 +579,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
         CheckBoxCell cell = new CheckBoxCell(getParentActivity(), 1);
         cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-        cell.setText("Don't show again.", "", false, false);
+        cell.setText(LocaleController.getString("DontShowAgain", R.string.DontShowAgain), "", false, false);
         cell.setPadding(LocaleController.isRTL ? AndroidUtilities.dp(8) : 0, 0, LocaleController.isRTL ? 0 : AndroidUtilities.dp(8), 0);
         frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 8, 0, 8, 0));
         cell.setOnClickListener(v -> {
@@ -520,7 +589,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         });
         builder.setView(frameLayout);
 
-        builder.setPositiveButton("OK", (dialogInterface, i) -> {
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
             if (checks[0]) ValueStorage.setDontShowMouthPhotoInstructions(context);
 //            hintCounter = 0;
 //            faceHintView.setImageResource(faceHints.get(hintCounter));
@@ -536,10 +605,15 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
     }
     private void askFlexatarName(){
+        if (isTryOut){
+
+            finishPage();
+            return;
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
 
-        builder.setTitle("Flexatar Name");
+        builder.setTitle(LocaleController.getString("FlexatarName", R.string.FlexatarName));
 //        builder.setMessage("Enter flexatar name");
 
 
@@ -553,12 +627,12 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         editText.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
-        editText.setHint("Enter flexatars name");
+        editText.setHint(LocaleController.getString("EnterFlexatarsName", R.string.EnterFlexatarsName));
         int pad = AndroidUtilities.dp(12);
         linearLayout.setPadding(pad, pad, pad, pad);
         linearLayout.addView(editText,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER));
         builder.setView(linearLayout);
-        builder.setPositiveButton("OK", (dialogInterface, i) -> {
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
             sendImagesToMakeFlexatar(editText.getText().toString());
         });
         /*builder.setNegativeButton("Skip", (dialogInterface, i) -> {

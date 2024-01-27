@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
@@ -19,9 +20,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.Cells.GraySectionCell;
+import org.telegram.ui.Cells.MemberRequestCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Components.LayoutHelper;
 
@@ -34,13 +37,14 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
     private final LinearLayout flxIconsLayout;
     private final Context context;
     private final FlexatarCabinetActivity parentFragment;
+    private final TextCell readInstructionsCell;
     private GraySectionCell dividerCellFlexatarInProgress;
     private List<FlexatarCell> flexatarCells;
     private int checkedCount = 1;
     private OnShowFlexatarListener onShowFlexatarListener;
 
     public interface OnShowFlexatarListener{
-        void onShowFlexatar(File flexatarFile);
+        void onShowFlexatar(FlexatarCell flexatarCell);
     }
 
     public void setOnShowFlexatarListener(OnShowFlexatarListener onShowFlexatarListener){
@@ -48,6 +52,9 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
     }
     public void setOnNewFlexatarChosenListener(OnClickListener newByPhotoListener){
         textCellNewFlxByPhoto.setOnClickListener(newByPhotoListener);
+    }
+    public void setOnViewInstructionsChosenListener(View.OnClickListener viewInstructionListener){
+        readInstructionsCell.setOnClickListener(viewInstructionListener);
     }
     public FlexatarIconsVerticalScroll(Context context, FlexatarCabinetActivity parentFragment) {
         super(context);
@@ -58,22 +65,25 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
 //        flxIconsLayout.setBackgroundColor(Color.BLACK);
         addView(flxIconsLayout, LayoutHelper.createLinear( LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, Gravity.CENTER_HORIZONTAL));
 
+        readInstructionsCell = new TextCell(context);
+        readInstructionsCell.setTextAndIcon(LocaleController.getString("ViewInstructions", R.string.ViewInstructions), R.drawable.msg_help, false);
+        flxIconsLayout.addView(readInstructionsCell);
 
         textCellNewFlxByPhoto = new TextCell(context);
-        textCellNewFlxByPhoto.setTextAndIcon("New Flexatar by Photo", R.drawable.msg_addphoto, false);
+        textCellNewFlxByPhoto.setTextAndIcon(LocaleController.getString("NewFlexatarByPhoto", R.string.NewFlexatarByPhoto), R.drawable.msg_addphoto, false);
         flxIconsLayout.addView(textCellNewFlxByPhoto);
 //        flxIconsLayout.setOnClickListener((l)->{});
 
-        TextCell textCellNewFlxFromCloud = new TextCell(context);
-        textCellNewFlxFromCloud.setTextAndIcon("Load Flexatar from Cloud", R.drawable.msg_download, false);
-        flxIconsLayout.addView(textCellNewFlxFromCloud);
+//        TextCell textCellNewFlxFromCloud = new TextCell(context);
+//        textCellNewFlxFromCloud.setTextAndIcon(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud), R.drawable.msg_download, false);
+//        flxIconsLayout.addView(textCellNewFlxFromCloud);
 
         dividerCellFlexatarInProgress = new GraySectionCell(context);
-        dividerCellFlexatarInProgress.setText("Flexatars in progress");
+        dividerCellFlexatarInProgress.setText(LocaleController.getString("FlexatarsInProgress", R.string.FlexatarsInProgress));
 //        ValueStorage.clearAllTickets(context);
 //        addFlexatarsInProgress();
         GraySectionCell dividerCell = new GraySectionCell(context);
-        dividerCell.setText("Flexatars available for calls");
+        dividerCell.setText(LocaleController.getString("FlexatarsAvailableForCalls", R.string.FlexatarsAvailableForCalls));
         flxIconsLayout.addView(dividerCell);
         flexatarCells = new ArrayList<>();
         File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
@@ -90,7 +100,7 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
                     cell.setChecked(!cell.isChecked(), true);
                     parentFragment.setCheckedFlexatarsCount();
                 }else{
-                    onShowFlexatarListener.onShowFlexatar(flexatarFile);
+                    onShowFlexatarListener.onShowFlexatar(cell);
                 }
             });
             flexatarCell.setOnLongClickListener((v) ->{

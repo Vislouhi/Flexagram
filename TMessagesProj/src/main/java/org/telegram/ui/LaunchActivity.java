@@ -343,8 +343,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
 //        Flexatar load static data
         AssetAccess.context = instance;
-        FlexatarRenderer.init();
         FlexatarStorageManager.createFlexatarStorage(instance);
+        FlexatarRenderer.init();
+
 
 
 

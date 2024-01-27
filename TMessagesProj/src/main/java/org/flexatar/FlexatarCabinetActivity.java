@@ -112,88 +112,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     private static final int delete = 2;
     private FlexatarIconsVerticalScroll flexatarIconsView;
     private FlexatarPreview flexatarPreview;
-
-/*    private static class EmptyTextProgressView extends FrameLayout {
-
-        private TextView emptyTextView1;
-        private TextView emptyTextView2;
-        private View progressView;
-        private RLottieImageView imageView;
-
-        *//*public EmptyTextProgressView(Context context) {
-            this(context, null);
-        }
-
-        public EmptyTextProgressView(Context context, View progressView) {
-            super(context);
-
-            addView(progressView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-            this.progressView = progressView;
-
-            imageView = new RLottieImageView(context);
-            imageView.setAnimation(R.raw.utyan_call, 120, 120);
-            imageView.setAutoRepeat(false);
-            addView(imageView, LayoutHelper.createFrame(140, 140, Gravity.CENTER, 52, 4, 52, 60));
-            imageView.setOnClickListener(v -> {
-                if (!imageView.isPlaying()) {
-                    imageView.setProgress(0.0f);
-                    imageView.playAnimation();
-                }
-            });
-
-            emptyTextView1 = new TextView(context);
-            emptyTextView1.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-            emptyTextView1.setText(LocaleController.getString("NoRecentCalls", R.string.NoRecentCalls));
-            emptyTextView1.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-            emptyTextView1.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-            emptyTextView1.setGravity(Gravity.CENTER);
-            addView(emptyTextView1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 17, 40, 17, 0));
-
-            emptyTextView2 = new TextView(context);
-            String help = LocaleController.getString("NoRecentCallsInfo", R.string.NoRecentCallsInfo);
-            if (AndroidUtilities.isTablet() && !AndroidUtilities.isSmallTablet()) {
-                help = help.replace('\n', ' ');
-            }
-            emptyTextView2.setText(help);
-            emptyTextView2.setTextColor(Theme.getColor(Theme.key_emptyListPlaceholder));
-            emptyTextView2.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            emptyTextView2.setGravity(Gravity.CENTER);
-            emptyTextView2.setLineSpacing(AndroidUtilities.dp(2), 1);
-            addView(emptyTextView2, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 17, 80, 17, 0));
-
-            progressView.setAlpha(0f);
-            imageView.setAlpha(0f);
-            emptyTextView1.setAlpha(0f);
-            emptyTextView2.setAlpha(0f);
-
-            setOnTouchListener((v, event) -> true);
-        }*//*
-
-        public void showProgress() {
-            imageView.animate().alpha(0f).setDuration(150).start();
-            emptyTextView1.animate().alpha(0f).setDuration(150).start();
-            emptyTextView2.animate().alpha(0f).setDuration(150).start();
-            progressView.animate().alpha(1f).setDuration(150).start();
-        }
-
-        public void showTextView() {
-            imageView.animate().alpha(1f).setDuration(150).start();
-            emptyTextView1.animate().alpha(1f).setDuration(150).start();
-            emptyTextView2.animate().alpha(1f).setDuration(150).start();
-            progressView.animate().alpha(0f).setDuration(150).start();
-            imageView.playAnimation();
-        }
-
-        @Override
-        public boolean hasOverlappingRendering() {
-            return false;
-        }
-    }*/
-
-
-
-
-
+    private ActionBarMenuItem keepMetaDataCahnges;
 
 
     @Override
@@ -209,34 +128,41 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         super.onFragmentDestroy();
 
     }
+    @Override
+    public boolean onBackPressed() {
+        FrameLayout frameLayout = (FrameLayout) fragmentView;
+        if (flexatarPreview != null && frameLayout.indexOfChild(flexatarPreview) != -1) {
+            frameLayout.removeView(flexatarPreview);
+
+            keepMetaDataCahnges.setVisibility(View.GONE);
+            keepMetaDataCahnges.setEnabled(false);
+            return false;
+        }else {
+            return super.onBackPressed();
+        }
+
+    }
 
     @Override
     public View createView(Context context) {
-//        greenDrawable = getParentActivity().getResources().getDrawable(R.drawable.ic_call_made_green_18dp).mutate();
-//        greenDrawable.setBounds(0, 0, greenDrawable.getIntrinsicWidth(), greenDrawable.getIntrinsicHeight());
-//        greenDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_calls_callReceivedGreenIcon), PorterDuff.Mode.MULTIPLY));
-//        iconOut = new ImageSpan(greenDrawable, ImageSpan.ALIGN_BOTTOM);
-//        greenDrawable2 = getParentActivity().getResources().getDrawable(R.drawable.ic_call_received_green_18dp).mutate();
-//        greenDrawable2.setBounds(0, 0, greenDrawable2.getIntrinsicWidth(), greenDrawable2.getIntrinsicHeight());
-//        greenDrawable2.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_calls_callReceivedGreenIcon), PorterDuff.Mode.MULTIPLY));
-//        iconIn = new ImageSpan(greenDrawable2, ImageSpan.ALIGN_BOTTOM);
-//        redDrawable = getParentActivity().getResources().getDrawable(R.drawable.ic_call_received_green_18dp).mutate();
-//        redDrawable.setBounds(0, 0, redDrawable.getIntrinsicWidth(), redDrawable.getIntrinsicHeight());
-//        redDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_fill_RedNormal), PorterDuff.Mode.MULTIPLY));
-//        iconMissed = new ImageSpan(redDrawable, ImageSpan.ALIGN_BOTTOM);
+
+
         fragmentView = new FrameLayout(context);
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         FrameLayout frameLayout = (FrameLayout) fragmentView;
 
         actionBar.setBackButtonDrawable(new BackDrawable(false));
         actionBar.setAllowOverlayTitle(true);
-        actionBar.setTitle("Flexatar");
+        actionBar.setTitle(LocaleController.getString("FlexatarMenuName", R.string.FlexatarMenuName));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
                 if (id == -1) {
                     if (flexatarPreview != null && frameLayout.indexOfChild(flexatarPreview) != -1) {
                         frameLayout.removeView(flexatarPreview);
+
+                        keepMetaDataCahnges.setVisibility(View.GONE);
+                        keepMetaDataCahnges.setEnabled(false);
                     } else {
                         if (actionBar.isActionModeShowed()) {
                             hideActionMode(true);
@@ -249,12 +175,37 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     showDeleteAlert(true);
                 } else if (id == delete) {
                     showDeleteAlert(false);
+                }else if (id == 10) {
+                    if (flexatarPreview != null && frameLayout.indexOfChild(flexatarPreview) != -1) {
+                        frameLayout.removeView(flexatarPreview);
+
+                        keepMetaDataCahnges.setVisibility(View.GONE);
+                        keepMetaDataCahnges.setEnabled(false);
+                        FlexatarStorageManager.FlexatarMetaData metaData = flexatarPreview.getNewMetaData();
+                        if (metaData != null) {
+                            FlexatarStorageManager.FlexatarMetaData oldMetData = flexatarPreview.getFlexatarCell().getMetaData();
+                            if (metaData.name != null) {
+                                oldMetData.name = metaData.name;
+                                flexatarPreview.getFlexatarCell().setName(metaData.name);
+                            }
+                            if (metaData.mouthCalibration != null) {
+                                oldMetData.mouthCalibration = metaData.mouthCalibration;
+                            }
+                            if (metaData.amplitude != null) {
+                                oldMetData.amplitude = metaData.amplitude;
+                            }
+
+
+                        }
+                    }
                 }
             }
         });
 
-//        ActionBarMenu menu = actionBar.createMenu();
-//        otherItem = menu.addItem(10, R.drawable.ic_ab_other);
+        ActionBarMenu menu = actionBar.createMenu();
+        keepMetaDataCahnges = menu.addItem(10, R.drawable.background_selected);
+        keepMetaDataCahnges.setVisibility(View.GONE);
+        keepMetaDataCahnges.setEnabled(false);
 //        otherItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
 //        otherItem.addSubItem(delete_all_calls, R.drawable.msg_delete, LocaleController.getString("DeleteAllCalls", R.string.DeleteAllCalls));
 
@@ -274,14 +225,25 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         flexatarIconsView.setOnNewFlexatarChosenListener((l)->{
             presentFragment(new FlexatarCameraCaptureFragment());
         });
-        flexatarIconsView.setOnShowFlexatarListener((flexatarFile) -> {
+        flexatarIconsView.setOnShowFlexatarListener((flexatarCell) -> {
+            keepMetaDataCahnges.setVisibility(View.VISIBLE);
+            keepMetaDataCahnges.setEnabled(true);
 
-            flexatarPreview = new FlexatarPreview(context,flexatarFile,this);
+            flexatarPreview = new FlexatarPreview(context,flexatarCell,this);
             flexatarPreview.setClickable(false);
 
             frameLayout.addView(flexatarPreview,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
 
 
+        });
+        flexatarIconsView.setOnViewInstructionsChosenListener((v)->{
+            FlexatarInstructionFragment flexatarInstructionFragment = new FlexatarInstructionFragment();
+            flexatarInstructionFragment.setOnTryInterfacePressed((v1)->{
+
+                presentFragment(new FlexatarCameraCaptureFragment(true));
+                flexatarInstructionFragment.finishPage();
+            });
+            presentFragment(flexatarInstructionFragment);
         });
         frameLayout.addView(flexatarIconsView);
 

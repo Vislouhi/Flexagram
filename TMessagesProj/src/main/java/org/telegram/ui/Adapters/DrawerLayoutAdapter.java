@@ -324,7 +324,7 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
             items.add(new Item(16, LocaleController.getString("ProfileMyStories", R.string.ProfileMyStories), R.drawable.msg_menu_stories));
             showDivider = true;
         }
-        items.add(new Item(17, "Flexatar", R.drawable.calls_flexatar));
+        items.add(new Item(17, LocaleController.getString("FlexatarMenuName", R.string.FlexatarMenuName), R.drawable.calls_flexatar));
 
         TLRPC.TL_attachMenuBots menuBots = MediaDataController.getInstance(UserConfig.selectedAccount).getAttachMenuBots();
         if (menuBots != null && menuBots.bots != null) {

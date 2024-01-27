@@ -107,9 +107,35 @@ public class FlexatarStorageManager {
         public Bitmap previewImage;
         public String date;
         public String name;
+        public Float amplitude;
+        public float[] mouthCalibration;
+        public int headerLength = -1;
 
     }
-    public static FlexatarMetaData getFlexatarMetaData(File file){
+    public static void rewriteFlexatarHeader(File flexatarFile){
+
+    }
+    public static JSONObject metaDataToJson(FlexatarMetaData md){
+
+        try {
+            JSONObject mdJSON = new JSONObject();
+            mdJSON.put("name",md.name);
+            mdJSON.put("date",md.date);
+            if (md.mouthCalibration != null){
+                JSONArray mouthCalibrationJson = new JSONArray();
+                for (float v:md.mouthCalibration)
+                    mouthCalibrationJson.put(v);
+                mdJSON.put("mouth_calibration",mouthCalibrationJson);
+
+            }
+            if (md.amplitude != null)
+                mdJSON.put("amplitude",md.amplitude);
+            return mdJSON;
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+    public static FlexatarMetaData getFlexatarMetaData(File file,boolean loadPreviewImage){
         try {
             boolean isBuiltin = file.getName().startsWith("builtin");
             FileInputStream fileInputStream = new FileInputStream(file);
@@ -119,15 +145,17 @@ public class FlexatarStorageManager {
             String currentType = "";
             String name = "";
             String date = "";
-
+            int headerLength = 0;
             while (true) {
                 byte[] buffer = new byte[8];
                 int bytesRead = fileInputStream.read(buffer, 0, 8);
+                headerLength+=bytesRead;
                 if (bytesRead<=0) break;
 
                 int packetLength = dataToIntArray(buffer)[0];
                 buffer = new byte[packetLength];
                 bytesRead = fileInputStream.read(buffer, 0, packetLength);
+                headerLength+=bytesRead;
                 if(isHeader) {
                     String str = new String(buffer, StandardCharsets.UTF_8);
                     JSONObject jsonObject = new JSONObject(str);
@@ -148,15 +176,19 @@ public class FlexatarStorageManager {
                     date = jsonObject.has("date") ? jsonObject.getString("date") : noDate;
                     Log.d("FLX_INJECT",jsonObject.toString());
                 }
-                if (currentType.equals("PreviewImage")&&!isHeader){
+                if ( currentType.equals(loadPreviewImage ? "PreviewImage":"Info")&&!isHeader){
                     fileInputStream.close();
-                    Bitmap bitmapOrig = BitmapFactory.decodeStream(new ByteArrayInputStream(buffer));
-                    Bitmap bitmap = Bitmap.createScaledBitmap(bitmapOrig, (int)(bitmapOrig.getWidth()*0.5f), (int)(bitmapOrig.getHeight()*0.5f), false);
                     FlexatarMetaData flexatarMetaData = new FlexatarMetaData();
-                    flexatarMetaData.previewImage = bitmap;
+                    if (loadPreviewImage) {
+                        Bitmap bitmapOrig = BitmapFactory.decodeStream(new ByteArrayInputStream(buffer));
+                        Bitmap bitmap = Bitmap.createScaledBitmap(bitmapOrig, (int) (bitmapOrig.getWidth() * 0.5f), (int) (bitmapOrig.getHeight() * 0.5f), false);
+                        flexatarMetaData.previewImage = bitmap;
+                        bitmapOrig.recycle();
+                    }
                     flexatarMetaData.name = name;
                     flexatarMetaData.date = date;
-                    bitmapOrig.recycle();
+                    flexatarMetaData.headerLength = headerLength;
+
                     return flexatarMetaData;
                 }
                 isHeader = !isHeader;
@@ -195,7 +227,10 @@ public class FlexatarStorageManager {
 
         File rootDir = context.getFilesDir();
         File flexatarStorageFolder = new File(rootDir,FLEXATAR_STORAGE_FOLDER);
-        for(File f : flexatarStorageFolder.listFiles()) {
+        File[] allStroageFiles = flexatarStorageFolder.listFiles();
+        if (allStroageFiles == null) return;
+        if (allStroageFiles.length == 0) return;
+        for(File f : allStroageFiles) {
             if (f.getName().startsWith("user") || f.getName().startsWith("builtin"))
                 f.delete();
         }
