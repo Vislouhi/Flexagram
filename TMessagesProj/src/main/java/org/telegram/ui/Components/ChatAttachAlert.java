@@ -39,6 +39,7 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.ImageSpan;
+import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.Property;
 import android.util.TypedValue;
@@ -766,9 +767,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertPollLayout pollLayout;
     private ChatAttachAlertLocationLayout locationLayout;
     private ChatAttachAlertDocumentLayout documentLayout;
+    private ChatAttachAlertFlexatarLayout flexatarLayout;
     private ChatAttachAlertPhotoLayoutPreview photoPreviewLayout;
     public ChatAttachAlertColorsLayout colorsLayout;
-    private AttachAlertLayout[] layouts = new AttachAlertLayout[7];
+    private AttachAlertLayout[] layouts = new AttachAlertLayout[8];
     private LongSparseArray<ChatAttachAlertBotWebViewLayout> botAttachLayouts = new LongSparseArray<>();
     private AttachAlertLayout currentAttachLayout;
     private AttachAlertLayout nextAttachLayout;
@@ -2213,7 +2215,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         return;
                     }
                     openDocumentsLayout(true);
-                } else if (num == 5) {
+                } else if (num == 11) {//TODO flexatar attach on click button
+                    openFlexatarLayout(true);
+
+                }
+                else if (num == 5) {
                     if (Build.VERSION.SDK_INT >= 23 && plainTextEnabled) {
                         if (getContext().checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
                             AndroidUtilities.findActivity(getContext()).requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, BasePermissionsActivity.REQUEST_CODE_ATTACH_CONTACT);
@@ -2980,6 +2986,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             newId = 3;
         } else if (layout == documentLayout) {
             newId = 4;
+        }else if (layout == flexatarLayout) {
+            newId = 11;
         } else if (layout == contactsLayout) {
             newId = 5;
         } else if (layout == locationLayout) {
@@ -3268,7 +3276,88 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         showLayout(colorsLayout);
     }
+    private void openFlexatarLayout(boolean show) {
+       /* if (!documentsEnabled) {
+            if (show) {
+                restrictedLayout = new ChatAttachRestrictedLayout(4, this, getContext(), resourcesProvider);
+                showLayout(restrictedLayout);
+            }
+        }*/
+        if (flexatarLayout == null) {
+            int type = isSoundPicker ? ChatAttachAlertDocumentLayout.TYPE_RINGTONE : ChatAttachAlertDocumentLayout.TYPE_DEFAULT;
+            layouts[7] = flexatarLayout = new ChatAttachAlertFlexatarLayout(this, getContext(), type, resourcesProvider);
+            flexatarLayout.setDelegate(new ChatAttachAlertFlexatarLayout.FlexatarSelectActivityDelegate() {
+                @Override
+                public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate) {
+//                    Log.d("FLX_INJECT","send files flexatarLayout.setDelegate head");
+                    if (documentsDelegate != null) {
+//                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate documentsDelegate");
+                        documentsDelegate.didSelectFiles(files, caption, fmessages, notify, scheduleDate);
 
+                    } else if (baseFragment instanceof ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate ) {
+//                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate instanceof");
+                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).didSelectFiles(files, caption, fmessages, notify, scheduleDate);
+
+                    } else if (baseFragment instanceof PassportActivity) {
+//                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate PassportActivity");
+
+                        ((PassportActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate);
+                    }
+                }
+            });
+            /*flexatarLayout.setDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
+                @Override
+                public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate) {
+                    *//*if (documentsDelegate != null) {
+                        documentsDelegate.didSelectFiles(files, caption, fmessages, notify, scheduleDate);
+                    } else if (baseFragment instanceof ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) {
+                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).didSelectFiles(files, caption, fmessages, notify, scheduleDate);
+                    } else if (baseFragment instanceof PassportActivity) {
+                        ((PassportActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate);
+                    }*//*
+                }
+
+                @Override
+                public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate) {
+                    *//*if (documentsDelegate != null) {
+                        documentsDelegate.didSelectPhotos(photos, notify, scheduleDate);
+                    } else if (baseFragment instanceof ChatActivity) {
+                        ((ChatActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate);
+                    } else if (baseFragment instanceof PassportActivity) {
+                        ((PassportActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate);
+                    }*//*
+                }
+
+                @Override
+                public void startDocumentSelectActivity() {
+                    *//*if (documentsDelegate != null) {
+                        documentsDelegate.startDocumentSelectActivity();
+                    } else if (baseFragment instanceof ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) {
+                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).startDocumentSelectActivity();
+                    } else if (baseFragment instanceof PassportActivity) {
+                        ((PassportActivity) baseFragment).startDocumentSelectActivity();
+                    }*//*
+                }
+
+                @Override
+                public void startMusicSelectActivity() {
+//                    openAudioLayout(true);
+                }
+            });*/
+        }
+       /* if (baseFragment instanceof ChatActivity) {
+            ChatActivity chatActivity = (ChatActivity) baseFragment;
+            TLRPC.Chat currentChat = chatActivity.getCurrentChat();
+            documentLayout.setMaxSelectedFiles(currentChat != null && !ChatObject.hasAdminRights(currentChat) && currentChat.slowmode_enabled || editingMessageObject != null ? 1 : -1);
+        } else {
+            documentLayout.setMaxSelectedFiles(maxSelectedPhotos);
+            documentLayout.setCanSelectOnlyImageFiles(!isSoundPicker && !allowEnterCaption);
+        }
+        documentLayout.isSoundPicker = isSoundPicker;*/
+        if (show) {
+            showLayout(flexatarLayout);
+        }
+    }
     private void openDocumentsLayout(boolean show) {
         if (!documentsEnabled) {
             if (show) {
@@ -3283,10 +3372,15 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 @Override
                 public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate) {
                     if (documentsDelegate != null) {
+                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate documentsDelegate");
                         documentsDelegate.didSelectFiles(files, caption, fmessages, notify, scheduleDate);
                     } else if (baseFragment instanceof ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) {
+                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate ChatAttachAlertDocumentLayout");
+
                         ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).didSelectFiles(files, caption, fmessages, notify, scheduleDate);
                     } else if (baseFragment instanceof PassportActivity) {
+                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate PassportActivity");
+
                         ((PassportActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate);
                     }
                 }
@@ -4349,6 +4443,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         private List<TLRPC.TL_attachMenuBot> attachMenuBots = new ArrayList<>();
 
         private int documentButton;
+        private int flexatarButton;
         private int musicButton;
         private int pollButton;
         private int contactButton;
@@ -4388,7 +4483,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else if (position == documentButton) {
                         attachButton.setTextAndIcon(4, LocaleController.getString("ChatDocument", R.string.ChatDocument), Theme.chat_attachButtonDrawables[2], Theme.key_chat_attachFileBackground, Theme.key_chat_attachFileText);
                         attachButton.setTag(4);
-                    } else if (position == locationButton) {
+                    } else if (position == flexatarButton) {
+                        attachButton.setTextAndIcon(11, LocaleController.getString("ChatDocument", R.string.ChatDocument), Theme.chat_attachButtonDrawables[6], Theme.key_chat_attachFileBackground, Theme.key_chat_attachFileText);
+                        attachButton.setTag(11);
+                    }
+                    else if (position == locationButton) {
                         attachButton.setTextAndIcon(6, LocaleController.getString("ChatLocation", R.string.ChatLocation), Theme.chat_attachButtonDrawables[4], Theme.key_chat_attachLocationBackground, Theme.key_chat_attachLocationText);
                         attachButton.setTag(6);
                     } else if (position == musicButton) {
@@ -4443,6 +4542,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             buttonsCount = 0;
             galleryButton = -1;
             documentButton = -1;
+            flexatarButton = -1;
             musicButton = -1;
             pollButton = -1;
             contactButton = -1;
@@ -4452,6 +4552,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             if (!(baseFragment instanceof ChatActivity)) {
                 galleryButton = buttonsCount++;
                 documentButton = buttonsCount++;
+                flexatarButton = buttonsCount++;
                 if (allowEnterCaption) {
                     musicButton = buttonsCount++;
                 }
@@ -4461,10 +4562,12 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         musicButton = buttonsCount++;
                     } else {
                         documentButton = buttonsCount++;
+                        flexatarButton = buttonsCount++;
                     }
                 } else {
                     galleryButton = buttonsCount++;
                     documentButton = buttonsCount++;
+                    flexatarButton = buttonsCount++;
                     musicButton = buttonsCount++;
                 }
             } else {
@@ -4486,6 +4589,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
                 }
                 documentButton = buttonsCount++;
+                flexatarButton = buttonsCount++;
 
                 if (plainTextEnabled) {
                     locationButton = buttonsCount++;

@@ -35,6 +35,7 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
@@ -2564,6 +2565,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
             chatAttachAlert.setDocumentsDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
                 @Override
                 public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate) {
+//                    Log.d("FLX_INJECT","sending documents");
                     TL_stories.StoryItem storyItem = currentStory.storyItem;
                     if (storyItem == null || storyItem instanceof TL_stories.TL_storyItemSkipped) {
                         return;

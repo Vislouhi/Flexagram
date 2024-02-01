@@ -8,20 +8,31 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import org.flexatar.DataOps.Data;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.telegram.messenger.ApplicationLoader;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class FlexatarStorageManager {
@@ -36,21 +47,62 @@ public class FlexatarStorageManager {
             flexatarStorageFolder.mkdir();
         }
     }
-    public static void addToStorage(Context context, byte[] flexatarData,String fId){
+    public static File addToStorage(Context context, byte[] flexatarData,String fId){
 
         File rootDir = context.getFilesDir();
         File flexatarStorageFolder = new File(rootDir,FLEXATAR_STORAGE_FOLDER);
-        File flexataFile = new File(flexatarStorageFolder,fId + ".flx");
+        String fileName = ServerDataProc.routToFileName(fId);
+        File flexataFile = new File(flexatarStorageFolder,fileName);
         if (!flexataFile.exists()){
+
             addStorageRecord(context,fId);
             dataToFile(flexatarData,flexataFile);
         }
+        return flexataFile;
     }
-    private static synchronized void addStorageRecord(Context context,String fId){
+    public static File addToStorage(Context context, File srcFile,String fId){
+
+        File rootDir = context.getFilesDir();
+        File flexatarStorageFolder = new File(rootDir,FLEXATAR_STORAGE_FOLDER);
+        String fileName = ServerDataProc.routToFileName(fId);
+        File flexataFile = new File(flexatarStorageFolder,fileName);
+        if (!flexataFile.exists()){
+
+            addStorageRecord(context,fId);
+            try {
+                copy(srcFile, flexataFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+        return flexataFile;
+    }
+    private static void copy(File src, File dst) throws IOException {
+        InputStream in = new FileInputStream(src);
+        try {
+            OutputStream out = new FileOutputStream(dst);
+            try {
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            } finally {
+                out.close();
+            }
+        } finally {
+            in.close();
+        }
+    }
+
+    public static synchronized void addStorageRecord(Context context,String fId){
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
         try {
             JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            Log.d("FLX_INJECT","addStorageRecord fid "+ fId);
             jsonArray.put(fId);
             flexatarFilesString = jsonArray.toString();
             SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -79,7 +131,7 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    private static synchronized String[] getRecords(Context context){
+    public static synchronized String[] getRecords(Context context){
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
         try {
@@ -96,9 +148,33 @@ public class FlexatarStorageManager {
         }
 
     }
+
+    public static synchronized List<String> getSavedFids(String prefix){
+        Context context = ApplicationLoader.applicationContext;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            List<String> result = new ArrayList<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                String fid = jsonArray.getString(jsonArray.length() - i - 1);
+                if (fid.startsWith(prefix)){
+                    result.add(fid);
+                }
+//                result[i] = jsonArray.getString(jsonArray.length() - i - 1);
+
+            }
+            return result;
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
     public static void deleteFromStorage(Context context,File flexatarFile){
         if (flexatarFile.exists()){
-            removeRecord(context,flexatarFile.getName().split("\\.")[0]);
+            removeRecord(context,ServerDataProc.fileNameToRout(flexatarFile.getName()));
+            FlexatarServerAccess.lambdaRequest(ServerDataProc.genDeleteRout(ServerDataProc.fileNameToRout(flexatarFile.getName())), "DELETE", null, null, null);
             flexatarFile.delete();
         }
 
@@ -109,11 +185,61 @@ public class FlexatarStorageManager {
         public String name;
         public Float amplitude;
         public float[] mouthCalibration;
-        public int headerLength = -1;
+
+        public Data toHeaderAsData(){
+            Data infoHeader = new Data("{\"type\":\"Info\"}");
+            infoHeader = infoHeader.encodeLengthHeader().add(infoHeader);
+            Data headerData = new Data(metaDataToJson(this).toString());
+            headerData = headerData.encodeLengthHeader().add(headerData);
+            headerData = infoHeader.add(headerData);
+            return headerData;
+        }
 
     }
-    public static void rewriteFlexatarHeader(File flexatarFile){
+    public static void rewriteFlexatarHeader(File flexatarFile,FlexatarStorageManager.FlexatarMetaData metaData){
+        byte[] remainingBytes;
+        try (RandomAccessFile file = new RandomAccessFile(flexatarFile, "rw")) {
+            file.seek(0);
+            byte[] lengthHeaderBytes = new byte[8];
+            file.read(lengthHeaderBytes);
+            long lengthHeader1 = Data.decodeLengthHeader(lengthHeaderBytes);
+            file.seek(8+lengthHeader1);
 
+            file.read(lengthHeaderBytes);
+            long lengthHeader2 = Data.decodeLengthHeader(lengthHeaderBytes);
+
+            int bytesToDelete = (int) (8+lengthHeader1+8+lengthHeader2);
+
+            long fileLength = file.length();
+
+            remainingBytes = new byte[(int) (fileLength - bytesToDelete)];
+            file.seek(bytesToDelete);
+            file.read(remainingBytes);
+
+            Data newMetaData = metaData.toHeaderAsData();
+            int newLength = newMetaData.value.length + remainingBytes.length;
+            file.setLength(newLength);
+            file.seek(0);
+            file.write(newMetaData.value);
+            file.seek(newMetaData.value.length);
+            file.write(remainingBytes);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+       /* flexatarFile.delete();
+        Data newMetaData = metaData.toHeaderAsData();
+
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(flexatarFile);
+            fos.write(newMetaData.value);
+            fos.write(remainingBytes);
+            fos.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+*/
     }
     public static JSONObject metaDataToJson(FlexatarMetaData md){
 
@@ -130,13 +256,40 @@ public class FlexatarStorageManager {
             }
             if (md.amplitude != null)
                 mdJSON.put("amplitude",md.amplitude);
+            Log.d("FLX_INJECT", "meta json "+mdJSON.toString());
             return mdJSON;
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+    public static FlexatarMetaData jsonToMetaData(String json){
+        FlexatarMetaData md = new FlexatarMetaData();
+        try {
+            JSONObject jsonObject = new JSONObject(json);
+            md.name = jsonObject.has("name") ? jsonObject.getString("name") : "No Name";
+
+            String noDate = "";
+
+            md.date = jsonObject.has("date") ? jsonObject.getString("date") : noDate;
+
+            if (jsonObject.has("mouth_calibration")) {
+                JSONArray jsonArr = jsonObject.getJSONArray("mouth_calibration");
+                md.mouthCalibration = new float[jsonArr.length()];
+                for (int i = 0; i < jsonArr.length(); i++) {
+                    md.mouthCalibration[i] = (float) jsonArr.getDouble(i);
+                }
+            }
+            if (jsonObject.has("amplitude")) {
+                md.amplitude = (float) jsonObject.getDouble("amplitude");
+            }
+            return md;
         } catch (JSONException e) {
             return null;
         }
     }
     public static FlexatarMetaData getFlexatarMetaData(File file,boolean loadPreviewImage){
         try {
+            FlexatarMetaData flexatarMetaData = new FlexatarMetaData();
             boolean isBuiltin = file.getName().startsWith("builtin");
             FileInputStream fileInputStream = new FileInputStream(file);
 
@@ -145,17 +298,19 @@ public class FlexatarStorageManager {
             String currentType = "";
             String name = "";
             String date = "";
-            int headerLength = 0;
+            float[] mouthCalibration = null;
+            Float amplitude = null;
+//            int headerLength = 0;
             while (true) {
                 byte[] buffer = new byte[8];
                 int bytesRead = fileInputStream.read(buffer, 0, 8);
-                headerLength+=bytesRead;
+//                headerLength+=bytesRead;
                 if (bytesRead<=0) break;
 
                 int packetLength = dataToIntArray(buffer)[0];
                 buffer = new byte[packetLength];
                 bytesRead = fileInputStream.read(buffer, 0, packetLength);
-                headerLength+=bytesRead;
+//                headerLength+=bytesRead;
                 if(isHeader) {
                     String str = new String(buffer, StandardCharsets.UTF_8);
                     JSONObject jsonObject = new JSONObject(str);
@@ -164,7 +319,9 @@ public class FlexatarStorageManager {
                 }
                 if (currentType.equals("Info")&&!isHeader){
                     String str = new String(buffer, StandardCharsets.UTF_8);
-                    JSONObject jsonObject = new JSONObject(str);
+                    flexatarMetaData = FlexatarStorageManager.jsonToMetaData(str);
+
+                    /*JSONObject jsonObject = new JSONObject(str);
                     name = jsonObject.has("name") ? jsonObject.getString("name") : "No Name";
 
                     String noDate = "";
@@ -174,20 +331,34 @@ public class FlexatarStorageManager {
                         noDate = currentDateTime.format(formatter);
                     }
                     date = jsonObject.has("date") ? jsonObject.getString("date") : noDate;
-                    Log.d("FLX_INJECT",jsonObject.toString());
+
+                    if (jsonObject.has("mouth_calibration")) {
+                        JSONArray jsonArr = jsonObject.getJSONArray("mouth_calibration");
+                        mouthCalibration = new float[jsonArr.length()];
+                        for (int i = 0; i < jsonArr.length(); i++) {
+                            mouthCalibration[i] = (float) jsonArr.getDouble(i);
+                        }
+                    }
+                    if (jsonObject.has("amplitude")) {
+                        amplitude = (float) jsonObject.getDouble("amplitude");
+                    }*/
+
+
+//                    Log.d("FLX_INJECT",jsonObject.toString());
                 }
                 if ( currentType.equals(loadPreviewImage ? "PreviewImage":"Info")&&!isHeader){
                     fileInputStream.close();
-                    FlexatarMetaData flexatarMetaData = new FlexatarMetaData();
+
                     if (loadPreviewImage) {
                         Bitmap bitmapOrig = BitmapFactory.decodeStream(new ByteArrayInputStream(buffer));
                         Bitmap bitmap = Bitmap.createScaledBitmap(bitmapOrig, (int) (bitmapOrig.getWidth() * 0.5f), (int) (bitmapOrig.getHeight() * 0.5f), false);
                         flexatarMetaData.previewImage = bitmap;
                         bitmapOrig.recycle();
                     }
-                    flexatarMetaData.name = name;
-                    flexatarMetaData.date = date;
-                    flexatarMetaData.headerLength = headerLength;
+//                    flexatarMetaData.name = name;
+//                    flexatarMetaData.date = date;
+//                    flexatarMetaData.mouthCalibration = mouthCalibration;
+//                    flexatarMetaData.amplitude = amplitude;
 
                     return flexatarMetaData;
                 }
@@ -206,7 +377,7 @@ public class FlexatarStorageManager {
         File[] files = new File[fids.length];
 //        Log.d("FLX_INJECT", "length files "+files.length);
         for (int i = 0; i < fids.length; i++) {
-            files[i] = new File(flexatarStorageFolder,fids[i]+".flx");
+            files[i] = new File(flexatarStorageFolder,ServerDataProc.routToFileName(fids[i]));
 
             Log.d("FLX_INJECT", files[i].getAbsolutePath());
 //            Log.d("FLX_INJECT", "lastModified "+files[i].lastModified());
@@ -214,6 +385,19 @@ public class FlexatarStorageManager {
 
         return files;
     }
+    /*public static File[] getFlexatarFileList(String prefix){
+        Context context = ApplicationLoader.applicationContext;
+        File rootDir = context.getFilesDir();
+        File flexatarStorageFolder = new File(rootDir,FLEXATAR_STORAGE_FOLDER);
+        String[] fids = getRecords(context,prefix);
+        File[] files = new File[fids.length];
+//        Log.d("FLX_INJECT", "length files "+files.length);
+        for (int i = 0; i < fids.length; i++) {
+            files[i] = new File(flexatarStorageFolder,fids[i]+".flx");
+        }
+
+        return files;
+    }*/
     public static File makeFileInFlexatarStorage(Context context,String fName){
         File rootDir = context.getFilesDir();
         File flexatarStorageFolder = new File(rootDir,FLEXATAR_STORAGE_FOLDER);
@@ -231,7 +415,7 @@ public class FlexatarStorageManager {
         if (allStroageFiles == null) return;
         if (allStroageFiles.length == 0) return;
         for(File f : allStroageFiles) {
-            if (f.getName().startsWith("user") || f.getName().startsWith("builtin"))
+            if (f.getName().startsWith("user") || f.getName().startsWith("builtin") || f.getName().startsWith("public")|| f.getName().startsWith("private"))
                 f.delete();
         }
     }

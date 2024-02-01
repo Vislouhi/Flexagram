@@ -3299,12 +3299,23 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			}
 		}
 	}
-	public void switchToFlexatar(boolean isFlexatar){
+	public void destroyCameraCapturer(){
 		if (captureDevice[CAPTURE_DEVICE_CAMERA]!=0 ) {
 //			tgVoip[CAPTURE_DEVICE_CAMERA].clearVideoCapturer();
 			NativeInstance.destroyVideoCapturer(captureDevice[CAPTURE_DEVICE_CAMERA]);
 			captureDevice[CAPTURE_DEVICE_CAMERA] = 0;
 			videoState[CAPTURE_DEVICE_CAMERA] = Instance.VIDEO_STATE_INACTIVE;
+		}
+		isFlexatar = false;
+	}
+	public void switchToFlexatar(boolean isFlexatar){
+
+		if (captureDevice[CAPTURE_DEVICE_CAMERA]!=0 ) {
+			VoIPService.getSharedInstance().setVideoState(false, Instance.VIDEO_STATE_INACTIVE);
+			clearCamera();
+			NativeInstance.destroyVideoCapturer(captureDevice[CAPTURE_DEVICE_CAMERA]);
+			captureDevice[CAPTURE_DEVICE_CAMERA] = 0;
+
 		}
 		createCaptureDevice(false,isFlexatar);
 

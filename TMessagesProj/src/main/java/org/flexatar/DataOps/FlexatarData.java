@@ -2,16 +2,15 @@ package org.flexatar.DataOps;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.util.Log;
 
 import org.flexatar.AnimationUnit;
 import org.flexatar.FlexatarAnimator;
 import org.flexatar.FlexatarCommon;
+import org.flexatar.FlexatarStorageManager;
 import org.flexatar.GLM;
 import org.flexatar.InterUnit;
-import org.flexatar.VBO;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,8 +29,8 @@ import java.util.Map;
 public class FlexatarData {
     private LengtBasedDict mouthData;
     public float mouthRatio;
-    private  String name;
-    private  String date;
+//    private  String name;
+//    private  String date;
     public Map<String, Map<String, List<byte[]>>> flxData = new HashMap<>();
     public int mouthVtxCount;
     public ByteBuffer mouthUvBB;
@@ -48,6 +47,7 @@ public class FlexatarData {
     private int[] mandalaBorderIdx;
     private float[] lipSizeModified;
     public float headRotationAmplitude = 1;
+    private FlexatarStorageManager.FlexatarMetaData metaData = new FlexatarStorageManager.FlexatarMetaData();
 
     public FlexatarData(LengthBasedFlxUnpack dataLB){
         String currentPartName = "exp0";
@@ -123,18 +123,30 @@ public class FlexatarData {
         prepareGlBuffers();
 
         String str = new String(this.flxData.get("exp0").get("Info").get(0), StandardCharsets.UTF_8);
-        JSONObject jsonObject = null;
-        try {
-            jsonObject = new JSONObject(str);
-            this.name = jsonObject.has("name") ? jsonObject.getString("name") : "No Name";
-            this.date = jsonObject.has("date") ? jsonObject.getString("date") : "";
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
+        metaData = FlexatarStorageManager.jsonToMetaData(str);
+        if (metaData.mouthCalibration!=null){
+            correctTopHorizontalLipAnchor(metaData.mouthCalibration[0]);
+            correctTopVerticalLipAnchor(metaData.mouthCalibration[1]);
+            correctBotHorizontalLipAnchor(metaData.mouthCalibration[2]);
+            correctBotVerticalLipAnchor(metaData.mouthCalibration[3]);
+            correctMouthSize(metaData.mouthCalibration[4]);
+        }
+        if (metaData.amplitude!=null){
+            setHeadRotationAmplitude(metaData.amplitude);
         }
 
+        /*JSONObject jsonObject = null;
+        try {
+            jsonObject = new JSONObject(str);
+            metaData.name = jsonObject.has("name") ? jsonObject.getString("name") : "No Name";
+            metaData.date = jsonObject.has("date") ? jsonObject.getString("date") : "";
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }*/
+
     }
-    public String getName(){
-        return name;
+    public FlexatarStorageManager.FlexatarMetaData getMetaData(){
+        return metaData;
     }
     public ByteBuffer[] headBB = new ByteBuffer[5];
     public Bitmap[] headBitmaps = new Bitmap[5];

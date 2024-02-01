@@ -30,6 +30,7 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -759,6 +760,8 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
             fmessages.add(selectedMessages.get(hashId));
         }
         ArrayList<String> files = new ArrayList<>(selectedFilesOrder);
+        Log.d("FLX_INJECT","document sent "+files.get(0) + " fmessages "+fmessages.size() + " scheduleDate " + scheduleDate + " cap "+parentAlert.commentTextView.getText().toString());
+
         delegate.didSelectFiles(files, parentAlert.commentTextView.getText().toString(), fmessages, notify, scheduleDate);
 
         parentAlert.dismiss(true);
@@ -816,6 +819,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                 if (selectedMessages.size() >= 100) {
                     return false;
                 }
+
                 selectedMessages.put(hashId, message);
                 add = true;
             }

@@ -65,6 +65,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -73,7 +74,7 @@ import java.util.concurrent.ExecutionException;
 public class FlexatarCameraCaptureFragment extends BaseFragment implements LifecycleOwner{
 
     private boolean isTryOut = false;
-    private byte[] flexatarBody;
+    private String flexatarBody;
     private Context context;
     private PreviewView mPreviewView;
     private ImageCapture imageCapture;
@@ -100,7 +101,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
     }
 
 
-    public FlexatarCameraCaptureFragment(byte[] flexatarBody) {
+    public FlexatarCameraCaptureFragment(String flexatarBody) {
         super();
         this.flexatarBody=flexatarBody;
     }
@@ -127,6 +128,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
             R.drawable.flx_photo_helper_down,
     };
     private void makeUI(){
+
         frameLayout = (FrameLayout) fragmentView;
         frameLayout.setBackgroundColor(Color.BLACK);
 //        frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
@@ -150,9 +152,9 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                         if (hintCounter < photoHelperRes.length)
                             flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
                     }else{
-//                        if (hintCounter < photoHelperRes.length)
-//                            flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
-                        flxPhotoHelperView.setImageResource(photoHelperRes[0]);
+                        if (hintCounter < photoHelperRes.length)
+                            flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
+//                        flxPhotoHelperView.setImageResource(photoHelperRes[0]);
                     }
                 });
 //                Log.d("FLX_INJECT","timePassed "+timePassed);
@@ -310,14 +312,14 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 if (id == -1) {
                     finishPage();
                 }
-                if (id == 10){
-                    showStartUpAlert(true);
-                }
+//                if (id == 10){
+//                    showStartUpAlert(true);
+//                }
             }
         });
-        ActionBarMenu menu = actionBar.createMenu();
-        ActionBarMenuItem otherItem = menu.addItem(10, R.drawable.msg_help);
-        otherItem.setContentDescription("Help");
+//        ActionBarMenu menu = actionBar.createMenu();
+//        ActionBarMenuItem otherItem = menu.addItem(10, R.drawable.msg_help);
+//        otherItem.setContentDescription("Help");
 
         fragmentView = new FrameLayout(context);
         makeUI();
@@ -606,7 +608,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
     }
     private void askFlexatarName(){
         if (isTryOut){
-
+            ValueStorage.setInstructionsComplete(getContext());
             finishPage();
             return;
         }
@@ -662,30 +664,118 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 //        Data sendData = new Data(imagesCollector.get(0));
         Data sendData = new Data(jsonObject.toString());
         sendData = sendData.encodeLengthHeader().add(sendData);
-        if (flexatarBody != null) {
+        /*if (flexatarBody != null) {
             Data flxBodyData = new Data(flexatarBody);
             flxBodyData = flxBodyData.encodeLengthHeader().add(flxBodyData);
             sendData = sendData.add(flxBodyData);
 //            Log.d("FLX_INJECT", "add flx body of size " +flxBodyData.value.length);
 //            Log.d("FLX_INJECT", "sendData length " +sendData.value.length);
-        }
+        }*/
         for (int i = 0; i < imagesCollector.size(); i++) {
             Data cData = new Data(imagesCollector.get(i));
             cData = cData.encodeLengthHeader().add(cData);
             sendData = sendData.add(cData);
         }
 //        Log.d("FLX_INJECT", "full send data size " +sendData.value.length);
-        ValueStorage.addTicket(context, UUID.randomUUID().toString());
 
-        JSONArray tickets = ValueStorage.getTickets(context);
-        FlexatarStorageManager.dataToFile(sendData.value,FlexatarStorageManager.makeFileInFlexatarStorage(context,"input_face.bin"));
-        Log.d("FLX_INJECT", "addTicket : " + tickets + " " + tickets.length());
+
+//        JSONArray tickets = ValueStorage.getTickets(context);
+        /*if (flexatarBody != null)
+            FlexatarStorageManager.dataToFile(sendData.value,FlexatarStorageManager.makeFileInFlexatarStorage(context,"input_mouth.bin"));
+        else
+            if (imagesCollector.size() == 5)
+                FlexatarStorageManager.dataToFile(sendData.value,FlexatarStorageManager.makeFileInFlexatarStorage(context,"input_face.bin"));
+            else
+                FlexatarStorageManager.dataToFile(sendData.value,FlexatarStorageManager.makeFileInFlexatarStorage(context,"input_face_mouth.bin"));
+*/
+//        JSONObject flexatarLinks = new JSONObject();
+//        try {
+//            flexatarLinks.put("name",flexatarName);
+//            flexatarLinks.put("lfid",UUID.randomUUID().toString());
+//
+//        } catch (JSONException e) {
+//            throw new RuntimeException(e);
+//        }
+//        ValueStorage.addTicket(context, flexatarLinks);
+        TicketsController.Ticket ticket = new TicketsController.Ticket();
+        ticket.name = flexatarName;
+        ticket.status = "new";
+        ticket.setDate();
+        String lfid = UUID.randomUUID().toString();
+        TicketStorage.setTicket(lfid,ticket);
+
+        /*TicketStorage.setTicket(UUID.randomUUID().toString(),ticket);
+
+        Map<String, TicketsController.Ticket> tickets = TicketStorage.getTickets();
+        for(Map.Entry<String, TicketsController.Ticket> entry:tickets.entrySet()){
+            Log.d("FLX_INJECT","key "+entry.getKey());
+            Log.d("FLX_INJECT","val "+entry.getValue().toJson("{}").toString());
+        }*/
+
+        if (flexatarBody == null) {
+
+            FlexatarServerAccess.lambdaRequest("data", "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
+                @Override
+                public void onReady(String response) {
+                    try {
+                        JSONObject json = new JSONObject(response);
+                        JSONObject flexatarLinks = json.getJSONArray("private").getJSONObject(0);
+                        ticket.formJson(flexatarLinks);
+                        ticket.status = "in_process";
+                        TicketStorage.setTicket(lfid,ticket);
+                        TicketsController.flexatarTaskStart(lfid,ticket);
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Log.d("FLX_INJECT", "data resp " + response);
+                }
+
+                @Override
+                public void onFail() {
+
+                    Log.d("FLX_INJECT", "data fail ");
+                }
+            });
+        }else{
+
+            FlexatarServerAccess.lambdaRequest("delta/"+flexatarBody, "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
+                @Override
+                public void onReady(String response) {
+                    try {
+                        JSONObject json = new JSONObject(response);
+                        JSONObject flexatarLinks = json.getJSONArray("private").getJSONObject(0);
+                        ticket.formJson(flexatarLinks);
+                        ticket.status = "in_process";
+                        TicketStorage.setTicket(lfid,ticket);
+                        TicketsController.flexatarTaskStart(lfid,ticket);
+
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Log.d("FLX_INJECT", "data resp " + response);
+                }
+
+                @Override
+                public void onFail() {
+
+                    Log.d("FLX_INJECT", "data fail ");
+                }
+            });
+
+//            Log.d("FLX_INJECT")
+        }
+        fragmentView.post(() -> {
+            finishPage();
+        });
+
+//            Log.d("FLX_INJECT", "addTicket : " + tickets + " " + tickets.length());
+
 //        ExecutorService executor = Executors.newSingleThreadExecutor();
 //        Data finalSendData = sendData;
 //        executor.execute(() -> {
 //                    FlexatarServerAccess.makeFlexatarRequest(finalSendData.value);
 //                });
-        finishPage();
+
     }
 
 

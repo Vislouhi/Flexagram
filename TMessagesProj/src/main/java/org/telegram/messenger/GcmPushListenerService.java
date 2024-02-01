@@ -10,9 +10,11 @@ package org.telegram.messenger;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.exoplayer2.util.Log;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.util.Arrays;
 import java.util.Map;
 
 public class GcmPushListenerService extends FirebaseMessagingService {
@@ -26,8 +28,12 @@ public class GcmPushListenerService extends FirebaseMessagingService {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("FCM received data: " + data + " from: " + from);
         }
-
-        PushListenerController.processRemoteMessage(PushListenerController.PUSH_TYPE_FIREBASE, data.get("p"), time);
+//        Log.d("FLX_INJECT","cloud message " + Arrays.toString(data.keySet().toArray()));
+        if (data.containsKey("flexatar")){
+            Log.d("FLX_INJECT","flexatar cloud message " + data.get("flexatar"));
+        }else {
+            PushListenerController.processRemoteMessage(PushListenerController.PUSH_TYPE_FIREBASE, data.get("p"), time);
+        }
     }
 
     @Override

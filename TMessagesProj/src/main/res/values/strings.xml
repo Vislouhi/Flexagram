@@ -37,6 +37,8 @@
     <string name="HeadRotationAmp">Head rotation amplitude</string>
     <string name="CalibrateTeeth">Calibrate teeth</string>
     <string name="CalibrateTeethInfo">Turn it on to calibrate teeth size and positions</string>
+    <string name="CompleteInstruction">Please, read instructions and complete test interface first.</string>
+    <string name="FlexatarPreview">Preview </string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

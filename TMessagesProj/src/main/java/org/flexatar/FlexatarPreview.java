@@ -20,6 +20,8 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 
 import org.checkerframework.checker.units.qual.A;
+import org.flexatar.DataOps.AssetAccess;
+import org.flexatar.DataOps.Data;
 import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AndroidUtilities;
@@ -39,7 +41,10 @@ import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class FlexatarPreview extends FrameLayout {
     private final FlxDrawerNew drawer;
@@ -48,7 +53,7 @@ public class FlexatarPreview extends FrameLayout {
     private final BaseFragment parentFragment;
     private final byte[] flxData;
     private final FlexatarData flexatarData;
-    private final FlexatarCell flexatarCell;
+    private final FlexatarCellNew flexatarCell;
 
     private boolean isMouthOpened = false;
     private LinearLayout layout;
@@ -63,10 +68,14 @@ public class FlexatarPreview extends FrameLayout {
     private String newName = null;
     private boolean[] mouthCalibrationChanged = {false,false,false,false,false};
     private boolean isHeadAmplitudeChanged;
-    public FlexatarCell getFlexatarCell(){
+    private Timer previewAnimTimer;
+    private int currentPosition;
+    private boolean isMakeMouthSelected = false;
+
+    public FlexatarCellNew getFlexatarCell(){
         return flexatarCell;
     }
-    public FlexatarPreview(@NonNull Context context, FlexatarCell flexatarCell, BaseFragment parentFragment) {
+    public FlexatarPreview(@NonNull Context context, FlexatarCellNew flexatarCell, BaseFragment parentFragment) {
         super(context);
         this.flexatarCell=flexatarCell;
         this.parentFragment = parentFragment;
@@ -100,11 +109,13 @@ public class FlexatarPreview extends FrameLayout {
         surfaceView.setRenderer(renderer);
 
         cardview = new CardView(context);
+//        cardview.setBackgroundColor(Color.BLACK);
         cardview.setClickable(false);
 //        cardview.setContextClickable(false);
-        cardview.setRadius(AndroidUtilities.dp(10));
+        cardview.setRadius(AndroidUtilities.dp(30));
 
         cardview.addView(surfaceView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT, Gravity.CENTER));
+
         makeLayout(currentOrientation);
 //        addView(cardview);
 
@@ -153,6 +164,8 @@ public class FlexatarPreview extends FrameLayout {
         layout.setOrientation(isPortrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
         addView(layout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
         layout.addView(cardview);
+        if (flexatarCell.isBuiltin()) return;
+
         controlsScrollView = new ScrollView(getContext());
         LinearLayout controlsLayout = new LinearLayout(getContext());
         controlsLayout.setOrientation(LinearLayout.VERTICAL);
@@ -164,12 +177,12 @@ public class FlexatarPreview extends FrameLayout {
 
         TextDetailCell changeNameCell = new TextDetailCell(getContext(),resourcesProvider, true);
         changeNameCell.setContentDescriptionValueFirst(true);
-        changeNameCell.setTextAndValue(flexatarData.getName(), LocaleController.getString("FlexatarName", R.string.ViewInstructions), true);
+        changeNameCell.setTextAndValue(flexatarData.getMetaData().name, LocaleController.getString("FlexatarName", R.string.ViewInstructions), true);
         changeNameCell.valueTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText2));
         controlsLayout.addView(changeNameCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
         changeNameCell.setOnClickListener(v->{
             parentFragment.showDialog(
-                AlertDialogs.askFlexatarNameDialog(getContext(),name -> {
+                AlertDialogs.askFlexatarNameDialog(getContext(),flexatarData.getMetaData().name,name -> {
                     if (name.isEmpty()) name = "No Name";
                     newName = name;
                     changeNameCell.setTextAndValue(name, LocaleController.getString("FlexatarName", R.string.ViewInstructions), true);
@@ -181,15 +194,25 @@ public class FlexatarPreview extends FrameLayout {
         makeMouthByPhotoCell.setTextAndIcon(LocaleController.getString("MouthByPhoto", R.string.MouthByPhoto), R.drawable.msg_addphoto, true);
         controlsLayout.addView(makeMouthByPhotoCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
         makeMouthByPhotoCell.setOnClickListener(v->{
-            ((FrameLayout)getParent()).removeView(this);
-            this.parentFragment.presentFragment(new FlexatarCameraCaptureFragment(FlexatarData.removeMouth(unpackedFlexatar)));
-
+            if (ValueStorage.checkIfInstructionsComplete(getContext())) {
+                ((FrameLayout)getParent()).removeView(this);
+                isMakeMouthSelected = true;
+//                parentFragment.presentFragment(new FlexatarCameraCaptureFragment(flexatarCell.getFlexatarFile().getName().split("___")[1].split("\\.")[0]));
+                parentFragment.finishFragment();
+//                parentFragment.presentFragment(new FlexatarCameraCaptureFragment(FlexatarData.removeMouth(unpackedFlexatar)));
+            }else{
+                parentFragment.showDialog(AlertDialogs.askToCompleteInstructions(getContext()));
+            }
         });
 
         FlexatarCalibrationCell headAmplitudeCell = new FlexatarCalibrationCell(getContext(), LocaleController.getString("HeadRotationAmp", R.string.HeadRotationAmp));
         controlsLayout.addView(headAmplitudeCell.getHeaderCell(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
         controlsLayout.addView(headAmplitudeCell.getSeekBar(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,38,Gravity.TOP|Gravity.CENTER_HORIZONTAL,54,12,54,0));
         headAmplitudeCell.setProgress(1f);
+        if (flexatarData.getMetaData().amplitude!=null) {
+            headAmplitudeCell.setProgress((-flexatarData.getMetaData().amplitude + 3)/2);
+        }
+
         headAmplitudeCell.setOnDragListener((progress) -> {
             Log.d("FLX_INJECT", "head amp progress" + (progress ));
             isHeadAmplitudeChanged = true;
@@ -226,8 +249,12 @@ public class FlexatarPreview extends FrameLayout {
         isFlexatarSpeakingCell.setOnClickListener((v)->{
             isFlexatarSpeakingCell.setChecked(!isFlexatarSpeakingCell.isChecked());
             if (isFlexatarSpeakingCell.isChecked()){
+                startSpeechAnimation();
+//                float[] animArray = Data.bufferFloatArray(AssetAccess.bufferFromFile("flexatar/FLX_bkg_anim_blendshapes.dat"));
+//                Log.d("FLX_INJECT","animArray" + Arrays.toString(animArray));
 //                openMouth();
             }else{
+                stopSpeechAnimation();
 //                closeMouth();
             }
         });
@@ -246,9 +273,22 @@ public class FlexatarPreview extends FrameLayout {
             FlexatarCalibrationCell calibrationCell = new FlexatarCalibrationCell(getContext(), calibrationHeaderNames[i]);
             mouthCalibrationViews.add(calibrationCell.getHeaderCell());
             mouthCalibrationViews.add(calibrationCell.getSeekBar());
+            if (flexatarData.getMetaData().mouthCalibration!=null) {
+                float currentCalibration = flexatarData.getMetaData().mouthCalibration[i];
+                if (i == 0)
+                    calibrationCell.getSeekBar().setProgress(currentCalibration / 0.15f + 0.5f);
+                else if (i == 1)
+                    calibrationCell.getSeekBar().setProgress(currentCalibration / 0.05f + 0.5f);
+                else if (i == 2)
+                    calibrationCell.getSeekBar().setProgress(currentCalibration / 0.15f + 0.5f);
+                else if (i == 3)
+                    calibrationCell.getSeekBar().setProgress(currentCalibration / 0.05f + 0.5f);
+                else if (i == 4)
+                    calibrationCell.getSeekBar().setProgress(- currentCalibration / 0.2f + 0.5f);
+            }
 
             controlsLayout.addView(calibrationCell.getHeaderCell(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
-            controlsLayout.addView(calibrationCell.getSeekBar(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,38,Gravity.TOP|Gravity.CENTER_HORIZONTAL,54,12,54,0));
+            controlsLayout.addView(calibrationCell.getSeekBar(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,38,Gravity.TOP|Gravity.CENTER_HORIZONTAL,54,12,54, i == 4 ? 24 : 0));
             int finalI = i;
             calibrationCell.setOnDragListener((progress -> {
 //                Log.d("FLX_INJECT", "mout cb "+ progress);
@@ -299,6 +339,44 @@ public class FlexatarPreview extends FrameLayout {
         else
             return null;
     }
+    public void stopTimer(){
+        if (previewAnimTimer!=null){
+            previewAnimTimer.cancel();
+            previewAnimTimer.purge();
+
+        }
+
+    }
+    private void stopSpeechAnimation(){
+        stopTimer();
+        openMouth();
+    }
+    private void startSpeechAnimation(){
+        float[] animArray = Data.bufferFloatArray(AssetAccess.bufferFromFile("flexatar/FLX_preview_speech_anim.dat"));
+
+//        Log.d("FLX_INJECT","animArray" + Arrays.toString(animArray));
+        if (previewAnimTimer!=null){
+            previewAnimTimer.cancel();
+            previewAnimTimer.purge();
+        }
+        previewAnimTimer = new Timer();
+        currentPosition = 80;
+
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                currentPosition+=5;
+                if (currentPosition>=animArray.length-50){
+                    currentPosition=80;
+                }
+                float[] anim = new float[]{animArray[currentPosition + 0], animArray[currentPosition + 1], animArray[currentPosition + 2], animArray[currentPosition + 3], animArray[currentPosition + 4]};
+                drawer.setSpeechState(anim);
+//                Log.d("FLX_INJECT","currentPositio1n "+Arrays.toString(anim));
+            }
+        };
+        previewAnimTimer.scheduleAtFixedRate(task, 0, 50);
+
+    }
     private static boolean atLeastOneTrue(boolean[] array) {
         for (boolean element : array) {
             if (element) {
@@ -309,7 +387,7 @@ public class FlexatarPreview extends FrameLayout {
     }
 
     public void openMouth(){
-        drawer.setSpeechState(new float[]{0,0,-0.8f,0,0});
+        drawer.setSpeechState(new float[]{0,0,-0.8f,0.3f,0});
     }
     public void closeMouth(){
         drawer.setSpeechState(new float[]{0,0,0.05f,0,0});
@@ -327,5 +405,14 @@ public class FlexatarPreview extends FrameLayout {
     }
     public int getThemedColor(int key) {
         return Theme.getColor(key, resourcesProvider);
+    }
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        stopTimer();
+    }
+
+    public boolean isMakeMouthSelected() {
+        return isMakeMouthSelected;
     }
 }

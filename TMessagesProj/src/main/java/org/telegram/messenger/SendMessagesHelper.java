@@ -6582,8 +6582,14 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (uri != null && AndroidUtilities.isInternalUri(uri)) {
             return ERROR_TYPE_UNSUPPORTED;
         }
-        if (path != null && AndroidUtilities.isInternalUri(Uri.fromFile(new File(path)))) {
-            return ERROR_TYPE_UNSUPPORTED;
+        boolean isFlexatar = false;
+        if (!path.contains("flexatar_storage")){
+//        if (!path.endsWith(".p")) {
+            if (path != null && AndroidUtilities.isInternalUri(Uri.fromFile(new File(path)))) {
+                return ERROR_TYPE_UNSUPPORTED;
+            }
+        }else{
+            isFlexatar = true;
         }
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         TLRPC.TL_documentAttributeAudio attributeAudio = null;
@@ -6721,6 +6727,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             document.id = 0;
             document.date = accountInstance.getConnectionsManager().getCurrentTime();
             TLRPC.TL_documentAttributeFilename fileName = new TLRPC.TL_documentAttributeFilename();
+            if (isFlexatar) name = "flexatar_"+name;
             fileName.file_name = name;
             document.file_reference = new byte[0];
             document.attributes.add(fileName);

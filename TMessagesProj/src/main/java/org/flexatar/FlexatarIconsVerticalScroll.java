@@ -65,6 +65,13 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
 //        flxIconsLayout.setBackgroundColor(Color.BLACK);
         addView(flxIconsLayout, LayoutHelper.createLinear( LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, Gravity.CENTER_HORIZONTAL));
 
+        TextCell testCrash = new TextCell(context);
+        testCrash.setTextAndIcon("Test crash", R.drawable.msg_help, false);
+        testCrash.setOnClickListener(v->{
+            throw new RuntimeException("This is a test crash!");
+        });
+        flxIconsLayout.addView(testCrash);
+
         readInstructionsCell = new TextCell(context);
         readInstructionsCell.setTextAndIcon(LocaleController.getString("ViewInstructions", R.string.ViewInstructions), R.drawable.msg_help, false);
         flxIconsLayout.addView(readInstructionsCell);
@@ -89,38 +96,50 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
         File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
         for (int i = 0; i < flexatarsInLocalStorage.length; i++) {
             File flexatarFile = flexatarsInLocalStorage[i];
-
-
-            FlexatarCell flexatarCell = new FlexatarCell(context,flexatarFile);
-            flexatarCell.setOnClickListener((v) ->{
-                FlexatarCell cell = (FlexatarCell) v;
-                if(parentFragment.getActionBar().isActionModeShowed() && !cell.isBuiltin()) {
-
-                    checkedCount += cell.isChecked() ? -1 : 1;
-                    cell.setChecked(!cell.isChecked(), true);
-                    parentFragment.setCheckedFlexatarsCount();
-                }else{
-                    onShowFlexatarListener.onShowFlexatar(cell);
-                }
-            });
-            flexatarCell.setOnLongClickListener((v) ->{
-                if(!parentFragment.getActionBar().isActionModeShowed()) {
-                    parentFragment.showOrUpdateActionMode();
-                    parentFragment.getActionBar().showActionMode();
-                    makeCheckBoxes();
-                    FlexatarCell cell = (FlexatarCell) v;
-                    checkedCount = cell.isBuiltin() ? 0 : 1;
-                    if (!cell.isBuiltin())
-                        cell.setChecked(true, true);
-                    parentFragment.setCheckedFlexatarsCount();
-                }
-                return true;
-            });
+            FlexatarCell flexatarCell = flexatarCellFactory(flexatarFile);
             flexatarCells.add(flexatarCell);
             flxIconsLayout.addView(flexatarCell,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER,0,2,0,2));
-
         }
+        FlexatarServerAccess.downloadBuiltinObserver = new FlexatarServerAccess.DownloadBuiltinObserver() {
+            @Override
+            public void downloaded(File file) {
+                FlexatarCell flexatarCell = flexatarCellFactory(file);
+                handler.post(() -> {
+                    flexatarCells.add(flexatarCell);
+                    flxIconsLayout.addView(flexatarCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 2, 0, 2));
+                });
 
+            }
+        };
+
+    }
+    public FlexatarCell flexatarCellFactory(File flexatarFile){
+        FlexatarCell flexatarCell = new FlexatarCell(context,flexatarFile);
+        flexatarCell.setOnClickListener((v) ->{
+            FlexatarCell cell = (FlexatarCell) v;
+            if(parentFragment.getActionBar().isActionModeShowed() && !cell.isBuiltin()) {
+
+                checkedCount += cell.isChecked() ? -1 : 1;
+                cell.setChecked(!cell.isChecked(), true);
+                parentFragment.setCheckedFlexatarsCount();
+            }else{
+                onShowFlexatarListener.onShowFlexatar(cell);
+            }
+        });
+        flexatarCell.setOnLongClickListener((v) ->{
+            if(!parentFragment.getActionBar().isActionModeShowed()) {
+                parentFragment.showOrUpdateActionMode();
+                parentFragment.getActionBar().showActionMode();
+                makeCheckBoxes();
+                FlexatarCell cell = (FlexatarCell) v;
+                checkedCount = cell.isBuiltin() ? 0 : 1;
+                if (!cell.isBuiltin())
+                    cell.setChecked(true, true);
+                parentFragment.setCheckedFlexatarsCount();
+            }
+            return true;
+        });
+        return flexatarCell;
     }
     public int getCheckedCount(){
 
@@ -141,7 +160,7 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
     List<FlexatarProgressCell> flexatarsInProgress = new ArrayList<>();
     Handler handler = new Handler(Looper.getMainLooper());
     private void addFlexatarsInProgress(){
-        JSONArray tickets = ValueStorage.getTickets(context);
+        /*JSONArray tickets = ValueStorage.getTickets(context);
 //        Log.d("FLX_INJECT", "Add new tickets: " + tickets + " " + tickets.length());
         if (tickets !=null && tickets.length()>0) {
             if (flxIconsLayout.indexOfChild(dividerCellFlexatarInProgress) == -1)
@@ -155,14 +174,23 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
                     FlexatarProgressCell flexatarProgressCell = new FlexatarProgressCell(context, ticket);
                     flexatarProgressCell.addDismissListener((status)->{
                         if (status == FlexatarProgressCell.FLEXATAR_READY) {
+
                             ValueStorage.removeTicket(context, ticketIdx);
                             handler.post(() -> flxIconsLayout.removeView(flexatarProgressCell));
                             flexatarsInProgress.remove(flexatarProgressCell);
                             if (flexatarsInProgress.size() == 0) {
                                 flxIconsLayout.removeView(dividerCellFlexatarInProgress);
                             }
+                            FlexatarCell flexatarCell = flexatarCellFactory(flexatarProgressCell.getFlexatarReadyFile());
+                            handler.post(() ->{
+                                flxIconsLayout.addView(flexatarCell,flxIconsLayout.indexOfChild(flexatarCells.get(0)),LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER,0,2,0,2));
+                                flexatarCells.add(0,flexatarCell);
+                            });
+
+
+
                         }else if (status == FlexatarProgressCell.FLEXATAR_ERROR){
-                            ValueStorage.changeTicketStatus(context,ticketIdx,"error");
+                            ValueStorage.changeTicketStatus(context,ticketIdx,"error",flexatarProgressCell.getErrorCode());
                             handler.post(() ->{
                                 flexatarProgressCell.removeViewAt(1);
                                 flexatarProgressCell.addErrorText();
@@ -192,7 +220,7 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
 
         }
         if (flxIconsLayout.indexOfChild(dividerCellFlexatarInProgress) != -1 && tickets.length() == 0)
-            flxIconsLayout.removeView(dividerCellFlexatarInProgress);
+            flxIconsLayout.removeView(dividerCellFlexatarInProgress);*/
     }
     public void updateFlexatarList() {
 
@@ -206,16 +234,17 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
     }
     public void showMakeFlexatarErrorAlert(FlexatarProgressCell cell){
 
-        Log.d("FLX_INJECT","getTicketStatus "+cell.getTicketStatus());
+//        Log.d("FLX_INJECT","getTicketStatus "+cell.getTicketStatus());
         AlertDialog.Builder builder = new AlertDialog.Builder(parentFragment.getParentActivity());
 
         if(cell.getTicketStatus() == FlexatarProgressCell.FLEXATAR_ERROR) {
+//        if(true) {
             builder.setTitle("There could be following problems:");
-            builder.setMessage("1. There was no human faces on the photos.\n" +
-                    "2. Head was turned the wrong side. \n" +
-                    "3. Flexatar server overloaded.");
+//            builder.setMessage("1. There was no human faces on the photos.\n" +
+//                    "2. Head was turned the wrong side. \n" +
+//                    "3. Flexatar server overloaded.");
 
-
+            builder.setMessage(cell.getErrorCode());
             builder.setPositiveButton("Delete", (dialogInterface, i) -> {
                 ValueStorage.removeTicketByTime(context, cell.getStartTime());
                 flxIconsLayout.removeView(cell);
@@ -223,6 +252,8 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
                 if (flexatarsInProgress.size() == 0) {
                     flxIconsLayout.removeView(dividerCellFlexatarInProgress);
                 }
+                cell.removeFlexatarOnServer();
+
 
             });
             builder.setNegativeButton("Cancel", (dialogInterface, i) -> {
@@ -281,5 +312,10 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
             FlexatarRenderer.altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));
 
         }
+    }
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        FlexatarServerAccess.downloadBuiltinObserver = null;
     }
 }

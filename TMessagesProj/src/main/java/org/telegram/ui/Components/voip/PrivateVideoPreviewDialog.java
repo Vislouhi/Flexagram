@@ -399,14 +399,20 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
     }
 
     private void onFinishMoveCameraPage() {
-        Log.d("FLX_INJECT","onPageSelected "+currentTexturePage);
+        Log.d("FLX_INJECT","onPageSelected "+currentPage);
 
         VoIPService service = VoIPService.getSharedInstance();
+//        if (currentPage == 0){
+//            Log.d("FLX_INJECT","destroy camera "+currentPage);
+//            service.destroyCameraCapturer();
+//            service.state
+//        }
         if (currentTexturePage == visibleCameraPage || service == null) {
             return;
         }
 
         boolean currentFrontface = service.isFrontFaceCamera();
+
 
         if (currentTexturePage == 1){
             saveLastCameraBitmap();
@@ -414,7 +420,9 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             VoIPService voipInstance = VoIPService.getSharedInstance();
             {
                 cameraReady = false;
+
                 if (!voipInstance.isFlexatarCamera()) {
+//                    Log.d("FLX_INJECT","create camera "+currentPage);
                     voipInstance.switchToFlexatar(true);
                 }
                 textureView.setAlpha(0.0f);
@@ -427,6 +435,7 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             {
                 cameraReady = false;
                 if (voipInstance.isFlexatarCamera()) {
+//                    Log.d("FLX_INJECT","create camera "+currentPage);
                     voipInstance.switchToFlexatar(false);
                 }
                 if (!currentFrontface) {
@@ -442,6 +451,7 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             {
                 cameraReady = false;
                 if (voipInstance.isFlexatarCamera()) {
+//                    Log.d("FLX_INJECT","create camera "+currentPage);
                     voipInstance.switchToFlexatar(false);
                 }
                 if (currentFrontface){
@@ -533,6 +543,9 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         }
         isDismissed = true;
         saveLastCameraBitmap();
+//        if (screencast){
+//            VoIPService.getSharedInstance().destroyCameraCapturer();
+//        }
         onDismiss(screencast, apply);
         animate().alpha(0f).translationX(AndroidUtilities.dp(32)).setDuration(150).setListener(new AnimatorListenerAdapter() {
             @Override

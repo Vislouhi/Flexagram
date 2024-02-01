@@ -40,7 +40,7 @@ public class Data {
         return new Data(buffer.array());
     }
 
-    static long decodeLengthHeader(byte[] data){
+    public static long decodeLengthHeader(byte[] data){
         ByteBuffer bb = ByteBuffer.allocate(8).order( ByteOrder.nativeOrder() );
         bb.put(data);
         bb.position(0);
@@ -63,6 +63,18 @@ public class Data {
         byteBuffer.put(data);
         byteBuffer.position(0);
         int floatCount = data.length / 4;
+        float[] floatArray = new float[floatCount];
+        for (int i = 0; i < floatCount; i++) {
+            floatArray[i] = byteBuffer.getFloat();
+        }
+//                String decodedString = new String(byteArray, StandardCharsets.UTF_8);
+//        Log.d("===DEB===","dataToFloatArray" + byteBuffer.getFloat());
+        return floatArray;
+    }
+    public static float[] bufferFloatArray(ByteBuffer byteBuffer){
+
+        byteBuffer.position(0);
+        int floatCount = byteBuffer.capacity() / 4;
         float[] floatArray = new float[floatCount];
         for (int i = 0; i < floatCount; i++) {
             floatArray[i] = byteBuffer.getFloat();

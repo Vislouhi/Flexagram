@@ -37,6 +37,7 @@ public class MediaActionDrawable extends Drawable {
     public static final int ICON_CANCEL_PERCENT = 13;
     public static final int ICON_CANCEL_FILL = 14;
     public static final int ICON_UPDATE = 15;
+    public static final int ICON_FLEXATAR = 16;
 
     private TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     public Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -470,7 +471,7 @@ public class MediaActionDrawable extends Drawable {
                     alpha = 0;
                 }
                 rotation = 0;
-            } else if (nextIcon == ICON_UPDATE || nextIcon == ICON_PLAY || nextIcon == ICON_PAUSE || nextIcon == ICON_FILE || nextIcon == ICON_GIF || nextIcon == ICON_SECRETCHECK || nextIcon == ICON_FIRE || nextIcon == ICON_CHECK) {
+            } else if (nextIcon == ICON_UPDATE || nextIcon == ICON_PLAY || nextIcon == ICON_PAUSE || nextIcon == ICON_FILE  || nextIcon == ICON_FLEXATAR|| nextIcon == ICON_GIF || nextIcon == ICON_SECRETCHECK || nextIcon == ICON_FIRE || nextIcon == ICON_CHECK) {
                 float progress;
                 float backProgress;
                 if (nextIcon == ICON_CHECK) {
@@ -616,6 +617,11 @@ public class MediaActionDrawable extends Drawable {
             nextPath = Theme.chat_filePath;
         } else if (currentIcon == ICON_FILE) {
             previousPath = Theme.chat_filePath;
+        }
+        if (nextIcon == ICON_FLEXATAR) {
+            nextPath = Theme.chat_fileFlexatarPath;
+        } else if (currentIcon == ICON_FLEXATAR) {
+            previousPath = Theme.chat_fileFlexatarPath;
         }
         if (nextIcon == ICON_FIRE) {
             nextDrawable = Theme.chat_flameIcon;

@@ -342,9 +342,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         instance = this;
 
 //        Flexatar load static data
-        AssetAccess.context = instance;
-        FlexatarStorageManager.createFlexatarStorage(instance);
-        FlexatarRenderer.init();
+
 
 
 
@@ -352,6 +350,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         ApplicationLoader.postInitApplication();
         AndroidUtilities.checkDisplaySize(this, getResources().getConfiguration());
         currentAccount = UserConfig.selectedAccount;
+
+        AssetAccess.context = instance;
+        FlexatarStorageManager.createFlexatarStorage(instance);
+        FlexatarRenderer.init();
+
         if (!UserConfig.getInstance(currentAccount).isClientActivated()) {
             Intent intent = getIntent();
             boolean isProxy = false;

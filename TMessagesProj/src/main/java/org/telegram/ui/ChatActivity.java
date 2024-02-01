@@ -121,6 +121,9 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.zxing.common.detector.MathUtils;
 
+import org.flexatar.AlertDialogs;
+import org.flexatar.FlexatarStorageManager;
+import org.flexatar.ServerDataProc;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -10910,6 +10913,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate) {
+        Log.d("FLX_INJECT","didSelectFiles ChatActivity ");
         fillEditingMediaWithCaption(caption, null);
         if (checkSlowModeAlert()) {
             if (!fmessages.isEmpty() && !TextUtils.isEmpty(caption)) {
@@ -29618,6 +29622,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             groupedMessages.messages.get(i).updateTranslation(false);
                         }
                     }
+
                     messageCell.setMessageObject(message, groupedMessages, pinnedBottom, pinnedTop);
                     messageCell.setSpoilersSuppressed(chatListView.getScrollState() != RecyclerView.SCROLL_STATE_IDLE);
                     messageCell.setHighlighted(highlightMessageId != Integer.MAX_VALUE && message.getId() == highlightMessageId);
@@ -31703,6 +31708,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     }
                     Theme.ThemeInfo themeInfo = Theme.applyThemeFile(locFile, message.getDocumentName(), null, true);
+
                     if (themeInfo != null) {
                         presentFragment(new ThemePreviewActivity(themeInfo));
                         return;
@@ -31717,12 +31723,37 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     handled = true;
                 }
                 if (!handled) {
-                    try {
-                        AndroidUtilities.openForView(message, getParentActivity(), themeDelegate);
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                        alertUserOpenError(message);
+                    Log.d("FLX_INJECT", "flexatar file name "+message.getDocumentName());
+                    if (message.getDocumentName().endsWith(".p") && message.getDocumentName().startsWith("flexatar_")) {
+                        Log.d("FLX_INJECT", "Catch flexatar file here");
+                        File f = null;
+                        if (message.messageOwner.attachPath != null && message.messageOwner.attachPath.length() != 0) {
+                            f = new File(message.messageOwner.attachPath);
+                        }
+                        if (f == null || !f.exists()) {
+                            f = FileLoader.getInstance(message.currentAccount).getPathToMessage(message.messageOwner);
+                        }
+//                        flexatarMetaData = FlexatarStorageManager.getFlexatarMetaData(f,true);
+
+                        Log.d("FLX_INJECT", "File length " + f.length());
+                        Log.d("FLX_INJECT", "File name " + message.getFileName().endsWith(".flx"));
+                        String fid = "private/" +message.getFileName();
+//                        String fileName = ServerDataProc.routToFileName(fid);
+//                        FlexatarStorageManager.addToStorage(getContext(),f,fid);
+                        AlertDialogs.flexatarPopup(getContext(),ChatActivity.this.fragmentLocationContextView,f);
+//                        showDialog(AlertDialogs.askToSaveFlexatarToGallery(getContext(),f));
+//                        showDialog(AlertDialogs.askToSaveFlexatarToGallery(getContext(),f));
+                        Log.d("FLX_INJECT", "Flexatar was placed to gallery " + message.getFileName().endsWith(".flx"));
+
+                    }else{
+                        try {
+                            AndroidUtilities.openForView(message, getParentActivity(), themeDelegate);
+                        } catch (Exception e) {
+                            FileLog.e(e);
+                            alertUserOpenError(message);
+                        }
                     }
+
                 }
             }
         }

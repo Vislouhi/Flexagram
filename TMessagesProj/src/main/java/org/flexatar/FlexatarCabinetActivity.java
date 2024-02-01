@@ -18,6 +18,8 @@ import android.graphics.drawable.Drawable;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.SpannableString;
 import android.text.style.ImageSpan;
 import android.util.Log;
@@ -34,8 +36,12 @@ import android.widget.TextView;
 
 
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 
 import org.telegram.messenger.LocaleController;
@@ -61,59 +67,33 @@ import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.voip.VoIPHelper;
 
 
+import java.io.File;
 import java.util.ArrayList;
-
+import java.util.HashMap;
+import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 
 public class FlexatarCabinetActivity extends BaseFragment  {
 
-//    private FlexatarCabinetActivity.ListAdapter listViewAdapter;
-//    private FlexatarCabinetActivity.EmptyTextProgressView emptyView;
-    private LinearLayoutManager layoutManager;
-//    private RecyclerListView listView;
-    private ImageView floatingButton;
-    private FlickerLoadingView flickerLoadingView;
 
     private NumberTextView selectedDialogsCountTextView;
     private ArrayList<View> actionModeViews = new ArrayList<>();
 
-    private ActionBarMenuItem otherItem;
-
-    private ArrayList<FlexatarCabinetActivity.CallLogRow> calls = new ArrayList<>();
-    private boolean loading;
-    private boolean firstLoaded;
-    private boolean endReached;
-
-    private ArrayList<Long> activeGroupCalls;
-
     private ArrayList<Integer> selectedIds = new ArrayList<>();
 
-    private int prevPosition;
-    private int prevTop;
-    private boolean scrollUpdated;
-    private boolean floatingHidden;
-    private final AccelerateDecelerateInterpolator floatingInterpolator = new AccelerateDecelerateInterpolator();
-
-    private Drawable greenDrawable;
-    private Drawable greenDrawable2;
-    private Drawable redDrawable;
-    private ImageSpan iconOut, iconIn, iconMissed;
-    private TLRPC.User lastCallUser;
-    private TLRPC.Chat lastCallChat;
-
-    private Long waitingForCallChatId;
-
-    private boolean openTransitionStarted;
-
-    private static final int TYPE_OUT = 0;
-    private static final int TYPE_IN = 1;
-    private static final int TYPE_MISSED = 2;
 
     private static final int delete_all_calls = 1;
     private static final int delete = 2;
-    private FlexatarIconsVerticalScroll flexatarIconsView;
-    private FlexatarPreview flexatarPreview;
-    private ActionBarMenuItem keepMetaDataCahnges;
+    private ItemModel flexatarInProgressDelimiter;
+    private List<ItemModel> itemsAction;
+    private List<ItemModel> itemsProgress;
+    private List<ItemModel> itemsFlexatar;
 
+    Handler handler = new Handler(Looper.getMainLooper());
+    private ItemAdapter itemAdapter;
+    private FrameLayout frameLayout;
+    private int checkedCount = 0;
 
     @Override
     public boolean onFragmentCreate() {
@@ -126,20 +106,12 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
+        TicketsController.stop();
 
     }
     @Override
     public boolean onBackPressed() {
-        FrameLayout frameLayout = (FrameLayout) fragmentView;
-        if (flexatarPreview != null && frameLayout.indexOfChild(flexatarPreview) != -1) {
-            frameLayout.removeView(flexatarPreview);
-
-            keepMetaDataCahnges.setVisibility(View.GONE);
-            keepMetaDataCahnges.setEnabled(false);
-            return false;
-        }else {
-            return super.onBackPressed();
-        }
+        return super.onBackPressed();
 
     }
 
@@ -149,7 +121,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
         fragmentView = new FrameLayout(context);
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
-        FrameLayout frameLayout = (FrameLayout) fragmentView;
+        frameLayout = (FrameLayout) fragmentView;
 
         actionBar.setBackButtonDrawable(new BackDrawable(false));
         actionBar.setAllowOverlayTitle(true);
@@ -158,136 +130,202 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             @Override
             public void onItemClick(int id) {
                 if (id == -1) {
-                    if (flexatarPreview != null && frameLayout.indexOfChild(flexatarPreview) != -1) {
-                        frameLayout.removeView(flexatarPreview);
 
-                        keepMetaDataCahnges.setVisibility(View.GONE);
-                        keepMetaDataCahnges.setEnabled(false);
+                    if (actionBar.isActionModeShowed()) {
+                        hideActionMode(true);
+                        itemAdapter.removeCheckBoxes();
+//                            handler.post(() -> {
+//                                itemAdapter.notifyDataSetChanged();
+//                            });
                     } else {
-                        if (actionBar.isActionModeShowed()) {
-                            hideActionMode(true);
-                            flexatarIconsView.removeCheckBoxes();
-                        } else {
-                            finishFragment();
-                        }
+                        finishFragment();
                     }
+
                 } else if (id == delete_all_calls) {
                     showDeleteAlert(true);
                 } else if (id == delete) {
                     showDeleteAlert(false);
-                }else if (id == 10) {
-                    if (flexatarPreview != null && frameLayout.indexOfChild(flexatarPreview) != -1) {
-                        frameLayout.removeView(flexatarPreview);
-
-                        keepMetaDataCahnges.setVisibility(View.GONE);
-                        keepMetaDataCahnges.setEnabled(false);
-                        FlexatarStorageManager.FlexatarMetaData metaData = flexatarPreview.getNewMetaData();
-                        if (metaData != null) {
-                            FlexatarStorageManager.FlexatarMetaData oldMetData = flexatarPreview.getFlexatarCell().getMetaData();
-                            if (metaData.name != null) {
-                                oldMetData.name = metaData.name;
-                                flexatarPreview.getFlexatarCell().setName(metaData.name);
-                            }
-                            if (metaData.mouthCalibration != null) {
-                                oldMetData.mouthCalibration = metaData.mouthCalibration;
-                            }
-                            if (metaData.amplitude != null) {
-                                oldMetData.amplitude = metaData.amplitude;
-                            }
-
-
-                        }
-                    }
                 }
             }
         });
 
-        ActionBarMenu menu = actionBar.createMenu();
-        keepMetaDataCahnges = menu.addItem(10, R.drawable.background_selected);
-        keepMetaDataCahnges.setVisibility(View.GONE);
-        keepMetaDataCahnges.setEnabled(false);
-//        otherItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
-//        otherItem.addSubItem(delete_all_calls, R.drawable.msg_delete, LocaleController.getString("DeleteAllCalls", R.string.DeleteAllCalls));
+//        ActionBarMenu menu = actionBar.createMenu();
 
-
-
-        flickerLoadingView = new FlickerLoadingView(context);
-        flickerLoadingView.setViewType(FlickerLoadingView.CALL_LOG_TYPE);
-        flickerLoadingView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-        flickerLoadingView.showDate(false);
+//        flickerLoadingView = new FlickerLoadingView(context);
+//        flickerLoadingView.setViewType(FlickerLoadingView.CALL_LOG_TYPE);
+//        flickerLoadingView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+//        flickerLoadingView.showDate(false);
 //        emptyView = new FlexatarCabinetActivity.EmptyTextProgressView(context, flickerLoadingView);
 //        frameLayout.addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
-        flexatarIconsView = new FlexatarIconsVerticalScroll(context,this);
-        flexatarIconsView.setLayoutParams(new LinearLayout.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        itemsAction = new ArrayList<>();
+        itemsProgress = new ArrayList<>();
+        itemsFlexatar = new ArrayList<>();
+        {
+            ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+            item.setImageResource(R.drawable.msg_help);
+            item.setNameText(LocaleController.getString("ViewInstructions", R.string.ViewInstructions));
+            item.setOnClickListener(v->{
+                FlexatarInstructionFragment flexatarInstructionFragment = new FlexatarInstructionFragment();
+                flexatarInstructionFragment.setOnTryInterfacePressed((v1)->{
 
-        flexatarIconsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-        flexatarIconsView.setOnNewFlexatarChosenListener((l)->{
-            presentFragment(new FlexatarCameraCaptureFragment());
-        });
-        flexatarIconsView.setOnShowFlexatarListener((flexatarCell) -> {
-            keepMetaDataCahnges.setVisibility(View.VISIBLE);
-            keepMetaDataCahnges.setEnabled(true);
-
-            flexatarPreview = new FlexatarPreview(context,flexatarCell,this);
-            flexatarPreview.setClickable(false);
-
-            frameLayout.addView(flexatarPreview,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
-
-
-        });
-        flexatarIconsView.setOnViewInstructionsChosenListener((v)->{
-            FlexatarInstructionFragment flexatarInstructionFragment = new FlexatarInstructionFragment();
-            flexatarInstructionFragment.setOnTryInterfacePressed((v1)->{
-
-                presentFragment(new FlexatarCameraCaptureFragment(true));
-                flexatarInstructionFragment.finishPage();
+                    presentFragment(new FlexatarCameraCaptureFragment(true));
+                    flexatarInstructionFragment.finishPage();
+                });
+                presentFragment(flexatarInstructionFragment);
             });
-            presentFragment(flexatarInstructionFragment);
+            itemsAction.add(item);
+        }
+        {
+            ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+            item.setImageResource(R.drawable.msg_addphoto);
+            item.setNameText(LocaleController.getString("NewFlexatarByPhoto", R.string.NewFlexatarByPhoto));
+            item.setOnClickListener(v-> {
+                if (ValueStorage.checkIfInstructionsComplete(context)) {
+                    presentFragment(new FlexatarCameraCaptureFragment());
+                }else{
+                    showDialog(AlertDialogs.askToCompleteInstructions(context));
+                }
+            });
+
+            itemsAction.add(item);
+        }
+        {
+            ItemModel item = new ItemModel(ItemModel.DELIMITER);
+            item.setNameText(LocaleController.getString("FlexatarsAvailableForCalls", R.string.FlexatarsAvailableForCalls));
+            itemsFlexatar.add(item);
+        }
+
+        flexatarInProgressDelimiter = new ItemModel(ItemModel.DELIMITER);
+        flexatarInProgressDelimiter.setNameText(LocaleController.getString("FlexatarsInProgress", R.string.FlexatarsInProgress));
+        itemsProgress.add(flexatarInProgressDelimiter);
+
+        File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
+        for (int i = 0; i < flexatarsInLocalStorage.length; i++) {
+            ItemModel item = flexatarItemFactory(flexatarsInLocalStorage[i]);
+
+            itemsFlexatar.add(item);
+        }
+
+
+        RecyclerView recyclerView = new RecyclerView(context);
+        recyclerView.setLayoutManager(new LinearLayoutManager(context));
+        itemAdapter = new ItemAdapter(context, itemsAction,itemsProgress,itemsFlexatar);
+
+        itemAdapter.setFlexatarCellOnClickListener((item,cell)->{
+//            ItemModel item = (ItemModel) v;
+            if(getActionBar().isActionModeShowed() ) {
+                Log.d("FLX_INJECT","flx cell pressed");
+                if (!cell.isBuiltin()) {
+                    item.setChecked(!item.isChecked());
+
+                    checkedCount += cell.isChecked() ? -1 : 1;
+                    handler.post(() -> {
+                        setCheckedFlexatarsCount();
+                    });
+                }
+            }else{
+                presentFragment(new FlexatarPreviewFragment(cell,this));
+
+            }
         });
-        frameLayout.addView(flexatarIconsView);
+        itemAdapter.setFlexatarCellOnLongClickListener((item,cell)->{
+            if(!getActionBar().isActionModeShowed() ) {
+                showOrUpdateActionMode();
+                getActionBar().showActionMode();
+                item.setChecked(!item.isChecked());
+                checkedCount = 1;
+                if (cell.isBuiltin()) checkedCount = 0;
+                itemAdapter.addCheckBoxes();
+                setCheckedFlexatarsCount();
+            }
+
+        });
+
+        recyclerView.setAdapter(itemAdapter);
+        recyclerView.setLayoutParams(new LinearLayout.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        recyclerView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        frameLayout.addView(recyclerView);
+
+
+
+        /*FlexatarServerAccess.downloadBuiltinObserver = file -> {
+            ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
+            item.setFlexatarFile(file);
+            itemsFlexatar.add(item);
+            handler.post(()->{
+                itemAdapter.notifyDataSetChanged();
+            });
+
+        };*/
+
 
 
 
         return fragmentView;
     }
+    Map<String,ItemModel> progressCells = new HashMap<>();
+    public void progressCellSetError(String fid,String errorCode){
+        if (progressCells.containsKey(fid)){
+            progressCells.get(fid).setError(errorCode);
+        }
+    }
+    public void addProgressCell(String fid,TicketsController.Ticket ticket){
+        if (progressCells.containsKey(fid)){
+            progressCells.get(fid).setTime(ticket.timePassed());
+        }else{
+            ItemModel progressItem = new ItemModel(ItemModel.PROGRESS_CELL);
+            progressItem.setTicket(null);
+            progressItem.setTime(ticket.timePassed());
+            progressItem.setNameText(ticket.name);
+            progressItem.setOnClickListener(v->{
+                FlexatarProgressCell flexatarProgressCell = (FlexatarProgressCell) v;
+                showMakeFlexatarErrorAlert(flexatarProgressCell,fid,progressItem);
+            });
+            if (ticket.status.equals("error")){
+                progressItem.setError(ticket.errorCode);
+            }
+            if (ticket.status.equals("in_process")){
+                TicketsController.flexatarTaskStart(fid,ticket);
+            }
+            itemAdapter.addProgressItem( progressItem);
+            progressCells.put(fid,progressItem);
 
-    private void showPlusFlexatarAlert(boolean all) {
+        }
+    }
+    public void removeProgressCell(String fid){
+        if (progressCells.containsKey(fid)){
+            itemAdapter.removeProgressItem(progressCells.remove(fid));
+//            itemsProgress.remove(progressCells.remove(fid));
+
+        }
+    }
+
+
+    private ItemModel flexatarItemFactory(File flexatarFile){
+        ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
+        item.setFlexatarFile(flexatarFile);
+        return item;
+    }
+    public void showMakeFlexatarErrorAlert(FlexatarProgressCell cell,String fid,ItemModel item){
+
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-        builder.setTitle("Choose");
-        builder.setMessage(LocaleController.getString("DeleteAllCallsText", R.string.DeleteAllCallsText));
-//        if (all) {
-//            builder.setTitle(LocaleController.getString("DeleteAllCalls", R.string.DeleteAllCalls));
-//            builder.setMessage(LocaleController.getString("DeleteAllCallsText", R.string.DeleteAllCallsText));
-//        } else {
-//            builder.setTitle(LocaleController.getString("DeleteCalls", R.string.DeleteCalls));
-//            builder.setMessage(LocaleController.getString("DeleteSelectedCallsText", R.string.DeleteSelectedCallsText));
-//        }
 
-        /*final boolean[] checks = new boolean[]{false};
-        FrameLayout frameLayout = new FrameLayout(getParentActivity());
-        CheckBoxCell cell = new CheckBoxCell(getParentActivity(), 1);
-        cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-        cell.setText(LocaleController.getString("DeleteCallsForEveryone", R.string.DeleteCallsForEveryone), "", false, false);
-        cell.setPadding(LocaleController.isRTL ? AndroidUtilities.dp(8) : 0, 0, LocaleController.isRTL ? 0 : AndroidUtilities.dp(8), 0);
-        frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 8, 0, 8, 0));
-        cell.setOnClickListener(v -> {
-            CheckBoxCell cell1 = (CheckBoxCell) v;
-            checks[0] = !checks[0];
-            cell1.setChecked(checks[0], true);
-        });*/
+            builder.setTitle("There could be following problems:");
+//            builder.setMessage("1. There was no human faces on the photos.\n" +
+//                    "2. Head was turned the wrong side. \n" +
+//                    "3. Flexatar server overloaded.");
 
-//        builder.setView(frameLayout);
-        builder.setPositiveButton("Cancel", (dialogInterface, i) -> {
+            builder.setMessage(cell.getErrorCode());
+            builder.setPositiveButton("Delete", (dialogInterface, i) -> {
 
-        });
-        /*builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+                TicketStorage.removeTicket(fid);
+                itemAdapter.removeProgressItem(item);
+
+
+            });
         AlertDialog alertDialog = builder.create();
         showDialog(alertDialog);
-        TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
-        if (button != null) {
-            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
-        }*/
     }
     private void showDeleteAlert(boolean all) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
@@ -297,9 +335,13 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             builder.setMessage("Do you want to delete selected flexatars from local storage?");
 
         builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialogInterface, i) -> {
-            flexatarIconsView.deleteSelectedFlexatars();
-            flexatarIconsView.removeCheckBoxes();
+
+            List<File> filesToDelete = itemAdapter.removeCheckedFlexatars();
+
+            for(File f:filesToDelete )
+                FlexatarStorageManager.deleteFromStorage(getContext(),f);
             hideActionMode(false);
+//            itemAdapter.removeCheckBoxes();
         });
         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
         AlertDialog alertDialog = builder.create();
@@ -310,25 +352,6 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         }
     }
 
-    /*private void deleteAllMessages(boolean revoke) {
-        TLRPC.TL_messages_deletePhoneCallHistory req = new TLRPC.TL_messages_deletePhoneCallHistory();
-        req.revoke = revoke;
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (response != null) {
-                TLRPC.TL_messages_affectedFoundMessages res = (TLRPC.TL_messages_affectedFoundMessages) response;
-                TLRPC.TL_updateDeleteMessages updateDeleteMessages = new TLRPC.TL_updateDeleteMessages();
-                updateDeleteMessages.messages = res.messages;
-                updateDeleteMessages.pts = res.pts;
-                updateDeleteMessages.pts_count = res.pts_count;
-                final TLRPC.TL_updates updates = new TLRPC.TL_updates();
-                updates.updates.add(updateDeleteMessages);
-                getMessagesController().processUpdates(updates, false);
-                if (res.offset != 0) {
-                    deleteAllMessages(revoke);
-                }
-            }
-        });
-    }*/
 
     private void hideActionMode(boolean animated) {
         actionBar.hideActionMode();
@@ -336,14 +359,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
     }
 
-    private boolean isSelected(ArrayList<TLRPC.Message> messages) {
-        for (int a = 0, N = messages.size(); a < N; a++) {
-            if (selectedIds.contains(messages.get(a).id)) {
-                return true;
-            }
-        }
-        return false;
-    }
+
 
     public void createActionMode() {
         if (actionBar.actionModeIsExist(null)) {
@@ -388,32 +404,43 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             animatorSet.setDuration(200);
             animatorSet.start();
         }
-        selectedDialogsCountTextView.setNumber(flexatarIconsView.getCheckedCount(), updateAnimated);
+
+        selectedDialogsCountTextView.setNumber(checkedCount, updateAnimated);
     }
     public void setCheckedFlexatarsCount(){
-        selectedDialogsCountTextView.setNumber(flexatarIconsView.getCheckedCount(), true);
+        selectedDialogsCountTextView.setNumber(checkedCount, true);
     }
 
-    private void hideFloatingButton(boolean hide) {
-        if (floatingHidden == hide) {
-            return;
-        }
-        floatingHidden = hide;
-        ObjectAnimator animator = ObjectAnimator.ofFloat(floatingButton, "translationY", floatingHidden ? AndroidUtilities.dp(100) : 0).setDuration(300);
-        animator.setInterpolator(floatingInterpolator);
-        floatingButton.setClickable(!hide);
-        animator.start();
-    }
 
 
     @Override
     public void onResume() {
         super.onResume();
-        flexatarIconsView.updateFlexatarList();
+        TicketsController.attachObserver( new TicketsController.TicketObserver() {
+            @Override
+            public void onReady(String lfid, File file) {
+                removeProgressCell(lfid);
+                itemAdapter.addFlexatarItem(flexatarItemFactory(file));
+            }
 
+            @Override
+            public void onError(String lfid, TicketsController.Ticket ticket) {
+                progressCellSetError(lfid,ticket.errorCode);
+            }
+
+            @Override
+            public void onTimer(String lfid, TicketsController.Ticket ticket) {
+                addProgressCell(lfid,ticket);
+            }
+
+            @Override
+            public void onStart(String lfid, TicketsController.Ticket ticket) {
+                addProgressCell(lfid,ticket);
+            }
+        });
     }
 
-    @Override
+    /*@Override
     public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == 101 || requestCode == 102 || requestCode == 103) {
             boolean allGranted = true;
@@ -434,24 +461,19 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 VoIPHelper.permissionDenied(getParentActivity(), null, requestCode);
             }
         }
-    }
+    }*/
 
 
 
-    private static class CallLogRow {
-        public TLRPC.User user;
-        public ArrayList<TLRPC.Message> calls;
-        public int type;
-        public boolean video;
-    }
 
-    @Override
+
+    /*@Override
     public void onTransitionAnimationStart(boolean isOpen, boolean backward) {
         super.onTransitionAnimationStart(isOpen, backward);
         if (isOpen) {
             openTransitionStarted = true;
         }
-    }
+    }*/
 
     @Override
     public boolean needDelayOpenAnimation() {
@@ -467,7 +489,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
         themeDescriptions.add(new ThemeDescription(fragmentView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundGray));
 
-        themeDescriptions.add(new ThemeDescription(flexatarIconsView, ThemeDescription.FLAG_BACKGROUND, new Class[]{FlexatarIconsVerticalScroll.class}, new String[]{"flexatarIconsView"}, null, null, null, Theme.key_avatar_backgroundPink));
+//        themeDescriptions.add(new ThemeDescription(flexatarIconsView, ThemeDescription.FLAG_BACKGROUND, new Class[]{FlexatarIconsVerticalScroll.class}, new String[]{"flexatarIconsView"}, null, null, null, Theme.key_avatar_backgroundPink));
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault));
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_actionBarDefaultIcon));
         themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_TITLECOLOR, null, null, null, null, Theme.key_actionBarDefaultTitle));
@@ -478,11 +500,11 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 //        themeDescriptions.add(new ThemeDescription(emptyView, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{FlexatarCabinetActivity.EmptyTextProgressView.class}, new String[]{"emptyTextView2"}, null, null, null, Theme.key_emptyListPlaceholder));
 
 
-        themeDescriptions.add(new ThemeDescription(floatingButton, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_chats_actionIcon));
-        themeDescriptions.add(new ThemeDescription(floatingButton, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_chats_actionBackground));
-        themeDescriptions.add(new ThemeDescription(floatingButton, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_chats_actionPressedBackground));
-
-        themeDescriptions.add(new ThemeDescription(flickerLoadingView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundWhite));
+//        themeDescriptions.add(new ThemeDescription(floatingButton, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_chats_actionIcon));
+//        themeDescriptions.add(new ThemeDescription(floatingButton, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_chats_actionBackground));
+//        themeDescriptions.add(new ThemeDescription(floatingButton, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_chats_actionPressedBackground));
+//
+//        themeDescriptions.add(new ThemeDescription(flickerLoadingView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundWhite));
 
 
         return themeDescriptions;

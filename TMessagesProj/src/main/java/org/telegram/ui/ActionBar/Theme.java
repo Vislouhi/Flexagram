@@ -3325,7 +3325,7 @@ public class Theme {
     public static Drawable chat_msgCallDownGreenDrawable;
 
     public static Drawable chat_attachEmptyDrawable;
-    public static RLottieDrawable[] chat_attachButtonDrawables = new RLottieDrawable[6];
+    public static RLottieDrawable[] chat_attachButtonDrawables = new RLottieDrawable[7];
     public static Drawable[] chat_locationDrawable = new Drawable[2];
     public static Drawable[] chat_contactDrawable = new Drawable[2];
     public static Drawable[][] chat_fileStatesDrawable = new Drawable[5][2];
@@ -3336,6 +3336,7 @@ public class Theme {
     public static Drawable calllog_msgCallDownGreenDrawable;
 
     public static Path[] chat_filePath = new Path[2];
+    public static Path[] chat_fileFlexatarPath = new Path[2];
     public static Path[] chat_updatePath = new Path[3];
     public static Drawable chat_flameIcon;
     public static Drawable chat_gifIcon;
@@ -8678,6 +8679,7 @@ public class Theme {
             chat_attachButtonDrawables[3] = new RLottieDrawable(R.raw.attach_contact, "attach_contact", AndroidUtilities.dp(26), AndroidUtilities.dp(26));
             chat_attachButtonDrawables[4] = new RLottieDrawable(R.raw.attach_location, "attach_location", AndroidUtilities.dp(26), AndroidUtilities.dp(26));
             chat_attachButtonDrawables[5] = new RLottieDrawable(R.raw.attach_poll, "attach_poll", AndroidUtilities.dp(26), AndroidUtilities.dp(26));
+            chat_attachButtonDrawables[6] = new RLottieDrawable(R.raw.attach_flexatar, "attach_flexatar", AndroidUtilities.dp(26), AndroidUtilities.dp(26));
             chat_attachEmptyDrawable = resources.getDrawable(R.drawable.nophotos3);
 
             chat_shareIconDrawable = resources.getDrawable(R.drawable.filled_button_share).mutate();
@@ -8685,6 +8687,49 @@ public class Theme {
             chat_closeIconDrawable = resources.getDrawable(R.drawable.msg_voiceclose).mutate();
             chat_goIconDrawable = resources.getDrawable(R.drawable.message_arrow);
 
+            Path path = new Path();
+            path.moveTo(AndroidUtilities.dp(7.280000000000001f),AndroidUtilities.dp(-1.1999999999999993f));
+            path.cubicTo(AndroidUtilities.dp(5.52f), AndroidUtilities.dp(-0.6799999999999997f), AndroidUtilities.dp(5.08f), AndroidUtilities.dp(-0.08000000000000185f), AndroidUtilities.dp(4.76f), AndroidUtilities.dp(1.9199999999999982f));
+            path.cubicTo(AndroidUtilities.dp(4.359999999999999f), AndroidUtilities.dp(4.599999999999998f), AndroidUtilities.dp(3.040000000000001f), AndroidUtilities.dp(8.8f), AndroidUtilities.dp(2.5600000000000005f), AndroidUtilities.dp(8.8f));
+            path.cubicTo(AndroidUtilities.dp(2.3599999999999994f), AndroidUtilities.dp(8.8f), AndroidUtilities.dp(1.8399999999999999f), AndroidUtilities.dp(8.559999999999999f), AndroidUtilities.dp(1.3599999999999994f), AndroidUtilities.dp(8.280000000000001f));
+            path.cubicTo(AndroidUtilities.dp(0.6400000000000006f), AndroidUtilities.dp(7.84f), AndroidUtilities.dp(0.40000000000000036f), AndroidUtilities.dp(7.960000000000001f), AndroidUtilities.dp(-0.5999999999999996f), AndroidUtilities.dp(9.079999999999998f));
+            path.cubicTo(AndroidUtilities.dp(-1.5999999999999996f), AndroidUtilities.dp(10.2f), AndroidUtilities.dp(-1.7199999999999998f), AndroidUtilities.dp(10.559999999999999f), AndroidUtilities.dp(-1.3999999999999995f), AndroidUtilities.dp(11.440000000000001f));
+            path.cubicTo(AndroidUtilities.dp(-1.1600000000000001f), AndroidUtilities.dp(12.04f), AndroidUtilities.dp(-0.5199999999999996f), AndroidUtilities.dp(13.04f), AndroidUtilities.dp(0.0f), AndroidUtilities.dp(13.68f));
+            path.cubicTo(AndroidUtilities.dp(0.5600000000000005f), AndroidUtilities.dp(14.32f), AndroidUtilities.dp(1.0f), AndroidUtilities.dp(15.04f), AndroidUtilities.dp(1.0f), AndroidUtilities.dp(15.24f));
+            path.cubicTo(AndroidUtilities.dp(1.0f), AndroidUtilities.dp(15.44f), AndroidUtilities.dp(1.4399999999999995f), AndroidUtilities.dp(15.68f), AndroidUtilities.dp(2.0f), AndroidUtilities.dp(15.84f));
+            path.cubicTo(AndroidUtilities.dp(2.5600000000000005f), AndroidUtilities.dp(15.959999999999999f), AndroidUtilities.dp(3.0f), AndroidUtilities.dp(16.36f), AndroidUtilities.dp(3.0f), AndroidUtilities.dp(16.759999999999998f));
+            path.cubicTo(AndroidUtilities.dp(3.0f), AndroidUtilities.dp(19.560000000000002f), AndroidUtilities.dp(4.960000000000001f), AndroidUtilities.dp(22.4f), AndroidUtilities.dp(8.08f), AndroidUtilities.dp(24.08f));
+            path.cubicTo(AndroidUtilities.dp(9.68f), AndroidUtilities.dp(24.96f), AndroidUtilities.dp(10.400000000000002f), AndroidUtilities.dp(25.12f), AndroidUtilities.dp(12.32f), AndroidUtilities.dp(24.96f));
+            path.cubicTo(AndroidUtilities.dp(17.12f), AndroidUtilities.dp(24.64f), AndroidUtilities.dp(20.96f), AndroidUtilities.dp(21.32f), AndroidUtilities.dp(21.0f), AndroidUtilities.dp(17.48f));
+            path.cubicTo(AndroidUtilities.dp(21.0f), AndroidUtilities.dp(16.72f), AndroidUtilities.dp(21.28f), AndroidUtilities.dp(16.28f), AndroidUtilities.dp(21.92f), AndroidUtilities.dp(16.04f));
+            path.cubicTo(AndroidUtilities.dp(22.88f), AndroidUtilities.dp(15.64f), AndroidUtilities.dp(25.799999999999997f), AndroidUtilities.dp(11.719999999999999f), AndroidUtilities.dp(25.799999999999997f), AndroidUtilities.dp(10.719999999999999f));
+            path.cubicTo(AndroidUtilities.dp(25.799999999999997f), AndroidUtilities.dp(10.399999999999999f), AndroidUtilities.dp(25.4f), AndroidUtilities.dp(9.64f), AndroidUtilities.dp(24.96f), AndroidUtilities.dp(9.04f));
+            path.cubicTo(AndroidUtilities.dp(24.2f), AndroidUtilities.dp(8.079999999999998f), AndroidUtilities.dp(23.92f), AndroidUtilities.dp(7.960000000000001f), AndroidUtilities.dp(22.6f), AndroidUtilities.dp(8.2f));
+            path.lineTo(AndroidUtilities.dp(21.12f),AndroidUtilities.dp(8.440000000000001f));
+            path.lineTo(AndroidUtilities.dp(20.48f),AndroidUtilities.dp(6.32f));
+            path.cubicTo(AndroidUtilities.dp(20.080000000000002f), AndroidUtilities.dp(5.16f), AndroidUtilities.dp(19.68f), AndroidUtilities.dp(3.3200000000000003f), AndroidUtilities.dp(19.560000000000002f), AndroidUtilities.dp(2.280000000000001f));
+            path.cubicTo(AndroidUtilities.dp(19.240000000000002f), AndroidUtilities.dp(0.0f), AndroidUtilities.dp(18.72f), AndroidUtilities.dp(-0.6000000000000014f), AndroidUtilities.dp(16.68f), AndroidUtilities.dp(-1.1999999999999993f));
+            path.cubicTo(AndroidUtilities.dp(14.920000000000002f), AndroidUtilities.dp(-1.6799999999999997f), AndroidUtilities.dp(8.88f), AndroidUtilities.dp(-1.6799999999999997f), AndroidUtilities.dp(7.280000000000001f), AndroidUtilities.dp(-1.1999999999999993f));
+            path.moveTo(AndroidUtilities.dp(10.32f),AndroidUtilities.dp(10.36f));
+            path.cubicTo(AndroidUtilities.dp(10.52f), AndroidUtilities.dp(10.559999999999999f), AndroidUtilities.dp(10.600000000000001f), AndroidUtilities.dp(11.2f), AndroidUtilities.dp(10.440000000000001f), AndroidUtilities.dp(11.759999999999998f));
+            path.cubicTo(AndroidUtilities.dp(10.120000000000001f), AndroidUtilities.dp(13.079999999999998f), AndroidUtilities.dp(8.68f), AndroidUtilities.dp(13.48f), AndroidUtilities.dp(7.08f), AndroidUtilities.dp(12.64f));
+            path.cubicTo(AndroidUtilities.dp(5.6f), AndroidUtilities.dp(11.879999999999999f), AndroidUtilities.dp(5.5600000000000005f), AndroidUtilities.dp(11.8f), AndroidUtilities.dp(5.200000000000001f), AndroidUtilities.dp(9.919999999999998f));
+            path.lineTo(AndroidUtilities.dp(4.92f),AndroidUtilities.dp(8.440000000000001f));
+            path.lineTo(AndroidUtilities.dp(7.4399999999999995f),AndroidUtilities.dp(9.2f));
+            path.cubicTo(AndroidUtilities.dp(8.8f), AndroidUtilities.dp(9.64f), AndroidUtilities.dp(10.080000000000002f), AndroidUtilities.dp(10.120000000000001f), AndroidUtilities.dp(10.32f), AndroidUtilities.dp(10.36f));
+            path.moveTo(AndroidUtilities.dp(18.400000000000002f),AndroidUtilities.dp(11.440000000000001f));
+            path.cubicTo(AndroidUtilities.dp(16.96f), AndroidUtilities.dp(13.68f), AndroidUtilities.dp(13.8f), AndroidUtilities.dp(13.52f), AndroidUtilities.dp(13.8f), AndroidUtilities.dp(11.239999999999998f));
+            path.cubicTo(AndroidUtilities.dp(13.8f), AndroidUtilities.dp(10.16f), AndroidUtilities.dp(13.96f), AndroidUtilities.dp(10.0f), AndroidUtilities.dp(16.32f), AndroidUtilities.dp(9.32f));
+            path.lineTo(AndroidUtilities.dp(18.8f),AndroidUtilities.dp(8.559999999999999f));
+            path.lineTo(AndroidUtilities.dp(18.92f),AndroidUtilities.dp(9.52f));
+            path.cubicTo(AndroidUtilities.dp(19.0f), AndroidUtilities.dp(10.04f), AndroidUtilities.dp(18.76f), AndroidUtilities.dp(10.879999999999999f), AndroidUtilities.dp(18.400000000000002f), AndroidUtilities.dp(11.440000000000001f));
+            path.moveTo(AndroidUtilities.dp(14.2f),AndroidUtilities.dp(17.88f));
+            path.cubicTo(AndroidUtilities.dp(14.2f), AndroidUtilities.dp(18.48f), AndroidUtilities.dp(12.8f), AndroidUtilities.dp(19.6f), AndroidUtilities.dp(12.0f), AndroidUtilities.dp(19.6f));
+            path.cubicTo(AndroidUtilities.dp(11.04f), AndroidUtilities.dp(19.6f), AndroidUtilities.dp(10.2f), AndroidUtilities.dp(18.92f), AndroidUtilities.dp(10.2f), AndroidUtilities.dp(18.119999999999997f));
+            path.cubicTo(AndroidUtilities.dp(10.2f), AndroidUtilities.dp(17.759999999999998f), AndroidUtilities.dp(10.84f), AndroidUtilities.dp(17.6f), AndroidUtilities.dp(12.2f), AndroidUtilities.dp(17.6f));
+            path.cubicTo(AndroidUtilities.dp(13.32f), AndroidUtilities.dp(17.6f), AndroidUtilities.dp(14.2f), AndroidUtilities.dp(17.72f), AndroidUtilities.dp(14.2f), AndroidUtilities.dp(17.88f));
+            path.close();
+            chat_fileFlexatarPath[0] = path;
             int rad = AndroidUtilities.dp(2);
             RectF rect = new RectF();
             chat_filePath[0] = new Path();
@@ -8708,6 +8753,11 @@ public class Theme {
             chat_filePath[1].lineTo(AndroidUtilities.dp(14), AndroidUtilities.dp(10));
             chat_filePath[1].close();
 
+//            chat_filePath[0] = path;
+//            chat_filePath[1] = new Path();
+//            chat_filePath[0] = path;
+
+
             chat_flameIcon = resources.getDrawable(R.drawable.filled_fire).mutate();
             chat_gifIcon = resources.getDrawable(R.drawable.msg_round_gif_m).mutate();
 
@@ -8719,6 +8769,8 @@ public class Theme {
             chat_fileStatesDrawable[2][1] = createCircleDrawableWithIcon(AndroidUtilities.dp(44), R.drawable.msg_round_load_m);
             chat_fileStatesDrawable[3][0] = createCircleDrawableWithIcon(AndroidUtilities.dp(44), R.drawable.msg_round_file_s);
             chat_fileStatesDrawable[3][1] = createCircleDrawableWithIcon(AndroidUtilities.dp(44), R.drawable.msg_round_file_s);
+
+
             chat_fileStatesDrawable[4][0] = createCircleDrawableWithIcon(AndroidUtilities.dp(44), R.drawable.msg_round_cancel_m);
             chat_fileStatesDrawable[4][1] = createCircleDrawableWithIcon(AndroidUtilities.dp(44), R.drawable.msg_round_cancel_m);
 

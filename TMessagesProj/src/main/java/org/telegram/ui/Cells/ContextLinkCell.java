@@ -75,6 +75,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
     private final static int DOCUMENT_ATTACH_TYPE_PHOTO = 7;
     private final static int DOCUMENT_ATTACH_TYPE_GEO = 8;
 
+
     public interface ContextLinkCellDelegate {
         void didPressedImage(ContextLinkCell cell);
     }

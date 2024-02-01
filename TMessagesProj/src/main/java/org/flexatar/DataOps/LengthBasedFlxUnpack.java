@@ -1,5 +1,7 @@
 package org.flexatar.DataOps;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,9 +29,11 @@ public class LengthBasedFlxUnpack {
             }else{
                 hPacksByte.add(body);
                 String str = new String(body, StandardCharsets.UTF_8);
+
                 try {
+                    Log.d("====DEB====", " header " + str);
                     JSONObject jsonObject = new JSONObject(str);
-//                    Log.d("====DEB====", " header " + jsonObject.getString("type"));
+
                     hPacks.add(jsonObject.getString("type"));
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
