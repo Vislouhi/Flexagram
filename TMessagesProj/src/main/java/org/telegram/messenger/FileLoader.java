@@ -9,6 +9,7 @@
 package org.telegram.messenger;
 
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.SparseArray;
 
 import org.telegram.tgnet.TLObject;
@@ -1444,7 +1445,9 @@ public class FileLoader extends BaseController {
 
     public static String fixFileName(String fileName) {
         if (fileName != null) {
-            fileName = fileName.replaceAll("[\u0001-\u001f<>\u202E:\"/\\\\|?*\u007f]+", "").trim();
+
+                fileName = fileName.replaceAll("[\u0001-\u001f<>\u202E:\"/\\\\|?*\u007f]+", "").trim();
+
         }
         return fileName;
     }
@@ -1469,6 +1472,7 @@ public class FileLoader extends BaseController {
                 }
             }
         }
+
         fileName = fixFileName(fileName);
         return fileName != null ? fileName : "";
     }

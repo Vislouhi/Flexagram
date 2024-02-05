@@ -28,6 +28,8 @@ import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Components.BitmapShaderTools;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
+import org.telegram.ui.Components.RLottieDrawable;
+import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.voip.PrivateVideoPreviewDialogNew;
 
 public class FlexatarInstructionFragment extends BaseFragment{
@@ -246,6 +248,21 @@ public class FlexatarInstructionFragment extends BaseFragment{
         positiveButton.setPadding(0, AndroidUtilities.dp(12), 0, AndroidUtilities.dp(12));
         positiveButton.setOnClickListener(onViewInstructionsChosenListener);
         linearLayout.addView(positiveButton,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,12,12,12,12));
+
+        RLottieDrawable downloadDrawable = new RLottieDrawable(R.raw.download_progress, "download_progress", AndroidUtilities.dp(36), AndroidUtilities.dp(36), false, null);
+//        RLottieDrawable downloadDrawable = new RLottieDrawable(R.raw.speaker, "" + R.raw.speaker, AndroidUtilities.dp(24), AndroidUtilities.dp(24), true, null);
+
+        RLottieImageView imageView = new RLottieImageView(context);
+        imageView.setScaleType(ImageView.ScaleType.CENTER);
+        imageView.setAnimation(downloadDrawable);
+        imageView.setBackgroundColor(Color.BLACK);
+        imageView.setTag(1);
+        linearLayout.addView(imageView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 40, Gravity.CENTER, 0, 0, 0, 0));
+//        downloadDrawable.setCustomEndFrame(17);
+//        downloadDrawable.setCurrentFrame(10, false, true);
+        downloadDrawable.setAutoRepeat(1);
+        downloadDrawable.start();
+
         return fragmentView;
     }
     public void setOnTryInterfacePressed(View.OnClickListener listener){

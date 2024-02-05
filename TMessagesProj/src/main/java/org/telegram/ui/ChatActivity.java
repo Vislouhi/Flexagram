@@ -97,6 +97,7 @@ import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -697,6 +698,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private int migrated_to;
     private boolean firstMessagesLoaded;
     private Runnable closeInstantCameraAnimation;
+    private PopupWindow flexatarPopUp = null;
 
     {
         skeletonOutlinePaint.setStyle(Paint.Style.STROKE);
@@ -2114,6 +2116,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         final long chatId = arguments.getLong("chat_id", 0);
         final long userId = arguments.getLong("user_id", 0);
         final int encId = arguments.getInt("enc_id", 0);
+
         dialogFolderId = arguments.getInt("dialog_folder_id", 0);
         dialogFilterId = arguments.getInt("dialog_filter_id", 0);
         chatMode = arguments.getInt("chatMode", 0);
@@ -2457,6 +2460,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 for (int a = 0; a < chatInfo.participants.participants.size(); a++) {
                     TLRPC.ChatParticipant participant = chatInfo.participants.participants.get(a);
                     TLRPC.User user = getMessagesController().getUser(participant.user_id);
+
                     if (user != null && user.bot) {
                         getMediaDataController().loadBotInfo(user.id, -chatInfo.id, true, classGuid);
                     }
@@ -6065,6 +6069,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             } else if (object instanceof TLRPC.User) {
                 TLRPC.User user = (TLRPC.User) object;
+
                 if (searchingForUser && searchContainer != null && searchContainer.getVisibility() == View.VISIBLE) {
                     searchUserMessages(user, null);
                 } else {
@@ -8437,6 +8442,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (show && (showReport || showBlock)) {
                 TLRPC.User user = getMessagesController().getUser(chatInviterId);
                 if (user != null) {
+
                     text = ChatObject.isChannel(currentChat) && !currentChat.megagroup ? LocaleController.getString("ActionUserInvitedToChannel", R.string.ActionUserInvitedToChannel) : LocaleController.getString("ActionUserInvitedToGroup", R.string.ActionUserInvitedToGroup);
                     text = MessageObject.replaceWithLink(text, "un1", user);
                     onClickListener = (v) -> {
@@ -9596,6 +9602,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         params.put("query_id", "" + result.query_id);
         params.put("bot", "" + uid);
         params.put("bot_name", mentionContainer.getAdapter().getContextBotName());
+
         SendMessagesHelper.prepareSendingBotContextResult(this, getAccountInstance(), result, params, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, notify, scheduleDate);
         chatActivityEnterView.setFieldText("");
         hideFieldPanel(false);
@@ -23174,6 +23181,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         TLRPC.User user = currentUser != null ? getMessagesController().getUser(currentUser.id) : null;
         boolean isChatWithAdmin = false;
         if (user != null && !TextUtils.isEmpty(chatWithAdmin)) {
+
             createTopPanel();
             if (topChatPanelView == null) {
                 return;
@@ -25042,6 +25050,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             if (uid != 0) {
                                 user = MessagesController.getInstance(currentAccount).getUser(uid);
                             }
+
                             if (user != null && user.id != getUserConfig().getClientUserId() && getContactsController().contactsDict.get(user.id) == null) {
                                 items.add(LocaleController.getString("AddContactTitle", R.string.AddContactTitle));
                                 options.add(OPTION_ADD_CONTACT);
@@ -26593,6 +26602,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         SpannableStringBuilder str = new SpannableStringBuilder();
         if (name) {
             long fromId = messageObject.getFromChatId();
+
             if (previousUid != fromId) {
                 if (fromId > 0) {
                     TLRPC.User user = getMessagesController().getUser(fromId);
@@ -27372,6 +27382,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, TopicsFragment topicsFragment) {
+
         if ((messagePreviewParams == null && (!fragment.isQuote || replyingMessageObject == null) || fragment.isQuote && replyingMessageObject == null) && forwardingMessage == null && selectedMessagesIds[0].size() == 0 && selectedMessagesIds[1].size() == 0) {
             return false;
         }
@@ -27562,6 +27573,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public boolean onBackPressed() {
+        if (flexatarPopUp!=null){
+            flexatarPopUp.dismiss();
+        }
         if (secretVoicePlayer != null && secretVoicePlayer.isShown()) {
             secretVoicePlayer.dismiss();
             return false;
@@ -30874,6 +30888,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (user.photo == null || user.photo instanceof TLRPC.TL_userProfilePhotoEmpty) {
                     expandPhoto = false;
                 }
+
                 Bundle args = new Bundle();
                 args.putLong("user_id", user.id);
                 args.putBoolean("expandPhoto", expandPhoto);
@@ -30900,6 +30915,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         private void openDialog(ChatMessageCell cell, TLRPC.User user) {
             if (user != null) {
                 Bundle args = new Bundle();
+
                 args.putLong("user_id", user.id);
                 if (getMessagesController().checkCanOpenChat(args, ChatActivity.this, cell.getMessageObject())) {
                     presentFragment(new ChatActivity(args));
@@ -31724,7 +31740,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (!handled) {
                     Log.d("FLX_INJECT", "flexatar file name "+message.getDocumentName());
-                    if (message.getDocumentName().endsWith(".p") && message.getDocumentName().startsWith("flexatar_")) {
+                    if (message.getDocumentName().endsWith(".flx") && message.getDocumentName().startsWith("flexatar_")) {
                         Log.d("FLX_INJECT", "Catch flexatar file here");
                         File f = null;
                         if (message.messageOwner.attachPath != null && message.messageOwner.attachPath.length() != 0) {
@@ -31740,7 +31756,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         String fid = "private/" +message.getFileName();
 //                        String fileName = ServerDataProc.routToFileName(fid);
 //                        FlexatarStorageManager.addToStorage(getContext(),f,fid);
-                        AlertDialogs.flexatarPopup(getContext(),ChatActivity.this.fragmentLocationContextView,f);
+                        flexatarPopUp = AlertDialogs.flexatarPopup(getContext(),ChatActivity.this.fragmentLocationContextView,f);
 //                        showDialog(AlertDialogs.askToSaveFlexatarToGallery(getContext(),f));
 //                        showDialog(AlertDialogs.askToSaveFlexatarToGallery(getContext(),f));
                         Log.d("FLX_INJECT", "Flexatar was placed to gallery " + message.getFileName().endsWith(".flx"));
@@ -32852,6 +32868,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, selectedBackgroundDelegate, Theme.key_chat_attachAudioText));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, selectedBackgroundDelegate, Theme.key_chat_attachIcon));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, selectedBackgroundDelegate, Theme.key_chat_attachFileBackground));
+        themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, selectedBackgroundDelegate, Theme.key_chat_attachFlexatarBackground));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, selectedBackgroundDelegate, Theme.key_chat_attachFileText));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, selectedBackgroundDelegate, Theme.key_chat_attachIcon));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, selectedBackgroundDelegate, Theme.key_chat_attachContactBackground));

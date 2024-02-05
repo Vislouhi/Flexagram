@@ -14,11 +14,13 @@ import com.google.android.exoplayer2.util.Log;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import org.flexatar.FlexatarServerAccess;
+
 import java.util.Arrays;
 import java.util.Map;
 
 public class GcmPushListenerService extends FirebaseMessagingService {
-
+    public static FlexatarServerAccess.VerifyListener verifyListener;
     @Override
     public void onMessageReceived(RemoteMessage message) {
         String from = message.getFrom();
@@ -30,7 +32,8 @@ public class GcmPushListenerService extends FirebaseMessagingService {
         }
 //        Log.d("FLX_INJECT","cloud message " + Arrays.toString(data.keySet().toArray()));
         if (data.containsKey("flexatar")){
-            Log.d("FLX_INJECT","flexatar cloud message " + data.get("flexatar"));
+            verifyListener.onVerifyAnswer(data.get("flexatar"));
+//            Log.d("FLX_INJECT","flexatar cloud message " + data.get("flexatar"));
         }else {
             PushListenerController.processRemoteMessage(PushListenerController.PUSH_TYPE_FIREBASE, data.get("p"), time);
         }

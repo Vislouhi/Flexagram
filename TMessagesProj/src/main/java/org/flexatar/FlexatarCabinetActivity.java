@@ -1,35 +1,17 @@
 package org.flexatar;
 
 import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.animation.StateListAnimator;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.Outline;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.Drawable;
-import android.opengl.GLSurfaceView;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.SpannableString;
-import android.text.style.ImageSpan;
 import android.util.Log;
-import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.View;
 
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import android.widget.TextView;
@@ -39,40 +21,36 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
 
+import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
-import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 
-import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
-
-import org.telegram.ui.Components.RLottieImageView;
-
-import org.telegram.ui.Components.voip.VoIPHelper;
+import org.telegram.ui.DialogsActivity;
 
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 public class FlexatarCabinetActivity extends BaseFragment  {
 
@@ -94,6 +72,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     private ItemAdapter itemAdapter;
     private FrameLayout frameLayout;
     private int checkedCount = 0;
+    private TLRPC.User currentUser;
 
     @Override
     public boolean onFragmentCreate() {
@@ -107,6 +86,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
         TicketsController.stop();
+        FlexatarServerAccess.downloadBuiltinObserver = null;
 
     }
     @Override
@@ -166,13 +146,15 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             item.setImageResource(R.drawable.msg_help);
             item.setNameText(LocaleController.getString("ViewInstructions", R.string.ViewInstructions));
             item.setOnClickListener(v->{
+
                 FlexatarInstructionFragment flexatarInstructionFragment = new FlexatarInstructionFragment();
-                flexatarInstructionFragment.setOnTryInterfacePressed((v1)->{
+                flexatarInstructionFragment.setOnTryInterfacePressed((v1) -> {
 
                     presentFragment(new FlexatarCameraCaptureFragment(true));
                     flexatarInstructionFragment.finishPage();
                 });
                 presentFragment(flexatarInstructionFragment);
+
             });
             itemsAction.add(item);
         }
@@ -181,15 +163,164 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             item.setImageResource(R.drawable.msg_addphoto);
             item.setNameText(LocaleController.getString("NewFlexatarByPhoto", R.string.NewFlexatarByPhoto));
             item.setOnClickListener(v-> {
-                if (ValueStorage.checkIfInstructionsComplete(context)) {
-                    presentFragment(new FlexatarCameraCaptureFragment());
+                if (Config.isVerified()) {
+                    if (ValueStorage.checkIfInstructionsComplete(context)) {
+                        presentFragment(new FlexatarCameraCaptureFragment());
+                    } else {
+                        showDialog(AlertDialogs.askToCompleteInstructions(context));
+                    }
                 }else{
-                    showDialog(AlertDialogs.askToCompleteInstructions(context));
+                    showDialog(AlertDialogs.showVerifyInProgress(context));
                 }
             });
 
             itemsAction.add(item);
         }
+        {
+            ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+            item.setImageResource(R.drawable.msg_download);
+            if (FlexatarServerAccess.isDownloadingFlexatars){
+                item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
+            }else{
+                item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
+            }
+
+            item.setOnClickListener(v-> {
+                if (Config.isVerified()) {
+                    if (!FlexatarServerAccess.isDownloadingFlexatars) {
+                        handler.post(() -> {
+                            item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
+                            itemAdapter.notifyItemChanged(2);
+                        });
+                        FlexatarServerAccess.downloadCloudFlexatars(() -> {
+                            FlexatarServerAccess.isDownloadingFlexatars = false;
+                            handler.post(() -> {
+                                item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
+                                itemAdapter.notifyItemChanged(2);
+                            });
+                        });
+                    }
+
+                }else{
+                    showDialog(AlertDialogs.showVerifyInProgress(context));
+                }
+            });
+
+            itemsAction.add(item);
+        }
+//        ===============DEBUG CELLS============
+        if (Config.debugMode) {
+            {
+                ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+                item.setImageResource(R.drawable.msg_list);
+                item.setNameText("Check private storage");
+                item.setOnClickListener(v -> {
+                    if (Config.isVerified()) {
+                        FlexatarServerAccess.lambdaRequest("/list/1.00", "GET", null, null, new FlexatarServerAccess.CompletionListener() {
+                            @Override
+                            public void onReady(String response) {
+                                String[] links = ServerDataProc.getFlexatarLinkList(response, "private");
+//                            String[] ids = ServerDataProc.getFlexatarIdList(response, "public");
+                                if (links.length == 0) {
+                                    Log.d("FLX_INJECT", "private flexatars on server is empty list");
+                                    return;
+                                }
+                                Log.d("FLX_INJECT", "private flexatar on server: " + Arrays.toString(links));
+
+                            /*if (linksToDownload.size()>0){
+                                FlexatarServerAccess.downloadFlexatarListRecursive(FlexatarStorageManager.PUBLIC_PREFIX,linksToDownload,idsToDownload,0);
+                            }*/
+                            }
+                        });
+
+                    } else {
+                        showDialog(AlertDialogs.showVerifyInProgress(context));
+                    }
+                });
+
+                itemsAction.add(item);
+            }
+            {
+                ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+                item.setImageResource(R.drawable.msg_clear);
+                item.setNameText("Clear cloud storage");
+                item.setOnClickListener(v -> {
+                    if (Config.isVerified()) {
+                        FlexatarServerAccess.lambdaRequest("/list/1.00", "GET", null, null, new FlexatarServerAccess.CompletionListener() {
+                            @Override
+                            public void onReady(String response) {
+                                String[] links = ServerDataProc.getFlexatarLinkList(response, "private");
+//                            String[] ids = ServerDataProc.getFlexatarIdList(response, "public");
+
+                                Log.d("FLX_INJECT", "private flexatar on server " + Arrays.toString(links));
+                                for (String link : links)
+                                    FlexatarServerAccess.lambdaRequest("/" + ServerDataProc.genDeleteRout(link), "DELETE", null, null, null);
+
+                            /*if (linksToDownload.size()>0){
+                                FlexatarServerAccess.downloadFlexatarListRecursive(FlexatarStorageManager.PUBLIC_PREFIX,linksToDownload,idsToDownload,0);
+                            }*/
+                            }
+                        });
+
+                    } else {
+                        showDialog(AlertDialogs.showVerifyInProgress(context));
+                    }
+                });
+
+                itemsAction.add(item);
+            }
+            {
+                ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+                item.setImageResource(R.drawable.msg_delete);
+                item.setNameText("Delete local files");
+                item.setOnClickListener(v -> {
+                    if (Config.isVerified()) {
+                        File[] localFlexatars = FlexatarStorageManager.getFlexatarFileList(context, FlexatarStorageManager.FLEXATAR_PREFIX);
+                        for (File file : localFlexatars) {
+                            FlexatarStorageManager.deleteFromStorage(context, file, false);
+                        }
+                        Log.d("FLX_INJECT", "local flexatars deleted");
+
+                    } else {
+                        showDialog(AlertDialogs.showVerifyInProgress(context));
+                    }
+                });
+
+                itemsAction.add(item);
+            }
+            {
+                ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+                item.setImageResource(R.drawable.msg_delete);
+                item.setNameText("Try send to bot");
+                item.setOnClickListener(v -> {
+                    if (Config.isVerified()) {
+
+                        Log.d("FLX_INJECT", "Try send to bot");
+                        Config.botAuth(new Config.BotAuthCompletionListener() {
+                            @Override
+                            public void onReady(String token) {
+                                Log.d("FLX_INJECT", "Authorized "+token);
+                            }
+
+                            @Override
+                            public void onFail() {
+                                Log.d("FLX_INJECT", "Authorization failed ");
+                            }
+                        });
+
+
+                    } else {
+                        showDialog(AlertDialogs.showVerifyInProgress(context));
+                    }
+                });
+
+                itemsAction.add(item);
+            }
+        }
+//        796917078
+//        2101656846
+
+//======================END DEBUG CELLS===
         {
             ItemModel item = new ItemModel(ItemModel.DELIMITER);
             item.setNameText(LocaleController.getString("FlexatarsAvailableForCalls", R.string.FlexatarsAvailableForCalls));
@@ -241,6 +372,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             }
 
         });
+        itemAdapter.setResourceProvider(getResourceProvider());
 
         recyclerView.setAdapter(itemAdapter);
         recyclerView.setLayoutParams(new LinearLayout.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
@@ -249,13 +381,34 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
 
 
-        /*FlexatarServerAccess.downloadBuiltinObserver = file -> {
+        FlexatarServerAccess.downloadBuiltinObserver = new FlexatarServerAccess.DownloadBuiltinObserver() {
+            @Override
+            public void start() {
+                ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
+                itemAdapter.addFlexatarItem(item);
+            }
+
+            @Override
+            public void onError() {
+                itemAdapter.removeFlexatarCell(1);
+            }
+
+            @Override
+            public void downloaded(File file) {
+                itemAdapter.removeFlexatarCell(1);
+                ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
+                item.setFlexatarFile(file);
+                itemAdapter.addFlexatarItem(item);
+
+            }
+        };
+    /*file -> {
             ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
             item.setFlexatarFile(file);
-            itemsFlexatar.add(item);
-            handler.post(()->{
-                itemAdapter.notifyDataSetChanged();
-            });
+            itemAdapter.addFlexatarItem(item);
+//            handler.post(()->{
+//                itemAdapter.notifyDataSetChanged();
+//            });
 
         };*/
 

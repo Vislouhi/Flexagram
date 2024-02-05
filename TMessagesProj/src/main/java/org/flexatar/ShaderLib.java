@@ -1,6 +1,38 @@
 package org.flexatar;
 
 public class ShaderLib {
+    public static final String FRAME_VERTEX =
+                    "attribute vec2 uv;\n" +
+                    "varying highp vec2 UV;" +
+                    "void main(void) {\n" +
+
+                        "UV = uv;" +
+                        "gl_Position = vec4(uv*vec2(2.0,2.0)-vec2(1.0,1.0),0.0,1.0);" +
+                    "}\n";
+    public static final String FRAME_FRAGMENT =
+                    "varying highp vec2 UV;" +
+                    "uniform sampler2D uSampler[1];" +
+
+
+                    "void main(void) {" +
+                    "highp float alpha = texture2D(uSampler[0], UV).a;"+
+//                    "highp float alpha_inv = 1.0-alpha;"+
+//                            "if (alpha>0.5) discard;"+
+                    " gl_FragColor = vec4(0.0,0.0,0.0,alpha);" +
+                    "}";
+    public static final String ROUNDED_FRAGMENT =
+            "varying highp vec2 UV;" +
+                    "uniform sampler2D uSampler[2];" +
+
+
+                    "void main(void) {" +
+                    "highp float alpha = texture2D(uSampler[0], UV).a;"+
+                    "highp vec4 color = texture2D(uSampler[1], UV);"+
+//                    "highp float alpha_inv = 1.0-alpha;"+
+//                            "if (alpha>0.5) discard;"+
+//                    " gl_FragColor = vec4(color.xyz,1.0-alpha);" +
+                    " gl_FragColor = color*(1.0-alpha);" +
+                    "}";
     public static final String HEAD_SINGLE_VERTEX =
             "attribute vec4 bshp0;\n" +
                     "attribute vec4 bshp1;\n" +

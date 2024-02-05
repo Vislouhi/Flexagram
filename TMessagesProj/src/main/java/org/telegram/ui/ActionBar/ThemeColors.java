@@ -267,6 +267,7 @@ public class ThemeColors {
         defaultColors[key_chat_attachAudioBackground] = 0xffeb6060;
         defaultColors[key_chat_attachAudioText] = 0xffde4747;
         defaultColors[key_chat_attachFileBackground] = 0xff34b9f1;
+        defaultColors[key_chat_attachFlexatarBackground] = 0xff0b5c00;
         defaultColors[key_chat_attachFileText] = 0xff14a8e4;
         defaultColors[key_chat_attachContactBackground] = 0xfff2c04b;
         defaultColors[key_chat_attachContactText] = 0xffdfa000;
@@ -1045,6 +1046,7 @@ public class ThemeColors {
         colorKeysMap.put(key_chat_attachAudioBackground, "chat_attachAudioBackground");
         colorKeysMap.put(key_chat_attachAudioText, "chat_attachAudioText");
         colorKeysMap.put(key_chat_attachFileBackground, "chat_attachFileBackground");
+        colorKeysMap.put(key_chat_attachFlexatarBackground, "chat_attachFlexatarBackground");
         colorKeysMap.put(key_chat_attachFileText, "chat_attachFileText");
         colorKeysMap.put(key_chat_attachContactBackground, "chat_attachContactBackground");
         colorKeysMap.put(key_chat_attachContactText, "chat_attachContactText");

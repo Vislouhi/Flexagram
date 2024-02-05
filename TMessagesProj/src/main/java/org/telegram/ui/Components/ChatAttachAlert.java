@@ -1155,6 +1155,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             if (user == null) {
                 return;
             }
+
             nameTextView.setTextColor(getThemedColor(Theme.key_dialogTextGray2));
             currentUser = user;
             nameTextView.setText(ContactsController.formatName(user.first_name, user.last_name));
@@ -4484,7 +4485,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         attachButton.setTextAndIcon(4, LocaleController.getString("ChatDocument", R.string.ChatDocument), Theme.chat_attachButtonDrawables[2], Theme.key_chat_attachFileBackground, Theme.key_chat_attachFileText);
                         attachButton.setTag(4);
                     } else if (position == flexatarButton) {
-                        attachButton.setTextAndIcon(11, LocaleController.getString("ChatDocument", R.string.ChatDocument), Theme.chat_attachButtonDrawables[6], Theme.key_chat_attachFileBackground, Theme.key_chat_attachFileText);
+                        attachButton.setTextAndIcon(11, LocaleController.getString("FlexatarMenuName", R.string.FlexatarMenuName), Theme.chat_attachButtonDrawables[6], Theme.key_chat_attachFlexatarBackground, Theme.key_chat_attachFileText);
                         attachButton.setTag(11);
                     }
                     else if (position == locationButton) {

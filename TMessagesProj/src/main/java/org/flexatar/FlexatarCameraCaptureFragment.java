@@ -714,10 +714,11 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
         if (flexatarBody == null) {
 
-            FlexatarServerAccess.lambdaRequest("data", "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
+            FlexatarServerAccess.lambdaRequest("/data", "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
                 @Override
                 public void onReady(String response) {
                     try {
+
                         JSONObject json = new JSONObject(response);
                         JSONObject flexatarLinks = json.getJSONArray("private").getJSONObject(0);
                         ticket.formJson(flexatarLinks);
@@ -738,7 +739,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
             });
         }else{
 
-            FlexatarServerAccess.lambdaRequest("delta/"+flexatarBody, "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
+            FlexatarServerAccess.lambdaRequest("/delta/"+flexatarBody, "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
                 @Override
                 public void onReady(String response) {
                     try {
@@ -752,13 +753,13 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
                     }
-                    Log.d("FLX_INJECT", "data resp " + response);
+                    Log.d("FLX_INJECT", "delta resp " + response);
                 }
 
                 @Override
                 public void onFail() {
 
-                    Log.d("FLX_INJECT", "data fail ");
+                    Log.d("FLX_INJECT", "delta fail ");
                 }
             });
 

@@ -34,7 +34,6 @@ import android.provider.OpenableColumns;
 import android.text.Spannable;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -48,6 +47,9 @@ import androidx.annotation.UiThread;
 import androidx.collection.LongSparseArray;
 import androidx.core.view.inputmethod.InputContentInfoCompat;
 
+import com.google.android.exoplayer2.util.Log;
+
+import org.flexatar.FlexatarStorageManager;
 import org.json.JSONObject;
 import org.telegram.messenger.audioinfo.AudioInfo;
 import org.telegram.messenger.support.SparseLongArray;
@@ -90,6 +92,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -3372,6 +3375,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public void sendMessage(SendMessageParams sendMessageParams) {
+        Log.d("FLX_INJECT","sendMessage "+ sendMessageParams.message);
+        Log.d("FLX_INJECT","user id "+ sendMessageParams.user);
+
         String message = sendMessageParams.message;
         String caption = sendMessageParams.caption;
         TLRPC.MessageMedia location = sendMessageParams.location;
@@ -6582,14 +6588,13 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (uri != null && AndroidUtilities.isInternalUri(uri)) {
             return ERROR_TYPE_UNSUPPORTED;
         }
-        boolean isFlexatar = false;
-        if (!path.contains("flexatar_storage")){
+        boolean isFlexatar = path.contains(FlexatarStorageManager.FLEXATAR_STORAGE_FOLDER);
+        boolean isFlexatarPreview = path.contains(FlexatarStorageManager.FLEXATAR_PREVIEW_STORAGE_FOLDER);
+        if (!(isFlexatar||isFlexatarPreview)){
 //        if (!path.endsWith(".p")) {
             if (path != null && AndroidUtilities.isInternalUri(Uri.fromFile(new File(path)))) {
                 return ERROR_TYPE_UNSUPPORTED;
             }
-        }else{
-            isFlexatar = true;
         }
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         TLRPC.TL_documentAttributeAudio attributeAudio = null;
@@ -6722,12 +6727,18 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
             ensureMediaThumbExists(accountInstance, isEncrypted, document, path, null, 0);
         }
+
         if (document == null) {
             document = new TLRPC.TL_document();
             document.id = 0;
             document.date = accountInstance.getConnectionsManager().getCurrentTime();
             TLRPC.TL_documentAttributeFilename fileName = new TLRPC.TL_documentAttributeFilename();
-            if (isFlexatar) name = "flexatar_"+name;
+//            if (isFlexatar) name = "flexatar_"+name;
+//            if (isFlexatarPreview) {
+//                name = FlexatarStorageManager.getFlexatarNameByPreviewFileName(name)+".jpg";
+//            }
+            Log.d("FLX_INJECT","sending file with name "+name);
+
             fileName.file_name = name;
             document.file_reference = new byte[0];
             document.attributes.add(fileName);
@@ -6850,7 +6861,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
             }
         }
-
+        Log.d("FLX_INJECT","sending file with name "+documentFinal.file_name);
+//        if (isFlexatar ) documentFinal.file_name = UUID.randomUUID().toString() +".p";
+//        if (isFlexatarPreview ) documentFinal.file_name = UUID.randomUUID().toString() +".jpg";
         AndroidUtilities.runOnUIThread(() -> {
             if (editingMessageObject != null) {
                 accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, null, null, documentFinal, pathFinal, params, false, false, parentFinal);
@@ -7107,6 +7120,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (result == null) {
             return;
         }
+
         if (result.send_message instanceof TLRPC.TL_botInlineMessageMediaAuto) {
             new Thread(() -> {
                 boolean isEncrypted = DialogObject.isEncryptedDialog(dialogId);

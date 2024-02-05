@@ -2,6 +2,14 @@ package org.flexatar;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.graphics.RectF;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RoundRectShape;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -17,10 +25,13 @@ import androidx.core.graphics.drawable.RoundedBitmapDrawable;
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.CheckBoxCell;
 import org.telegram.ui.Cells.DividerCell;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RLottieDrawable;
 
 import java.io.File;
 
@@ -35,6 +46,9 @@ public class FlexatarCellNew extends RelativeLayout {
     private final TextView nameTextView;
     private FlexatarStorageManager.FlexatarMetaData flexatarMetaData;
     private CheckBoxCell checkBoxCell;
+    private boolean isPublic;
+    private RLottieDrawable downloadDrawable;
+    private Theme.ResourcesProvider resourceProvider;
 
     public File getFlexatarFile(){
         return flexatarFile;
@@ -42,11 +56,25 @@ public class FlexatarCellNew extends RelativeLayout {
     public void setName(String name){
         nameTextView.setText(name);
     }
+    private boolean isDownload = false;
     public FlexatarCellNew(@NonNull Context context) {
         super(context);
 
+        RectF rectF = new RectF();
+        Path path = new Path();
+        icnFlx = new ImageView(context)/*{
+            @Override
+            protected void onDraw(Canvas canvas) {
+                if (isDownload){
+                    rectF.set(0, 0, getWidth(), getHeight());
+                    path.addRoundRect(rectF, 20, 20, Path.Direction.CW);
+                    canvas.clipPath(path);
+                    super.onDraw(canvas);
+                }else
+                    super.onDraw(canvas);
+            }
+        }*/;
 
-        icnFlx = new ImageView(context);
         icnFlx.setContentDescription("flexatar button");
 //        icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
         icnFlx.setPadding(AndroidUtilities.dp(4), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
@@ -102,7 +130,8 @@ public class FlexatarCellNew extends RelativeLayout {
     private boolean isBuiltin = false;
     public void loadFromFile(File flexatarFile){
         this.flexatarFile = flexatarFile;
-        isBuiltin = flexatarFile.getName().startsWith("public");
+        isBuiltin =  flexatarFile.getName().startsWith(FlexatarStorageManager.BUILTIN_PREFIX);
+        isPublic = flexatarFile.getName().startsWith(FlexatarStorageManager.PUBLIC_PREFIX) ;
 //        flexatarType = flexatarFile.getName().split("___")[0];
         flexatarMetaData = FlexatarStorageManager.getFlexatarMetaData(flexatarFile,true);
         Bitmap iconBitmap = flexatarMetaData.previewImage;
@@ -123,12 +152,52 @@ public class FlexatarCellNew extends RelativeLayout {
         nameTextView.setText(flexatarMetaData.name);
         dateTextView.setText(flexatarMetaData.date);
     }
+
+    public void setLoading(){
+        downloadDrawable = new RLottieDrawable(R.raw.download_progress, "download_progress", AndroidUtilities.dp(36), AndroidUtilities.dp(36), false, null);
+//        downloadDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.MULTIPLY));
+
+        icnFlx.setImageDrawable(downloadDrawable);
+        downloadDrawable.setAutoRepeat(1);
+        downloadDrawable.start();
+
+//        ratio = (float)downloadDrawable.getMinimumHeight()/(float)downloadDrawable.getMinimumWidth();
+        imageWidth = 100;
+//        int imageHeight = (int) (imageWidth * ratio);
+        LayoutParams layoutParams = new LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth));
+//        layoutParams.gravity = Gravity.CENTER;
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        layoutParams.setMargins(AndroidUtilities.dp(32),0,0,0);
+//        icnFlx.setBackgroundColor(Color.BLACK);
+        int cornerRadius = AndroidUtilities.dp(20);
+        int fillColor = Theme.getColor( Theme.key_actionBarDefault, resourceProvider);
+//        int fillColor = Theme.key_actionBarActionModeDefault; // Replace with your desired color
+
+        // Create a rounded rectangle shape
+        RoundRectShape roundRectShape = new RoundRectShape(new float[]{cornerRadius, cornerRadius, cornerRadius, cornerRadius, cornerRadius, cornerRadius, cornerRadius, cornerRadius}, null, null);
+
+        // Create a ShapeDrawable with the rounded rectangle shape
+        ShapeDrawable shapeDrawable = new ShapeDrawable(roundRectShape);
+
+        // Set the fill color
+        shapeDrawable.getPaint().setColor(fillColor);
+        icnFlx.setBackground(shapeDrawable);
+
+        icnFlx.setLayoutParams(layoutParams);
+        nameTextView.setText(LocaleController.getString("Downloading", R.string.Downloading));
+        dateTextView.setText("");
+        isDownload = true;
+
+    }
     public void setChecked(boolean checked, boolean animated){
 //        Log.d("FLX_INJECT","flx cell set checked");
         checkBoxCell.setChecked(checked,animated);
     }
     public boolean isBuiltin(){
         return isBuiltin;
+    }
+    public boolean isPublic(){
+        return isPublic;
     }
     public void addCheckbox(){
         if (isBuiltin) {
@@ -145,11 +214,15 @@ public class FlexatarCellNew extends RelativeLayout {
         return checkBoxCell.isChecked();
     }
 
-    public void deleteFlexatarFile() {
+    /*public void deleteFlexatarFile() {
         FlexatarStorageManager.deleteFromStorage(getContext(),flexatarFile);
-    }
+    }*/
 
     public FlexatarStorageManager.FlexatarMetaData getMetaData() {
         return  flexatarMetaData;
+    }
+
+    public void setResourceProvider(Theme.ResourcesProvider resourceProvider) {
+        this.resourceProvider=resourceProvider;
     }
 }

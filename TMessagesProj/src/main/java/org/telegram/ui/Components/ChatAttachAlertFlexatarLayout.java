@@ -28,6 +28,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.SharedDocumentCell;
+import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Components.ChatAttachAlert;
 import org.telegram.ui.Components.ChatAttachAlertDocumentLayout;
 import org.telegram.ui.Components.CombinedDrawable;
@@ -120,7 +121,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
                 startSmoothScroll(linearSmoothScroller);
             }
         });
-        File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
+        File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context,FlexatarStorageManager.FLEXATAR_PREFIX);
 
         listAdapter = new ListAdapter(context,flexatarsInLocalStorage);
         listView.setClipToPadding(false);
@@ -128,17 +129,22 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
         listView.setPadding(0, 0, 0, AndroidUtilities.dp(48));
         addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listView.setOnItemClickListener((view, position) -> {
-            Log.d("FLX_INJECT","send flexatar file " + flexatarsInLocalStorage[position]);
+            if (flexatarsInLocalStorage.length>0) {
+                Log.d("FLX_INJECT", "send flexatar file " + flexatarsInLocalStorage[position]);
 
 
-            ArrayList<MessageObject> fmessages = new ArrayList<>();
+                ArrayList<MessageObject> fmessages = new ArrayList<>();
 
-            ArrayList<String> files = new ArrayList<>();
-            files.add(flexatarsInLocalStorage[position].getAbsolutePath());
-            Log.d("FLX_INJECT","flexatar sent "+files.get(0) + " fmessages "+fmessages.size() + " scheduleDate " + 0 + " cap "+parentAlert.commentTextView.getText().toString());
+                ArrayList<String> files = new ArrayList<>();
+                files.add(FlexatarStorageManager.storePreviewImage(flexatarsInLocalStorage[position]).getAbsolutePath());
+                files.add(flexatarsInLocalStorage[position].getAbsolutePath());
 
-            delegate.didSelectFiles(files, "flexatar", fmessages, true, 0);
-            parentAlert.dismiss(true);
+                Log.d("FLX_INJECT", "flexatar sent " + files.get(0) + " fmessages " + fmessages.size() + " scheduleDate " + 0 + " cap " + parentAlert.commentTextView.getText().toString());
+                Log.d("FLX_INJECT", "flexatar sent " + files.get(1) + " fmessages " + fmessages.size() + " scheduleDate " + 0 + " cap " + parentAlert.commentTextView.getText().toString());
+
+                delegate.didSelectFiles(files, "", fmessages, true, 0);
+                parentAlert.dismiss(true);
+            }
         });
 
         listView.setOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -200,7 +206,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
         public int getItemCount() {
 
 //            return 3;
-            return flexatarFiles.length;
+            return flexatarFiles.length == 0 ? 1 : flexatarFiles.length;
         }
 
         /*public ChatAttachAlertDocumentLayout.ListItem getItem(int position) {
@@ -233,14 +239,21 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
 
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
-            return new RecyclerListView.Holder(new FlexatarCellNew(mContext));
+            if (flexatarFiles.length>0) {
+                return new RecyclerListView.Holder(new FlexatarCellNew(mContext));
+            }else{
+                return new RecyclerListView.Holder( new TextCell(mContext));
+            }
         }
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            FlexatarCellNew fCell = (FlexatarCellNew) holder.itemView;
-            fCell.loadFromFile(flexatarFiles[position]);
+            if (flexatarFiles.length>0) {
+                FlexatarCellNew fCell = (FlexatarCellNew) holder.itemView;
+                fCell.loadFromFile(flexatarFiles[position]);
+            }else{
+                ((TextCell) holder.itemView).setTextAndIcon(LocaleController.getString("NoFlexatarsToShare", R.string.NoFlexatarsToShare), R.drawable.filled_unclaimed, false);
+            }
         }
 
         @Override

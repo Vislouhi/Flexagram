@@ -29,6 +29,8 @@ public class FlexatarCommon {
     public static int mouthLineMaskId;
     public static float[] uvKeyPoint;
     private static Bitmap mouthLineBitmap;
+    public static Bitmap blackFrame;
+    public static ByteBuffer frameBB;
 
     public static void prepare(){
         prepareAnimationPatterns();
@@ -109,14 +111,18 @@ public class FlexatarCommon {
         public final VBO[] speechBshVBO;
         public final int idxCount;
         public final TextureArray mouthLineTexture;
+        public final TextureArray frameTexture;
+        public final VBO frameVBO;
 
-        public GlBuffers(VBO eyebrowVBO, VBO uvVBO, VBO idxVBO, VBO[] speechBshVBO,int idxCount,TextureArray mouthLineTexture) {
+        public GlBuffers(VBO eyebrowVBO, VBO uvVBO, VBO idxVBO, VBO[] speechBshVBO,int idxCount,TextureArray mouthLineTexture,VBO frameVBO,TextureArray frameTexture) {
             this.eyebrowVBO = eyebrowVBO;
             this.uvVBO = uvVBO;
             this.idxVBO = idxVBO;
             this.speechBshVBO = speechBshVBO;
             this.idxCount=idxCount;
             this.mouthLineTexture=mouthLineTexture;
+            this.frameVBO=frameVBO;
+            this.frameTexture=frameTexture;
 
         }
         public void release(){
@@ -168,7 +174,9 @@ public class FlexatarCommon {
         byte[] imgData = AssetAccess.dataFromFile("flexatar/FLX_mouth_line_mask.dat");
         InputStream inputStream = new ByteArrayInputStream(imgData);
         mouthLineBitmap = BitmapFactory.decodeStream(inputStream);
+        blackFrame = BitmapFactory.decodeStream(new ByteArrayInputStream(AssetAccess.dataFromFile("flexatar/frame.png")));
 
+        frameBB = Data.floatArrayToBytebuffer(new float[]{0,0,0,1,1,1,0,0,1,1,1,0});
     }
     static GlBuffers bufferFactory(){
         VBO eyebrowVBO1 = new VBO(eyebrowBB, GLES20.GL_ARRAY_BUFFER);
@@ -181,7 +189,11 @@ public class FlexatarCommon {
         VBO idxVBO1 = new VBO(idxBB, GLES20.GL_ELEMENT_ARRAY_BUFFER);
         TextureArray mouthLineTexture = new TextureArray();
         mouthLineTexture.addTexture(mouthLineBitmap);
-        return new GlBuffers(eyebrowVBO1,  uvVBO1, idxVBO1, speechBshVBO1,idxBB.capacity()/2,mouthLineTexture);
+
+        TextureArray frameTexture = new TextureArray();
+        frameTexture.addTexture(blackFrame);
+        VBO frameVBO1 = new VBO(frameBB, GLES20.GL_ARRAY_BUFFER);
+        return new GlBuffers(eyebrowVBO1,  uvVBO1, idxVBO1, speechBshVBO1,idxBB.capacity()/2,mouthLineTexture,frameVBO1,frameTexture);
 
     }
     static void makeBuffers(){

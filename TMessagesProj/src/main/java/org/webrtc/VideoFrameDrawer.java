@@ -298,6 +298,7 @@ public class VideoFrameDrawer {
 //      if (frame.getIsFlexatar() && isFlexatar) {
         if (flxDrawer == null) {
           flxDrawer = new FlxDrawerNew();
+          flxDrawer.setFrame();
           flxDrawer.setIsStaticControlBind(true);
 
         }

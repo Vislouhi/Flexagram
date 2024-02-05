@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 
 import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlxDrawer;
+import org.flexatar.FlxDrawerNew;
 import org.telegram.messenger.FileLog;
 import org.webrtc.VideoFrame.I420Buffer;
 import org.webrtc.VideoFrame.TextureBuffer;
@@ -50,7 +51,7 @@ public class YuvConverter {
       + "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
       + "      sample(tc + 1.5 * xUnit).rgb);\n"
       + "}\n";
-  private FlxDrawer flxDrawer;
+  private FlxDrawerNew flxDrawer;
 
   private static class ShaderCallbacks implements GlGenericDrawer.ShaderCallbacks {
     // Y'UV444 to RGB888, see https://en.wikipedia.org/wiki/YUV#Y%E2%80%B2UV444_to_RGB888_conversion
@@ -194,8 +195,11 @@ public class YuvConverter {
       i420TextureFrameBuffer.setSize(viewportWidth, totalHeight);
 
       if (flxDrawer == null &&  isFlexatar){
-        flxDrawer = new FlxDrawer();
-        flxDrawer.addHead(FlexatarRenderer.currentFlxData);
+        flxDrawer = new FlxDrawerNew();
+        flxDrawer.setFrame();
+        flxDrawer.setIsStaticControlBind(true);
+//        flxDrawer = new FlxDrawer();
+//        flxDrawer.addHead(FlexatarRenderer.currentFlxData);
       }
       if (flxDrawer!=null)
         flxDrawer.screenRatio = (float) frameHeight / (float) frameWidth;

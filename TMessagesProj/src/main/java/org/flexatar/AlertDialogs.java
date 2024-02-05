@@ -1,17 +1,26 @@
 package org.flexatar;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.TextView;
+
+import androidx.cardview.widget.CardView;
 
 import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
@@ -19,6 +28,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 
@@ -64,6 +74,18 @@ public class AlertDialogs {
         });
         return builder.create();
     }
+    public static AlertDialog showVerifyInProgress(Context context){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("VerifyAlertCap", R.string.VerifyAlertCap));
+        builder.setMessage(LocaleController.getString("VerifyAlertMes", R.string.VerifyAlertMes));
+
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+
+
+        });
+        return builder.create();
+    }
     public static AlertDialog askToSaveFlexatarToGallery(Context context, File flexatarFile){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(LocaleController.getString("Info", R.string.Info));
@@ -98,15 +120,39 @@ public class AlertDialogs {
         GLSurfaceView surfaceView = new GLSurfaceView(context);
         surfaceView.setEGLContextClientVersion(2);
         FlexatarViewRenderer renderer = new FlexatarViewRenderer();
+        renderer.isRounded = true;
         FlxDrawerNew drawer = new FlxDrawerNew();
+
         renderer.drawer = drawer;
         drawer.setFlexatarData(flexatarData);
 
+        surfaceView.setBackgroundColor(Color.TRANSPARENT);
+        surfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
+        surfaceView.getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);
+//        surfaceView.setZOrderOnTop(true);
+
+
         surfaceView.setRenderer(renderer);
 
-        surfaceView.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+
+
+
+        FrameLayout layout = new FrameLayout(context);
+        ImageView decline = new ImageView(context);
+        decline.setImageResource(R.drawable.cancel_big);
+
+        layout.addView(surfaceView);
+        layout.addView(decline,LayoutHelper.createFrame(46,46,Gravity.TOP |Gravity.RIGHT,0,12,12,0));
+
+        TextView addView = new TextView(context);
+        addView.setTextColor(Color.WHITE);
+        addView.setText(LocaleController.getString("ImportFlexatar", R.string.ImportFlexatar));
+        addView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+        addView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+
+        layout.addView(addView,LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM,0,0,0,18));
         PopupWindow popupWindow = new PopupWindow(
-                surfaceView,
+                layout,
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
 
@@ -117,16 +163,34 @@ public class AlertDialogs {
         display.getSize(size);
         int width = Math.min(size.x, size.y);
 
-        int windowWidth = width - AndroidUtilities.dp(24);
-        int xOffset = AndroidUtilities.dp(12);
+        int windowWidth = width/2;
+        int windowHeight = (int)(windowWidth * 1.4f);
+//        int xOffset = AndroidUtilities.dp(12);
 
         popupWindow.setWidth(windowWidth);
+        popupWindow.setHeight(windowHeight);
+
+        decline.setOnClickListener(v->{
+            popupWindow.dismiss();
+        });
+        addView.setOnClickListener(v->{
+            popupWindow.dismiss();
+            Log.d("FLX_INJECT","file name "+flexatarFile.getName() );
+//            FlexatarStorageManager.addToStorage(context,f,fid);
+
+        });
+        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+            @Override
+            public void onDismiss() {
+                FlexatarRenderer.animator.release();
+            }
+        });
 //        popupView.setOnCloseListener(() -> {
 //            popupWindow.dismiss();
 //            Log.d("FLX_INJECT","popup dismissed");
 //        });
-        popupWindow.showAsDropDown(location, xOffset, AndroidUtilities.dp(48));
-//        popupWindow.showAtLocation(location, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, AndroidUtilities.dp(46));
+//        popupWindow.showAsDropDown(location, xOffset, AndroidUtilities.dp(48));
+        popupWindow.showAtLocation(location, Gravity.CENTER, 0, 0);
         return popupWindow;
     }
 

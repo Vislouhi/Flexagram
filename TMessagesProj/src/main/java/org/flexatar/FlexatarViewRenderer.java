@@ -10,6 +10,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class FlexatarViewRenderer implements GLSurfaceView.Renderer{
     public FlxDrawerNew drawer;
+    public boolean isRounded = false;
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
         Log.d("FLX_INJECT","onSurfaceCreated ");
@@ -19,12 +20,16 @@ public class FlexatarViewRenderer implements GLSurfaceView.Renderer{
     public void onSurfaceChanged(GL10 gl10, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
         drawer.screenRatio = (float) width/ (float)height;
+        drawer.setSize(width,height);
         Log.d("FLX_INJECT","drawer.screenRatio "+drawer.screenRatio);
     }
 
     @Override
     public void onDrawFrame(GL10 gl10) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        drawer.draw();
+        if (isRounded)
+            drawer.drawRounded();
+        else
+            drawer.draw();
     }
 }

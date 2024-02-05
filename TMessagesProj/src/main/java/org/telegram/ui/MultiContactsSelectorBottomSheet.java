@@ -11,6 +11,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.ReplacementSpan;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
@@ -113,6 +114,7 @@ public class MultiContactsSelectorBottomSheet extends BottomSheetWithRecyclerLis
         lastRequestId = BoostRepository.searchContacts(lastRequestId, query, arg -> {
             foundedUsers.clear();
             foundedUsers.addAll(arg);
+
             updateList(true, true);
         });
     }

@@ -12,12 +12,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCell;
+import org.telegram.ui.Components.RLottieDrawable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
     private ClickListener flexatarCellOnLongClickListener;
     private boolean isCheckBoxes = false;
     Handler handler = new Handler(Looper.getMainLooper());
+    private Theme.ResourcesProvider resourceProvider;
 
     public List<File> removeCheckedFlexatars() {
         List<File> files = new ArrayList<>();
@@ -72,6 +75,18 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
         return files;
     }
 
+    public void setResourceProvider(Theme.ResourcesProvider resourceProvider) {
+        this.resourceProvider=resourceProvider;
+    }
+
+    public void removeFlexatarCell(int position) {
+        handler.post(()-> {
+            itemsFlexatar.remove(position);
+            int start = itemsAction.size() + (itemsProgress.size() > 1 ? itemsProgress.size() : 0) + position;
+            notifyItemRemoved(start);
+        });
+    }
+
     public interface ClickListener{
         void onClick(ItemModel item,FlexatarCellNew cell);
     }
@@ -105,6 +120,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
             return new ViewHolder(flexatarProgressCell);
         }else if (viewType == ItemModel.FLEXATAR_CELL){
             FlexatarCellNew flexatarCell = new FlexatarCellNew(context);
+            flexatarCell.setResourceProvider(resourceProvider);
 //            Log.d("FLX_INJECT","create flexatar cell" );
             return new ViewHolder(flexatarCell);
         }else{
@@ -140,7 +156,16 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
             case ItemModel.FLEXATAR_CELL:
 //                Log.d("FLX_INJECT","add flx cell " + position);
                 FlexatarCellNew fCell = (FlexatarCellNew) holder.itemView;
-                fCell.loadFromFile(item.getFlexatarFile());
+
+                if (item.getFlexatarFile() == null) {
+                    fCell.setLoading();
+
+                }else{
+                    fCell.loadFromFile(item.getFlexatarFile());
+                }
+
+
+
                 fCell.setOnClickListener(v->{
                     flexatarCellOnClickListener.onClick(item,fCell);
                     notifyItemChanged(position);

@@ -118,6 +118,7 @@ public interface EglBase {
   }
 
   public static final int[] CONFIG_PLAIN = configBuilder().createConfigAttributes();
+//  public static final int[] CONFIG_PLAIN = configBuilder().createConfigAttributes();
   public static final int[] CONFIG_RGBA =
       configBuilder().setHasAlphaChannel(true).createConfigAttributes();
   public static final int[] CONFIG_PIXEL_BUFFER =

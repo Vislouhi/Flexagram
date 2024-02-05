@@ -18,6 +18,8 @@ import android.widget.TextView;
 
 import androidx.core.graphics.ColorUtils;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -55,7 +57,8 @@ public class FlexatarPreviewFragment extends BaseFragment{
 
     public void finishPage(){
         if (flexatarPreview.isMakeMouthSelected()) {
-            parentFragment.presentFragment(new FlexatarCameraCaptureFragment(cell.getFlexatarFile().getName().split("___")[1].split("\\.")[0]));
+            String filexatarId = cell.getFlexatarFile().getName().replace(".flx", "").replace("flexatar_", "");
+            parentFragment.presentFragment(new FlexatarCameraCaptureFragment(filexatarId));
         }
 //        finishFragment();
     }
@@ -92,7 +95,25 @@ public class FlexatarPreviewFragment extends BaseFragment{
                                 oldMetData.amplitude = metaData.amplitude;
                             }
 //                            Log.d("FLX_INJECT","write meta "+FlexatarStorageManager.metaDataToJson(oldMetData));
-                            FlexatarStorageManager.rewriteFlexatarHeader(flexatarPreview.getFlexatarCell().getFlexatarFile(),oldMetData);
+                            byte[] metaSend = FlexatarStorageManager.rewriteFlexatarHeader(flexatarPreview.getFlexatarCell().getFlexatarFile(), oldMetData);
+                            String putRout = ServerDataProc.genDeleteRout(ServerDataProc.fileNameToRout(flexatarPreview.getFlexatarCell().getFlexatarFile().getName()));
+//                            String putRout = flexatarPreview.getFlexatarCell().getFlexatarFile().getName().replace(FlexatarStorageManager.FLEXATAR_PREFIX,"").replace(".flx","");
+                            FlexatarServerAccess.lambdaRequest("/"+putRout, "PUT", metaSend, null, new FlexatarServerAccess.CompletionListener() {
+                                @Override
+                                public void onReady(String string) {
+                                    Log.d("FLX_INJECT","meta ready string");
+                                }
+
+                                @Override
+                                public void onReady(boolean isComplete) {
+                                    Log.d("FLX_INJECT","meta ready data");
+                                }
+
+                                @Override
+                                public void onFail() {
+                                    Log.d("FLX_INJECT","meta fail");
+                                }
+                            });
 //                            String metaStr = FlexatarStorageManager.metaDataToJson( FlexatarStorageManager.getFlexatarMetaData(flexatarPreview.getFlexatarCell().getFlexatarFile(),false)).toString();
 //                            Log.d("FLX_INJECT","read meta "+metaStr);
                         }

@@ -164,7 +164,7 @@ public class FlexatarPreview extends FrameLayout {
         layout.setOrientation(isPortrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
         addView(layout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
         layout.addView(cardview);
-        if (flexatarCell.isBuiltin()) return;
+        if (flexatarCell.isBuiltin() || flexatarCell.isPublic()) return;
 
         controlsScrollView = new ScrollView(getContext());
         LinearLayout controlsLayout = new LinearLayout(getContext());

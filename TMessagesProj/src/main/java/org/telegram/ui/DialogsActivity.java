@@ -47,6 +47,7 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.transition.ChangeBounds;
 import android.transition.TransitionManager;
+import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.Property;
 import android.util.StateSet;
@@ -223,6 +224,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 public class DialogsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, FloatingDebugProvider {
 
@@ -4171,6 +4173,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         searchViewPager = new SearchViewPager(context, this, type, initialDialogsType, folderId, new SearchViewPager.ChatPreviewDelegate() {
             @Override
             public void startChatPreview(RecyclerListView listView, DialogCell cell) {
+
                 showChatPreview(cell);
             }
 
@@ -4355,6 +4358,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         });
 
         searchViewPager.searchListView.setOnItemClickListener((view, position, x, y) -> {
+
             if (initialDialogsType == DIALOGS_TYPE_WIDGET) {
                 onItemLongClick(searchViewPager.searchListView, view, position, x, y, -1, searchViewPager.dialogsSearchAdapter);
                 return;
@@ -7636,11 +7640,25 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             Object obj = searchViewPager.dialogsSearchAdapter.getItem(position);
             isGlobalSearch = searchViewPager.dialogsSearchAdapter.isGlobalSearch(position);
             if (obj instanceof TLRPC.User) {
+
                 dialogId = ((TLRPC.User) obj).id;
+                Log.d("FLX_INJECT","didSelectDialogs" + dialogId);
                 if (!onlySelect) {
                     searchDialogId = dialogId;
                     searchObject = (TLRPC.User) obj;
                 }
+                /*TLRPC.User currentUser = getMessagesController().getUser(dialogId);
+                Log.d("FLX_INJECT","bottUser "+currentUser);
+                if (currentUser == null) {
+                    final MessagesStorage messagesStorage = getMessagesStorage();
+
+                    long finalDialogId = dialogId;
+                    messagesStorage.getStorageQueue().postRunnable(() -> {
+                        Log.d("FLX_INJECT","bottUser "+messagesStorage.getUser(finalDialogId));
+                    });
+                }
+                return;*/
+
             } else if (obj instanceof TLRPC.Chat) {
                 dialogId = -((TLRPC.Chat) obj).id;
                 if (!onlySelect) {
@@ -7775,6 +7793,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (searchViewPager.actionModeShowing()) {
                 searchViewPager.hideActionMode();
             }
+
             if (searchString != null) {
                 if (getMessagesController().checkCanOpenChat(args, DialogsActivity.this)) {
                     getNotificationCenter().postNotificationName(NotificationCenter.closeChats);

@@ -85,6 +85,8 @@ import com.google.firebase.appindexing.Action;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.AssistActionBuilder;
 
+import org.flexatar.AlertDialogs;
+import org.flexatar.Config;
 import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarCameraCaptureFragment;
@@ -352,8 +354,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         currentAccount = UserConfig.selectedAccount;
 
         AssetAccess.context = instance;
-        FlexatarStorageManager.createFlexatarStorage(instance);
+
         FlexatarRenderer.init();
+//        Config.init();
 
         if (!UserConfig.getInstance(currentAccount).isClientActivated()) {
             Intent intent = getIntent();
@@ -661,9 +664,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     presentFragment(new MediaActivity(args, null));
                 } else if (id == 17) {
                     Log.d("FLX_INJECT","To flexatar cabinet");
-//                    presentFragment(new FlexatarCameraCaptureFragment());
+
                     presentFragment(new FlexatarCabinetActivity());
-                    drawerLayoutContainer.closeDrawer(true);
+                    drawerLayoutContainer.closeDrawer(false);
+
+
                 }
             }
         });

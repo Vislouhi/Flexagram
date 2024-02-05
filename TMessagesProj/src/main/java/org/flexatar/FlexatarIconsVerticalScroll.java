@@ -100,7 +100,17 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
             flexatarCells.add(flexatarCell);
             flxIconsLayout.addView(flexatarCell,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER,0,2,0,2));
         }
-        FlexatarServerAccess.downloadBuiltinObserver = new FlexatarServerAccess.DownloadBuiltinObserver() {
+       /* FlexatarServerAccess.downloadBuiltinObserver = new FlexatarServerAccess.DownloadBuiltinObserver() {
+            @Override
+            public void start() {
+
+            }
+
+            @Override
+            public void onError() {
+
+            }
+
             @Override
             public void downloaded(File file) {
                 FlexatarCell flexatarCell = flexatarCellFactory(file);
@@ -110,7 +120,7 @@ public class FlexatarIconsVerticalScroll extends ScrollView {
                 });
 
             }
-        };
+        };*/
 
     }
     public FlexatarCell flexatarCellFactory(File flexatarFile){

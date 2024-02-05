@@ -3622,6 +3622,7 @@ public class Theme {
     public static final int key_chat_attachAudioBackground = colorsCount++;
     public static final int key_chat_attachAudioText = colorsCount++;
     public static final int key_chat_attachFileBackground = colorsCount++;
+    public static final int key_chat_attachFlexatarBackground = colorsCount++;
     public static final int key_chat_attachFileText = colorsCount++;
     public static final int key_chat_attachContactBackground = colorsCount++;
     public static final int key_chat_attachContactText = colorsCount++;

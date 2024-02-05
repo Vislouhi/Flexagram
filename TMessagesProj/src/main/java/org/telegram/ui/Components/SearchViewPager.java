@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
@@ -568,6 +569,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     }
 
     public void goToMessage(MessageObject messageObject) {
+
         Bundle args = new Bundle();
         long dialogId = messageObject.getDialogId();
         if (DialogObject.isEncryptedDialog(dialogId)) {
@@ -678,6 +680,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
 
     @Override
     protected void onItemSelected(View currentPage, View oldPage, int position, int oldPosition) {
+
         if (position == 0) {
             if (noMediaFiltersSearchView.getVisibility() == View.VISIBLE) {
                 noMediaFiltersSearchView.setDelegate(filteredSearchViewDelegate, false);

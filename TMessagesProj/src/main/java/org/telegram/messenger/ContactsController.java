@@ -25,12 +25,11 @@ import android.os.Build;
 import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
 import androidx.collection.LongSparseArray;
-
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.tgnet.ConnectionsManager;
@@ -1557,6 +1556,7 @@ public class ContactsController extends BaseController {
                 TLRPC.User user = getMessagesController().getUser(contactsArr.get(a).user_id);
                 if (user != null) {
                     usersDict.put(user.id, user);
+//                    Log.d("FLX_INJECT","contact_id "+ user.id);
                     //if (BuildVars.DEBUG_VERSION) {
                     //    FileLog.e("loaded user contact " + user.first_name + " " + user.last_name + " " + user.phone);
                     //}

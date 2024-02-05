@@ -156,8 +156,105 @@ public class TicketsController {
     public static void stop(){
         isRunning = false;
     }
+
     private static void poolFlexatar(String lfid,Ticket ticket, ByteArrayOutputStream outputStream,boolean poolErr){
-        if (poolErr)
+        FlexatarServerAccess.lambdaRequest("/poll/"+ticket.id, "GET", null, null, new FlexatarServerAccess.CompletionListener() {
+                    @Override
+                    public void onReady(String json) {
+
+                        try {
+                            JSONObject pollResponse = new JSONObject(json);
+                            if (pollResponse.has("private")){
+                                JSONObject listElementJson = pollResponse.getJSONArray("private").getJSONObject(0);
+                                if (listElementJson.has("ftar")){
+                                    String flxRout = listElementJson.getString("ftar");
+                                    String flxId = listElementJson.getString("id");
+                                    FlexatarServerAccess.downloadFlexatarRecursive("/"+flxRout,0, outputStream, new FlexatarServerAccess.CompletionListener() {
+                                        @Override
+                                        public void onReady(boolean isComplete) {
+                                            Log.d("FLX_INJECT","Flexatar Ready");
+
+                                            byte[] flexatarData = outputStream.toByteArray();
+                                            File flexatarReadyFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext, flexatarData, flxId);
+                                            TicketStorage.removeTicket(lfid);
+                                            lfidsPooling.remove(lfid);
+                                            if (ticketObserver != null) ticketObserver.onReady(lfid,flexatarReadyFile);
+                                            try {
+                                                outputStream.close();
+                                            } catch (IOException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        }
+                                        @Override
+                                        public void onFail() {
+                                            Log.d("FLX_INJECT","flexatar download failed");
+                                        }
+                                    });
+                                }else if (listElementJson.has("err")){
+                                    String errRout = listElementJson.getString("err");
+                                    FlexatarServerAccess.lambdaRequest("/"+errRout, "GET", null, outputStream, new FlexatarServerAccess.CompletionListener() {
+                                        @Override
+                                        public void onReady(boolean isComplete) {
+                                            ticket.errorCode = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
+                                            ticket.status = "error";
+                                            TicketStorage.setTicket(lfid,ticket);
+                                            FlexatarServerAccess.lambdaRequest("/"+ServerDataProc.genDeleteRout(errRout), "DELETE", null, null, null);
+                                            lfidsPooling.remove(lfid);
+                                            if (ticketObserver != null) ticketObserver.onError(lfid,ticket);
+                                            try {
+                                                outputStream.close();
+                                            } catch (IOException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                            Log.d("FLX_INJECT","error code" + ticket.errorCode);
+
+                                        }
+                                        @Override
+                                        public void onFail() {
+                                            Log.d("FLX_INJECT","Error download failed");
+                                        }
+                                    });
+                                }
+
+                            }else{
+                                if (ticketObserver != null) ticketObserver.onTimer(lfid,ticket);
+                                if (isRunning) {
+                                    try {
+                                        Thread.sleep(1500);
+                                    } catch (InterruptedException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    poolFlexatar(lfid, ticket, outputStream, poolErr);
+                                }
+                                else{
+                                    lfidsPooling.remove(lfid);
+                                }
+
+                            }
+
+                        } catch (JSONException ignored) {
+
+                        }
+
+//                        Log.d("FLX_INJECT","poll sccuess" + json);
+                    }
+                    @Override
+                    public void onFail() {
+                        Log.d("FLX_INJECT","poll fail" );
+                       /* try {
+                            Thread.sleep(1500);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        if (ticketObserver != null) ticketObserver.onTimer(lfid,ticket);
+                        if (isRunning)
+                            poolFlexatar(lfid,ticket,outputStream,!poolErr);
+                        else{
+                            lfidsPooling.remove(lfid);
+                        }*/
+                    }
+        });
+        /*if (poolErr)
             FlexatarServerAccess.lambdaRequest(ticket.err, "GET", null, outputStream, new FlexatarServerAccess.CompletionListener() {
                 @Override
                 public void onReady(boolean isComplete) {
@@ -228,7 +325,7 @@ public class TicketsController {
                     Log.d("FLX_INJECT","flexatar not ready");
 
                 }
-            });
+            });*/
     }
 
 

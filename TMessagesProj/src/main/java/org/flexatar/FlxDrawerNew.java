@@ -1,7 +1,9 @@
 package org.flexatar;
 
 import android.opengl.GLES20;
+import android.opengl.GLES31;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import org.flexatar.DataOps.FlexatarData;
 
@@ -36,7 +38,14 @@ public class FlxDrawerNew {
     private int[] renderFrameBuffer;
     public int[] renderTexture;
     private float[] speechState = {0,0,0.05f,0,0};
-
+    private ShaderProgram frameProgram;
+    private ShaderProgram frameRoundedProgram;
+    private int width;
+    private int height;
+    private boolean isFrame = false;
+    public void setFrame(){
+        isFrame = true;
+    }
     public void setSpeechState(float[] speechState){
         this.speechState=speechState;
     }
@@ -128,7 +137,23 @@ public class FlxDrawerNew {
             makeViewModelMatrix();
         }
     }
+    private void initFrameProgram(){
+        if (frameProgram != null) return;
+        frameProgram = new ShaderProgram(ShaderLib.FRAME_VERTEX, ShaderLib.FRAME_FRAGMENT);
+        frameProgram.attribute("uv" , commonBuffers.frameVBO, 2);
+        frameProgram.textureArray("uSampler", commonBuffers.frameTexture, 0);
 
+
+    }
+    private void initFrameRoundedProgram(){
+        if (frameRoundedProgram != null) return;
+        frameRoundedProgram = new ShaderProgram(ShaderLib.FRAME_VERTEX, ShaderLib.ROUNDED_FRAGMENT);
+        frameRoundedProgram.attribute("uv" , commonBuffers.frameVBO, 2);
+        commonBuffers.frameTexture.addTexture(renderTexture[0]);
+        frameRoundedProgram.textureArray("uSampler", commonBuffers.frameTexture, 0);
+
+
+    }
     private void initHeadProgram() {
         if (headProgram != null) return;
 
@@ -272,6 +297,19 @@ public class FlxDrawerNew {
         mouthProgramAlt.addUniform1f("alpha");
         return mouthProgramAlt;
     }
+    public  void drawRounded(){
+        drawToFrameBuffer();
+        initFrameRoundedProgram();
+        GLES20.glViewport(0, 0, width, height);
+        frameRoundedProgram.use();
+        frameRoundedProgram.bind();
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+        frameRoundedProgram.unbind();
+    }
+    public void setSize(int width,int height){
+        this.width=width;
+        this.height=height;
+    }
     public int drawToFrameBuffer(){
         initFrameBuffer();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFrameBuffer[0]);
@@ -281,16 +319,22 @@ public class FlxDrawerNew {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         draw();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        int error = GLES20.glGetError();
+        if (error != GLES20.GL_NO_ERROR) {
+            Log.e("FLX_INJECT", "Error openg: " + error);
+        }
         return renderTexture[0];
     }
 
     private static final Object loadBufferMutex = new Object();
     public void draw() {
+        GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if (isStaticControlBind) {
             if (flexatarData != FlexatarRenderer.currentFlxData) {
                 if (flexatarData == null) {
                     flexatarDataAlt = FlexatarRenderer.altFlxData;
-                    buffers2 = new FlxDrawerNew.GlBuffers(flexatarDataAlt);
+//                    buffers2 = new FlxDrawerNew.GlBuffers(flexatarDataAlt);
                     flexatarData = FlexatarRenderer.currentFlxData;
                 } else {
                     buffers2.destroy();
@@ -307,6 +351,7 @@ public class FlxDrawerNew {
         }
         synchronized (loadBufferMutex) {
             initCommonBuffers();
+            initFrameProgram();
             initHeadProgram();
             initHeadEffectsProgram();
             initMouthProgram();
@@ -399,6 +444,12 @@ public class FlxDrawerNew {
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
             headProgram.unbind();
             commonBuffers.idxVBO.unbind();
+        }
+        if (isFrame) {
+            frameProgram.use();
+            frameProgram.bind();
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+            frameProgram.unbind();
         }
 
         GLES20.glDisable(GLES20.GL_BLEND);

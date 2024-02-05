@@ -58,10 +58,10 @@ public class FlexatarRenderer {
 
     public static void makeIcons() {
 
-        String[] flxFileNames = {"android.p","android1.p","android2.p","android3.p","leo.p","leo1.p","auth2.p","char1t.p", "char2t.p", "char3t.p", "char4t.p", "char5t.p", "char6t.p", "char7t.p"};
-        String[] flxFileTypes = {"user","user","user","user","user","user","user","builtin", "builtin", "builtin", "builtin", "builtin", "builtin", "builtin"};
-//        TicketStorage.clearTickets();
+   //        TicketStorage.clearTickets();
         icons = new ArrayList<>();
+
+
 //        flexatarLinks = new ArrayList<>();
 //        FlexatarStorageManager.clearStorage(AssetAccess.context);
        /* FlexatarServerAccess.lambdaRequest("list/1.00", "GET", null, null, new FlexatarServerAccess.CompletionListener() {
@@ -96,17 +96,40 @@ public class FlexatarRenderer {
             }
         });*/
 
+//        String[] flxFileNames = {"android.p","android1.p","android2.p","android3.p","leo.p","leo1.p","auth2.p","char1t.p", "char2t.p", "char3t.p", "char4t.p", "char5t.p", "char6t.p", "char7t.p"};
+//        String[] flxFileTypes = {"user","user","user","user","user","user","user","builtin", "builtin", "builtin", "builtin", "builtin", "builtin", "builtin"};
 
-//        for (int i = 0; i < flxFileNames.length; i++) {
-//            String fName = flxFileNames[flxFileNames.length - i - 1];
-//            String fType = flxFileTypes[flxFileNames.length - i - 1];
-//
-//            String flexatarLink = "flexatar/" + fName;
-//
-//            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
-//            FlexatarStorageManager.addToStorage(AssetAccess.context,flxRaw,fType+"___"+fName.split("\\.")[0]);
-//
-//        }
+        /*for (int i = 0; i < flxFileNames.length; i++) {
+            String fName = flxFileNames[flxFileNames.length - i - 1];
+            String fType = flxFileTypes[flxFileNames.length - i - 1];
+
+            String flexatarLink = "flexatar/" + fName;
+
+            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
+            FlexatarStorageManager.addToStorage(AssetAccess.context,flxRaw,fType+"___"+fName);
+
+        }*/
+
+       /* String[] flxFileNames = {"Geralt","Kianu","Kirk","Monica","Morgan","ObiVan","Oprah","Samuel", "Snoop", "Tony", "Valdemar"};
+        for (int i = 0; i < flxFileNames.length; i++) {
+            String fName = flxFileNames[flxFileNames.length - i - 1];
+
+            String flexatarLink = "flexatar/" + fName+".p";
+
+            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
+            FlexatarStorageManager.addToStorage(AssetAccess.context,flxRaw,fName);
+
+        }*/
+        String[] flxFileNames = { "char6t", "char7t"};
+        for (int i = 0; i < flxFileNames.length; i++) {
+            String fName = flxFileNames[flxFileNames.length - i - 1];
+
+            String flexatarLink = "flexatar/" + fName+".p";
+
+            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
+            FlexatarStorageManager.addToStorage(AssetAccess.context,flxRaw,fName,"builtin_");
+
+        }
     }
 
     public static FlexatarData loadFlexatarByLink(String link) {
@@ -121,9 +144,9 @@ public class FlexatarRenderer {
 //        FirebaseCrashlytics.getInstance().setUserId("user123456789");
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false);
 
-        Log.d("FLX_INJECT","pushString :" + SharedConfig.pushString);
-        long telegramID = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser().id;
-        Log.d("FLX_INJECT","telegramID :" + telegramID);
+//        Log.d("FLX_INJECT","pushString :" + SharedConfig.pushString);
+//        long telegramID = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser().id;
+//        Log.d("FLX_INJECT","telegramID :" + telegramID);
 
        /* FlexatarServerAccess.getFlexatarList(new FlexatarServerAccess.CompletionListener() {
             @Override
@@ -183,7 +206,7 @@ public class FlexatarRenderer {
 
         animator = new FlexatarAnimator();
         FlexatarCommon.prepare();
-        makeIcons();
+//        makeIcons();
         /*File[] flexatarFiles = FlexatarStorageManager.getFlexatarFileList(AssetAccess.context);
         if (FlexatarUI.chosenFirst == null){
             FlexatarUI.chosenFirst = flexatarFiles[0];
@@ -192,8 +215,8 @@ public class FlexatarRenderer {
         Log.d("FLX_INJECT","FlexatarUI.chosenFirst" + FlexatarUI.chosenFirst);
         Log.d("FLX_INJECT","FlexatarUI.chosenFirst.length " + FlexatarUI.chosenFirst.length());
         currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst)));
-        altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));*/
-
+        altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));
+*/
 //        currentFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenFirst));
 //        altFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenSecond));
     }

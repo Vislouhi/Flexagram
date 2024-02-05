@@ -13,6 +13,7 @@ import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -998,6 +999,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (text != null && text.equals(lastSearchText) && (folderId == this.folderId || TextUtils.isEmpty(text))) {
             return;
         }
+
         lastSearchText = text;
         this.folderId = folderId;
         if (searchRunnable != null) {
@@ -1592,6 +1594,12 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     } else {
                         username = membersString;
                     }
+                }
+                if (user != null){
+                    Log.d("FLX_INJECT","user id " + user.id + " username "+ name);
+                }
+                if (chat != null){
+                    Log.d("FLX_INJECT","chat id " + chat.id + " username "+ name);
                 }
                 cell.setData(user != null ? user : chat, encryptedChat, name, username, true, savedMessages);
                 cell.setChecked(delegate.isSelected(cell.getDialogId()), oldDialogId == cell.getDialogId());

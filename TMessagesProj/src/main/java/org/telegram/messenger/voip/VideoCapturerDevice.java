@@ -60,6 +60,7 @@ public class VideoCapturerDevice {
         Logging.d("VideoCapturerDevice", "device model = " + Build.MANUFACTURER + Build.MODEL);
         AndroidUtilities.runOnUIThread(() -> {
             if (eglBase == null) {
+//                eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_RGBA_BUFFER);
                 eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
             }
             instance[screencast ? 1 : 0] = this;

@@ -7302,6 +7302,7 @@ public class MessagesStorage extends BaseController {
                                 contact.last_name = "";
                             }
                             contact.contact_id = uid;
+
                             contactHashMap.put(uid, contact);
                         }
                         String phone = cursor.stringValue(3);

@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class Data {
@@ -54,6 +55,17 @@ public class Data {
         byteBuffer.position(0);
 //                String decodedString = new String(byteArray, StandardCharsets.UTF_8);
 //        Log.d("IntStorManager","Float" + byteBuffer.asFloatBuffer().get(0));
+        return byteBuffer;
+    }
+    public static ByteBuffer floatArrayToBytebuffer(float[] array){
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(array.length*4);
+        byteBuffer.order(ByteOrder.nativeOrder());
+        FloatBuffer fb = byteBuffer.asFloatBuffer();
+        for (int i = 0; i < array.length; i++) {
+            fb.put(array[i]);
+        }
+        fb.position(0);
+        byteBuffer.position(0);
         return byteBuffer;
     }
     public static float[] dataToFloatArray(byte[] data){

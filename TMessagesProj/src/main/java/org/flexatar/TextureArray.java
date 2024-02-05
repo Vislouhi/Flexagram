@@ -30,6 +30,7 @@ public class TextureArray {
         GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE );
         GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, 0 );
         textureIds.add(textureId[0]);
+
 //        bitmap.recycle();
     }
     public void release(){
@@ -39,5 +40,9 @@ public class TextureArray {
         }
 
 
+    }
+
+    public void addTexture(int i) {
+        textureIds.add(i);
     }
 }

@@ -16,6 +16,7 @@ import android.util.LongSparseArray;
 
 import com.google.android.exoplayer2.util.Log;
 
+import org.flexatar.Config;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
 
@@ -260,6 +261,8 @@ public class UserConfig extends BaseController {
             currentUser = user;
             clientUserId = user.id;
             checkPremiumSelf(oldUser, user);
+//            Log.d("FLX_INJECT","setCurrentUser "+clientUserId);
+            Config.init();
         }
     }
 
