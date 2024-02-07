@@ -4120,7 +4120,16 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             renderersContainer.delayHideUi();
             VoIPService service = VoIPService.getSharedInstance();
             if (service != null && service.getVideoState(false) == Instance.VIDEO_STATE_ACTIVE) {
-                service.switchCamera();
+                if (FlexatarRenderer.isFlexatarCamera){
+                    FlexatarRenderer.isFlexatarCamera = false;
+                    service.restartCamera();
+                }else if(!service.isFrontFaceCamera() && !FlexatarRenderer.isFlexatarCamera){
+                    FlexatarRenderer.isFlexatarCamera = true;
+                    service.switchCamera();
+                }else {
+                    service.switchCamera();
+                }
+
                 if (flipIconCurrentEndFrame == 18) {
                     flipIcon.setCustomEndFrame(flipIconCurrentEndFrame = 39);
                     flipIcon.start();

@@ -419,48 +419,30 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         if (currentTexturePage == 1){
             saveLastCameraBitmap();
 
-            VoIPService voipInstance = VoIPService.getSharedInstance();
-            {
-                cameraReady = false;
+            cameraReady = false;
 
-                if (!voipInstance.isFlexatarCamera()) {
-                    FlexatarRenderer.isFlexatarCamera = true;
-                    service.restartCamera();
-//                    Log.d("FLX_INJECT","create camera "+currentPage);
-//                    voipInstance.destroyDevice();
-//                    voipInstance.recreate();
-//                    voipInstance.switchToFlexatar(true);
-//                    voipInstance.setStateActive();
+            if (!FlexatarRenderer.isFlexatarCamera) {
+                FlexatarRenderer.isFlexatarCamera = true;
+                service.restartCamera();
 
-//                    voipInstance.setupCaptureDevice(false,false);
-
-//                    voipInstance.recreate();
-                }
-                textureView.setAlpha(0.0f);
             }
+            textureView.setAlpha(0.0f);
+
         }
         if (currentTexturePage == 2){
             saveLastCameraBitmap();
 
-            VoIPService voipInstance = VoIPService.getSharedInstance();
-            {
-                cameraReady = false;
-//                    if (FlexatarRenderer.isFlexatarCamera){
-//                        service.restartCamera();
-//                    }else{
-//                        service.switchCamera();
-//                    }
-                    FlexatarRenderer.isFlexatarCamera = false;
 
+            cameraReady = false;
 
-
-                if (!currentFrontface) {
-                    service.switchCamera();
-                }else{
-                    service.restartCamera();
-                }
-                textureView.setAlpha(0.0f);
+            FlexatarRenderer.isFlexatarCamera = false;
+            if (!currentFrontface) {
+                service.switchCamera();
+            }else{
+                service.restartCamera();
             }
+            textureView.setAlpha(0.0f);
+
         }
         if (currentTexturePage == 3){
             saveLastCameraBitmap();
@@ -479,32 +461,7 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         }
 
 
-//        VoIPService.getSharedInstance().switchCamera();
-        /*if (currentTexturePage == 1 && !currentFrontface || currentTexturePage == 2 && currentFrontface) {
-            Log.d("FLX_INJECT","currentTexturePage" + currentTexturePage);
-            Log.d("FLX_INJECT","visibleCameraPage" + visibleCameraPage);
-            saveLastCameraBitmap();
-//            if (visibleCameraPage == 1){
 
-//            }
-            cameraReady = false;
-            VoIPService.getSharedInstance().switchCamera();
-            textureView.setAlpha(0.0f);
-        }*/
-
-        /*if (currentTexturePage == 1){
-            saveLastCameraBitmap();
-//            FlexatarRenderer.isFlexatarRendering = true;
-//            textureView.renderer.setIsFlexatar(true);
-            VoIPService voipInstance = VoIPService.getSharedInstance();
-            cameraReady = false;
-            if (voipInstance != null) {
-                voipInstance.switchToFlexatar(true);
-                voipInstance.setFlexatarDelay(true);
-            }
-            textureView.setAlpha(0.0f);
-
-        }*/
         Log.d("FLX_INJECT","currentTexturePage "+currentTexturePage);
         visibleCameraPage = currentTexturePage;
     }

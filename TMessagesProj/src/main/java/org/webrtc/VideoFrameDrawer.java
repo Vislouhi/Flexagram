@@ -268,7 +268,7 @@ public class VideoFrameDrawer {
       renderMatrix.preRotate(frame.getRotation());
     }else {
       if (fromEncoder){
-        renderMatrix.preRotate(270);
+        renderMatrix.preRotate(90);
       }else {
         renderMatrix.preRotate(0);
       }

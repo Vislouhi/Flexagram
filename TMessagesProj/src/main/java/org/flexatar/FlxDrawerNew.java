@@ -328,9 +328,10 @@ public class FlxDrawerNew {
 
     private static final Object loadBufferMutex = new Object();
     public void draw() {
-        GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+//        GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if (isStaticControlBind) {
+            if (!FlexatarRenderer.isFlexatarCamera) return;
             if (flexatarData != FlexatarRenderer.currentFlxData) {
                 if (flexatarData == null) {
                     flexatarDataAlt = FlexatarRenderer.altFlxData;

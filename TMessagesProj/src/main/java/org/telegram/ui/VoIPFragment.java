@@ -59,6 +59,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 
+import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
@@ -1127,8 +1128,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         flexatarIcon.setAlpha(0f);
         flexatarIcon.setEnabled(false);
         flexatarIcon.setOnClickListener(view -> {
-//            VoIPService.getSharedInstance().setAudioListener();
-//            FlexatarRenderer.isFlexatarRendering = !FlexatarRenderer.isFlexatarRendering;
+
             flexatarPanelView.setVisibility(View.VISIBLE);
             flexatarPanelView.updateIcons();
 //            flexatarPanelView.switchToCameraButton.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
@@ -2796,8 +2796,26 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                         }
                         view.announceForAccessibility(text);
                     }
+
                     bottomButton.setType(VoIpSwitchLayout.Type.CAMERA, !service.isFrontFaceCamera());
-                    serviceInstance.switchCamera();
+
+                    if (FlexatarRenderer.isFlexatarCamera){
+                        FlexatarRenderer.isFlexatarCamera = false;
+                        service.restartCamera();
+                        flexatarIcon.setEnabled(false);
+                        flexatarIcon.setVisibility(View.GONE);
+
+                    }else if(!service.isFrontFaceCamera() && !FlexatarRenderer.isFlexatarCamera){
+                        FlexatarRenderer.isFlexatarCamera = true;
+                        service.switchCamera();
+                        flexatarIcon.setEnabled(true);
+                        flexatarIcon.setVisibility(View.VISIBLE);
+                        flexatarIcon.setAlpha(1f);
+                    }else {
+                        service.switchCamera();
+                        flexatarIcon.setEnabled(false);
+                        flexatarIcon.setVisibility(View.GONE);
+                    }
                 }
             });
         }
@@ -2825,11 +2843,9 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             if (!currentUserIsVideo) {
                 if (Build.VERSION.SDK_INT >= 21) {
                     if (previewDialog == null) {
-                        service.switchToFlexatar(true);
-//                        service.createCaptureDevice(false,true);
-                        if (!service.isFrontFaceCamera()) {
-                            service.switchCamera();
-                        }
+                        FlexatarRenderer.isFlexatarCamera = true;
+                        service.createCaptureDevice(false);
+
                         windowView.setLockOnScreen(true);
                         int[] locVideoButton = new int[2];
                         bottomVideoBtn.getLocationOnScreen(locVideoButton);

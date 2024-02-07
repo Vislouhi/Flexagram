@@ -569,6 +569,7 @@ class Camera2Session implements CameraSession {
     checkIsOnCameraThread();
 
     surfaceTextureHelper.stopListening();
+    surfaceTextureHelper.stopFrameTimer();
 
     if (captureSession != null) {
       captureSession.close();
@@ -609,7 +610,7 @@ class Camera2Session implements CameraSession {
     if (FlexatarRenderer.isFlexatarCamera){
       int rotation = orientationHelper.getOrientation();
       OrientationHelper.cameraOrientation = rotation;
-      Logging.d(TAG, "rotation "+rotation);
+//      Logging.d(TAG, "rotation "+rotation);
       return  (180 + rotation) % 360;
     }else {
       int rotation = orientationHelper.getOrientation();
