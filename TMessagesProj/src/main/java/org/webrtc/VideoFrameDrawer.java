@@ -43,6 +43,9 @@ public class VideoFrameDrawer {
       int viewportWidth, int viewportHeight, boolean blur,boolean fromEncoder,boolean isFlexatar,int flexatarTextureId) {
     Matrix finalMatrix = new Matrix(buffer.getTransformMatrix());
     finalMatrix.preConcat(renderMatrix);
+
+
+
     float[] finalGlMatrix = RendererCommon.convertMatrixFromAndroidGraphicsMatrix(finalMatrix);
 //    if (fromEncoder)
 //      Log.d("FLX_INJECT","drawFrame");
@@ -260,9 +263,6 @@ public class VideoFrameDrawer {
       renderMatrix.preScale(1.3f, 1.3f);
     }
 
-//    renderMatrix.preRotate(frame.getRotation());
-
-//    if (!frame.getIsFlexatar() || !isFlexatar) {
     if ( !isFlexatar) {
 
       renderMatrix.preRotate(frame.getRotation());
@@ -270,18 +270,9 @@ public class VideoFrameDrawer {
       if (fromEncoder){
         renderMatrix.preRotate(270);
       }else {
-        renderMatrix.preRotate(180);
+        renderMatrix.preRotate(0);
       }
-      /*if (fromEncoder){
 
-        if(FlexatarRenderer.isFrontFaceCamera) {
-          renderMatrix.preRotate(90);
-        }else{
-          renderMatrix.preRotate(270);
-        }
-      }else{
-        renderMatrix.preRotate(180);
-      }*/
     }
 
     renderMatrix.preTranslate(-0.5f, -0.5f);

@@ -521,7 +521,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (tgVoip[CAPTURE_DEVICE_CAMERA] != null) {
 			tgVoip[CAPTURE_DEVICE_CAMERA].setMuteMicrophone(mute);
 			VoIPService.getSharedInstance().setAudioListener(true);
-			VoIPService.getSharedInstance().setFlexatarDelay(isFlexatar);
+			VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
 //			tgVoip[CAPTURE_DEVICE_CAMERA].setFlexatarDelay(true);
 		}
 		for (StateListener l : stateListeners) {
@@ -1124,21 +1124,44 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	}
 
 	public void switchCamera() {
-		if (!isFlexatar) {
-			if (tgVoip[CAPTURE_DEVICE_CAMERA] == null || !tgVoip[CAPTURE_DEVICE_CAMERA].hasVideoCapturer() || switchingCamera) {
-				if (captureDevice[CAPTURE_DEVICE_CAMERA] != 0 && !switchingCamera) {
-					FlexatarRenderer.isFrontFaceCamera = isFrontFaceCamera;
+
+		if (tgVoip[CAPTURE_DEVICE_CAMERA] == null || !tgVoip[CAPTURE_DEVICE_CAMERA].hasVideoCapturer() || switchingCamera) {
+			if (captureDevice[CAPTURE_DEVICE_CAMERA] != 0 && !switchingCamera) {
+				FlexatarRenderer.isFrontFaceCamera = isFrontFaceCamera;
 //				Log.d("FLX_INJECT","switch camera isFrontFaceCamera " +isFrontFaceCamera);
-					NativeInstance.switchCameraCapturer(captureDevice[CAPTURE_DEVICE_CAMERA], !isFrontFaceCamera);
+				NativeInstance.switchCameraCapturer(captureDevice[CAPTURE_DEVICE_CAMERA], !isFrontFaceCamera);
 
-				}
-				return;
 			}
-			switchingCamera = true;
-			tgVoip[CAPTURE_DEVICE_CAMERA].switchCamera(!isFrontFaceCamera);
-
-			FlexatarRenderer.isFrontFaceCamera = isFrontFaceCamera;
+			return;
 		}
+		switchingCamera = true;
+		tgVoip[CAPTURE_DEVICE_CAMERA].switchCamera(!isFrontFaceCamera);
+
+		FlexatarRenderer.isFrontFaceCamera = isFrontFaceCamera;
+
+//		if (FlexatarRenderer.isFlexatarCamera) VoIPService.getSharedInstance().setAudioListener(true);
+		VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
+
+	}
+	public void restartCamera() {
+
+		if (tgVoip[CAPTURE_DEVICE_CAMERA] == null || !tgVoip[CAPTURE_DEVICE_CAMERA].hasVideoCapturer() || switchingCamera) {
+			if (captureDevice[CAPTURE_DEVICE_CAMERA] != 0 && !switchingCamera) {
+				FlexatarRenderer.isFrontFaceCamera = isFrontFaceCamera;
+//				Log.d("FLX_INJECT","switch camera isFrontFaceCamera " +isFrontFaceCamera);
+				NativeInstance.switchCameraCapturer(captureDevice[CAPTURE_DEVICE_CAMERA], isFrontFaceCamera);
+
+			}
+			return;
+		}
+		switchingCamera = true;
+		tgVoip[CAPTURE_DEVICE_CAMERA].switchCamera(isFrontFaceCamera);
+
+		FlexatarRenderer.isFrontFaceCamera = isFrontFaceCamera;
+
+//		if (FlexatarRenderer.isFlexatarCamera) VoIPService.getSharedInstance().setAudioListener(true);
+		VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
+
 	}
 
 	public boolean isSwitchingCamera() {
@@ -1149,15 +1172,12 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	public boolean isFlexatarCamera(){
 		return isFlexatar;
 	}
-	public void createCaptureDevice(boolean screencast,boolean flexatar) {
-
-		boolean prevFlexatarState = isFlexatar;
-		if (screencast) flexatar = false;
-		isFlexatar = flexatar;
+	public void createCaptureDevice(boolean screencast) {
 
 
-		if (isFlexatar) VoIPService.getSharedInstance().setAudioListener(true);
-		VoIPService.getSharedInstance().setFlexatarDelay(isFlexatar);
+
+		if (FlexatarRenderer.isFlexatarCamera) VoIPService.getSharedInstance().setAudioListener(true);
+		VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
 //			Log.d("FLX_INJECT","setAudioListener flexatar");
 
 
@@ -1168,7 +1188,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (screencast) {
 			deviceType = 2;
 		} else {
-			deviceType = flexatar ? 100 : isFrontFaceCamera ? 1 : 0;
+			deviceType = isFrontFaceCamera ? 1 : 0;
 		}
 		if (groupCall == null) {
 			if (!isPrivateScreencast && screencast) {
@@ -1196,18 +1216,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				}
 			}
 		} else {
-//			if (prevFlexatarState != flexatar){
-//				if (captureDevice[index] != 0 || tgVoip[index] == null) {
-//					if (tgVoip[index] != null && captureDevice[index] != 0) {
-//						NativeInstance.destroyVideoCapturer(captureDevice[CAPTURE_DEVICE_CAMERA]);
-//						captureDevice[CAPTURE_DEVICE_CAMERA] = 0;
-//						videoState[CAPTURE_DEVICE_CAMERA] = Instance.VIDEO_STATE_INACTIVE;
-////						tgVoip[index].clearVideoCapturer();
-//					}
-//
-//
-//				}
-//			}else {
+
 				if (captureDevice[index] != 0 || tgVoip[index] == null) {
 					if (tgVoip[index] != null && captureDevice[index] != 0) {
 						tgVoip[index].activateVideoCapturer(captureDevice[index]);
@@ -1216,11 +1225,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 						return;
 					}
 				}
-//			}
-//			if (captureDevice[CAPTURE_DEVICE_CAMERA]!=0) {
-//				NativeInstance.destroyVideoCapturer(captureDevice[CAPTURE_DEVICE_CAMERA]);
-//			}
-			Log.d("FLX_INJECT","deviceType "+deviceType);
+
 			captureDevice[index] = NativeInstance.createVideoCapturer(localSink[index], deviceType);
 		}
 	}
@@ -2342,7 +2347,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 					if (!micMute) {
 						instance.setMuteMicrophone(false);
 						VoIPService.getSharedInstance().setAudioListener(true);
-						VoIPService.getSharedInstance().setFlexatarDelay(isFlexatar);
+						VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
 					}
 
 				}
@@ -2533,7 +2538,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			tgVoip[CAPTURE_DEVICE_CAMERA].setMuteMicrophone(micMute);
 
 			VoIPService.getSharedInstance().setAudioListener(true);
-			VoIPService.getSharedInstance().setFlexatarDelay(isFlexatar);
+			VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
 
 			if (newAvailable != isVideoAvailable) {
 				isVideoAvailable = newAvailable;
@@ -2786,7 +2791,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		});
 	}
 	public void setAudioListener(boolean enabled){
-		tgVoip[CAPTURE_DEVICE_CAMERA].setAudioListener(enabled);
+		if (tgVoip[CAPTURE_DEVICE_CAMERA]!=null)
+			tgVoip[CAPTURE_DEVICE_CAMERA].setAudioListener(enabled);
 	}
 	public boolean isMicMute() {
 		return micMute;
@@ -3317,7 +3323,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			captureDevice[CAPTURE_DEVICE_CAMERA] = 0;
 
 		}
-		createCaptureDevice(false,isFlexatar);
+		createCaptureDevice(false);
 
 
 	}

@@ -144,6 +144,9 @@ public class TicketsController {
         }
 
     }
+    public static void removeObserver(){
+        TicketsController.ticketObserver = null;
+    }
     private static boolean isRunning = false;
     private static Set<String> lfidsPooling = new HashSet<>();
     public static void flexatarTaskStart(String lfid,Ticket ticket){

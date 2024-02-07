@@ -242,7 +242,11 @@ public class FlexatarServerAccess {
 
                 if (listResponse.hasPublic()) {
                     FlexatarServerAccess.downloadFlexatarListRecursive(FlexatarStorageManager.PUBLIC_PREFIX, listResponse.getPublicLinksToDownload(), listResponse.getPublicIdsToDownload(), 0, ()->{
-                        FlexatarServerAccess.downloadFlexatarListRecursive(FlexatarStorageManager.FLEXATAR_PREFIX, listResponse.getPrivateLinksToDownload(), listResponse.getPrivateIdsToDownload(), 0, onFinish);
+                        if(listResponse.hasPrivate()) {
+                            FlexatarServerAccess.downloadFlexatarListRecursive(FlexatarStorageManager.FLEXATAR_PREFIX, listResponse.getPrivateLinksToDownload(), listResponse.getPrivateIdsToDownload(), 0, onFinish);
+                        }else{
+                            if (onFinish!=null) onFinish.run();
+                        }
                     });
                 }
                 else if(listResponse.hasPrivate()){

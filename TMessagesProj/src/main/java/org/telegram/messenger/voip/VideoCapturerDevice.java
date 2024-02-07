@@ -232,6 +232,7 @@ public class VideoCapturerDevice {
                 String[] names = enumerator.getDeviceNames();
                 for (int a = 0; a < names.length; a++) {
                     boolean isFrontFace = enumerator.isFrontFacing(names[a]);
+
                     if (isFrontFace == "front".equals(deviceName)) {
                         index = a;
                         break;

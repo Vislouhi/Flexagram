@@ -34,6 +34,7 @@ public class CameraFSession  implements CameraSession{
 //            "WebRTC.Android.Camera2.Resolution", CameraEnumerationAndroid.COMMON_RESOLUTIONS.size());
     static String TAG = "CameraFSession";
     private final OrientationHelper orientationHelper;
+    private final CameraStateCallback cameraStateCallback;
 
     private static enum SessionState { RUNNING, STOPPED }
     private final Handler cameraThreadHandler;
@@ -98,8 +99,11 @@ public class CameraFSession  implements CameraSession{
 
             final boolean startFailure = (state != CameraFSession.SessionState.STOPPED);
             state = CameraFSession.SessionState.STOPPED;
-            stopInternal();
+            Logging.d(TAG, "On disconectsd session state set ot stop.");
+//            if (state != )
+
             if (startFailure) {
+                stopInternal();
                 callback.onFailure(FailureType.DISCONNECTED, "Camera disconnected / evicted.");
             } else {
                 events.onCameraDisconnected(CameraFSession.this);
@@ -222,6 +226,10 @@ public class CameraFSession  implements CameraSession{
                 events.onFrameCaptured(CameraFSession.this, modifiedFrame);
                 modifiedFrame.release();
             });
+
+
+
+
             surfaceTextureHelper.setTextureType(VideoFrame.TextureBuffer.Type.FLX);
             surfaceTextureHelper.startFrameTimer();
             Logging.d(TAG, "Camera device successfully started.");
@@ -276,7 +284,7 @@ public class CameraFSession  implements CameraSession{
 
         Logging.d(TAG, "Opening camera " + cameraId);
         events.onCameraOpening();
-        CameraStateCallback cameraStateCallback = new CameraStateCallback();
+        cameraStateCallback = new CameraStateCallback();
         cameraStateCallback.onOpened(null);
         orientationHelper.start();
 
@@ -286,14 +294,17 @@ public class CameraFSession  implements CameraSession{
     @Override
     public void stop() {
         Logging.d(TAG, "Stop cameraF session on camera " + cameraId);
+        Logging.d(TAG, "Session state: " + state);
         surfaceTextureHelper.stopFrameTimer();
         if (state != CameraFSession.SessionState.STOPPED) {
+            Logging.d(TAG, "session statenot stoped");
             final long stopStartTime = System.nanoTime();
             state = CameraFSession.SessionState.STOPPED;
             stopInternal();
             final int stopTimeMs = (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
             camera2StopTimeMsHistogram.addSample(stopTimeMs);
         }
+
     }
     private void stopInternal() {
         Logging.d(TAG, "Stop internal");
@@ -303,6 +314,7 @@ public class CameraFSession  implements CameraSession{
         if (orientationHelper != null) {
             orientationHelper.stop();
         }
+        cameraStateCallback.onDisconnected(null);
         Logging.d(TAG, "Stop done");
     }
     private void checkIsOnCameraThread() {

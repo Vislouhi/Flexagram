@@ -95,6 +95,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
     private ImageView flxPhotoHelperView;
     private boolean flxPhotoHelperRotated;
     private Timer flxPhotoHelperTmer;
+    private boolean isTakePhotoAvailable = false;
 
     public FlexatarCameraCaptureFragment(){
         super();
@@ -143,7 +144,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         flxPhotoHelperTmer = new Timer();
 
         flxPhotoHelperRotated = false;
-        TimerTask task = new TimerTask() {
+        /*TimerTask task = new TimerTask() {
             @Override
             public void run() {
                 frameLayout.post(()->{
@@ -160,7 +161,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 //                Log.d("FLX_INJECT","timePassed "+timePassed);
             }
         };
-        flxPhotoHelperTmer.scheduleAtFixedRate(task, 0, 1000);
+        flxPhotoHelperTmer.scheduleAtFixedRate(task, 0, 1000);*/
 
 //        hintCounter
         mPreviewView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
@@ -250,7 +251,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         takePhotoParams.setMargins(AndroidUtilities.dp(12),AndroidUtilities.dp(12),AndroidUtilities.dp(12),AndroidUtilities.dp(50));
         takePhotoButton.setLayoutParams(takePhotoParams);
         takePhotoButton.setOnClickListener((l)->{
-            takePhoto();
+            if (isTakePhotoAvailable)takePhoto();
         });
         frameLayout.addView(takePhotoButton);
 
@@ -392,7 +393,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
 
         Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, imageCapture);
-
+        isTakePhotoAvailable = true;
 
     }
 
@@ -424,7 +425,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 hintCounter += 1;
                 if (hintCounter<faceHints.size()) {
                     faceHintView.setImageResource(faceHints.get(hintCounter));
-//                    flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
+                    flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
                 }
                 if (hintCounter%2 == 0 || hintCounter == 1) {
                     try {
@@ -512,7 +513,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
             FrameLayout frameLayout = new FrameLayout(getParentActivity());
 
             CheckBoxCell cell = new CheckBoxCell(getParentActivity(), 1);
-            cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+            cell.setBackground(Theme.getSelectorDrawable(false));
             cell.setText(LocaleController.getString("DontShowAgain", R.string.DontShowAgain), "", false, false);
             cell.setPadding(LocaleController.isRTL ? AndroidUtilities.dp(8) : 0, 0, LocaleController.isRTL ? 0 : AndroidUtilities.dp(8), 0);
             frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 8, 0, 8, 0));
@@ -539,7 +540,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
     public void showStartMouthCaptureAlert(){
 
-
+        isTakePhotoAvailable = false;
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
 
@@ -550,6 +551,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
 
             builder.setPositiveButton(LocaleController.getString("Continue", R.string.Continue), (dialogInterface, i) -> {
+                isTakePhotoAvailable = false;
                 hintCounter = 0;
                 faceHintView.setImageResource(faceHints.get(hintCounter));
                 isMouthDone = true;

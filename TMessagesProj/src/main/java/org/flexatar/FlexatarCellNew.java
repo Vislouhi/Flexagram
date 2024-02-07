@@ -147,7 +147,7 @@ public class FlexatarCellNew extends RelativeLayout {
 //        layoutParams.gravity = Gravity.CENTER;
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         layoutParams.setMargins(AndroidUtilities.dp(32),0,0,0);
-
+        icnFlx.setBackground(null);
         icnFlx.setLayoutParams(layoutParams);
         nameTextView.setText(flexatarMetaData.name);
         dateTextView.setText(flexatarMetaData.date);

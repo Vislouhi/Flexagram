@@ -5735,7 +5735,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 VoIPService service = VoIPService.getSharedInstance();
                 if (service != null) {
                     VideoCapturerDevice.mediaProjectionPermissionResultData = data;
-                    service.createCaptureDevice(true,false);
+                    service.createCaptureDevice(true);
                 }
             }
         } else if (requestCode == PLAY_SERVICES_REQUEST_CHECK_SETTINGS) {

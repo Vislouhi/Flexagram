@@ -20,8 +20,14 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.OutputConfiguration;
+import android.os.Build;
 import android.os.Handler;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+
 import android.util.Range;
 import android.view.Surface;
 
@@ -29,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.flexatar.FlexatarRenderer;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 @TargetApi(21)
@@ -41,6 +48,7 @@ class Camera2Session implements CameraSession {
       Histogram.createCounts("WebRTC.Android.Camera2.StopTimeMs", 1, 10000, 50);
   private static final Histogram camera2ResolutionHistogram = Histogram.createEnumeration(
       "WebRTC.Android.Camera2.Resolution", CameraEnumerationAndroid.COMMON_RESOLUTIONS.size());
+  private CameraStateCallbackFlexatar cameraStateCallbackFlx;
 
   private static enum SessionState { RUNNING, STOPPED }
 
@@ -63,6 +71,7 @@ class Camera2Session implements CameraSession {
   private boolean isCameraFrontFacing;
   private int fpsUnitFactor;
   private CaptureFormat captureFormat;
+  public static boolean isFlexatar = false;
 
   // Initialized when camera opens
   @Nullable private CameraDevice cameraDevice;
@@ -139,6 +148,127 @@ class Camera2Session implements CameraSession {
       checkIsOnCameraThread();
 
       Logging.d(TAG, "Camera device closed.");
+//      events.onCameraClosed(Camera2Session.this);
+    }
+  }
+
+  private class CameraStateCallbackFlexatar extends CameraDevice.StateCallback {
+
+    private String getErrorDescription(int errorCode) {
+      switch (errorCode) {
+        case CameraDevice.StateCallback.ERROR_CAMERA_DEVICE:
+          return "Camera device has encountered a fatal error.";
+        case CameraDevice.StateCallback.ERROR_CAMERA_DISABLED:
+          return "Camera device could not be opened due to a device policy.";
+        case CameraDevice.StateCallback.ERROR_CAMERA_IN_USE:
+          return "Camera device is in use already.";
+        case CameraDevice.StateCallback.ERROR_CAMERA_SERVICE:
+          return "Camera service has encountered a fatal error.";
+        case CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE:
+          return "Camera device could not be opened because"
+                  + " there are too many other open camera devices.";
+        default:
+          return "Unknown camera error: " + errorCode;
+      }
+    }
+    @Override
+    public void onDisconnected(CameraDevice camera) {
+      checkIsOnCameraThread();
+
+      final boolean startFailure = (state != Camera2Session.SessionState.STOPPED);
+      state = Camera2Session.SessionState.STOPPED;
+      Logging.d(TAG, "On disconectsd session state set ot stop.");
+//            if (state != )
+
+      if (startFailure) {
+        stopInternal();
+        callback.onFailure(FailureType.DISCONNECTED, "Camera disconnected / evicted.");
+      } else {
+        events.onCameraDisconnected(Camera2Session.this);
+      }
+    }
+
+    @Override
+    public void onError(CameraDevice camera, int errorCode) {
+      checkIsOnCameraThread();
+      reportError(getErrorDescription(errorCode));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    public void onOpened(CameraDevice camera) {
+      Logging.d(TAG, "flexatar Camera opened.");
+      surfaceTextureHelper.setTextureSize(600, 400);
+      Camera2Session.CaptureSessionCallbackFlexatar captureSessionCallback = new Camera2Session.CaptureSessionCallbackFlexatar();
+      captureSessionCallback.onConfigured(new CameraCaptureSession() {
+        @NonNull
+        @Override
+        public CameraDevice getDevice() {
+          return null;
+        }
+
+        @Override
+        public void prepare(@NonNull Surface surface) throws CameraAccessException {
+
+        }
+
+        @Override
+        public void finalizeOutputConfigurations(List<OutputConfiguration> list) throws CameraAccessException {
+
+        }
+
+        @Override
+        public int capture(@NonNull CaptureRequest captureRequest, @Nullable CaptureCallback captureCallback, @Nullable Handler handler) throws CameraAccessException {
+          return 0;
+        }
+
+        @Override
+        public int captureBurst(@NonNull List<CaptureRequest> list, @Nullable CaptureCallback captureCallback, @Nullable Handler handler) throws CameraAccessException {
+          return 0;
+        }
+
+        @Override
+        public int setRepeatingRequest(@NonNull CaptureRequest captureRequest, @Nullable CaptureCallback captureCallback, @Nullable Handler handler) throws CameraAccessException {
+          return 0;
+        }
+
+        @Override
+        public int setRepeatingBurst(@NonNull List<CaptureRequest> list, @Nullable CaptureCallback captureCallback, @Nullable Handler handler) throws CameraAccessException {
+          return 0;
+        }
+
+        @Override
+        public void stopRepeating() throws CameraAccessException {
+
+        }
+
+        @Override
+        public void abortCaptures() throws CameraAccessException {
+
+        }
+
+        @Override
+        public boolean isReprocessable() {
+          return false;
+        }
+
+        @Nullable
+        @Override
+        public Surface getInputSurface() {
+          return null;
+        }
+
+        @Override
+        public void close() {
+
+        }
+      });
+
+    }
+
+    @Override
+    public void onClosed(CameraDevice camera) {
+      checkIsOnCameraThread();
       events.onCameraClosed(Camera2Session.this);
     }
   }
@@ -212,8 +342,10 @@ class Camera2Session implements CameraSession {
         modifiedFrame.release();
       });
       surfaceTextureHelper.setTextureType(VideoFrame.TextureBuffer.Type.OES);
+
       Logging.d(TAG, "Camera device successfully started.");
       callback.onDone(Camera2Session.this);
+
     }
 
     // Prefers optical stabilization over software stabilization if available. Only enables one of
@@ -264,6 +396,50 @@ class Camera2Session implements CameraSession {
     }
   }
 
+  private class CaptureSessionCallbackFlexatar extends CameraCaptureSession.StateCallback {
+    @Override
+    public void onConfigureFailed(CameraCaptureSession session) {
+      checkIsOnCameraThread();
+      session.close();
+      reportError("Failed to configure capture session.");
+    }
+
+    @Override
+    public void onConfigured(CameraCaptureSession session) {
+//            FlexatarRenderer.isFlexatarRendering = true;
+      surfaceTextureHelper.startListening((VideoFrame frame) -> {
+
+        if (!firstFrameReported) {
+
+          firstFrameReported = true;
+          final int startTimeMs =
+                  (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - constructionTimeNs);
+          camera2StartTimeMsHistogram.addSample(startTimeMs);
+        }
+
+        final VideoFrame modifiedFrame =
+                new VideoFrame(CameraSession.createTextureBufferWithModifiedTransformMatrix(
+                        (TextureBufferImpl) frame.getBuffer(),
+                        /* mirror= */ false,
+                        /* rotation= */ 180),
+                        /* rotation= */ getFrameOrientation(), frame.getTimestampNs());
+        events.onFrameCaptured(Camera2Session.this, modifiedFrame);
+        modifiedFrame.release();
+      });
+
+
+
+
+      surfaceTextureHelper.setTextureType(VideoFrame.TextureBuffer.Type.FLX);
+      surfaceTextureHelper.startFrameTimer();
+      Logging.d(TAG, "Camera device successfully started.");
+      callback.onDone(Camera2Session.this);
+    }
+
+    // Prefers optical stabilization over software stabilization if available. Only enables one of
+    // the stabilization modes at a time because having both enabled can cause strange results.
+
+  }
   private static class CameraCaptureCallback extends CameraCaptureSession.CaptureCallback {
     @Override
     public void onCaptureFailed(
@@ -298,8 +474,17 @@ class Camera2Session implements CameraSession {
     this.height = height;
     this.framerate = framerate;
     this.orientationHelper = new OrientationHelper();
+    if (FlexatarRenderer.isFlexatarCamera)
+      startFlexatar();
+    else
+      start();
 
-    start();
+  }
+  private void startFlexatar(){
+    events.onCameraOpening();
+    cameraStateCallbackFlx = new Camera2Session.CameraStateCallbackFlexatar();
+    cameraStateCallbackFlx.onOpened(null);
+    orientationHelper.start();
   }
 
   private void start() {
@@ -313,12 +498,14 @@ class Camera2Session implements CameraSession {
       return;
     }
     orientationHelper.start();
+
     cameraOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
     isCameraFrontFacing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING)
         == CameraMetadata.LENS_FACING_FRONT;
 
     findCaptureFormat();
     openCamera();
+
   }
 
   private void findCaptureFormat() {
@@ -356,6 +543,7 @@ class Camera2Session implements CameraSession {
 
     try {
       cameraManager.openCamera(cameraId, new CameraStateCallback(), cameraThreadHandler);
+
     } catch (Exception e) {
       reportError("Failed to open camera: " + e);
       return;
@@ -366,6 +554,7 @@ class Camera2Session implements CameraSession {
   public void stop() {
     Logging.d(TAG, "Stop camera2 session on camera " + cameraId);
     checkIsOnCameraThread();
+    surfaceTextureHelper.stopFrameTimer();
     if (state != SessionState.STOPPED) {
       final long stopStartTime = System.nanoTime();
       state = SessionState.STOPPED;
@@ -389,6 +578,7 @@ class Camera2Session implements CameraSession {
       surface.release();
       surface = null;
     }
+
     if (cameraDevice != null) {
       cameraDevice.close();
       cameraDevice = null;
@@ -396,7 +586,8 @@ class Camera2Session implements CameraSession {
     if (orientationHelper != null) {
       orientationHelper.stop();
     }
-
+    if (cameraStateCallbackFlx!=null)
+      cameraStateCallbackFlx.onDisconnected(null);
     Logging.d(TAG, "Stop done");
   }
 
@@ -415,13 +606,20 @@ class Camera2Session implements CameraSession {
   }
 
   private int getFrameOrientation() {
-    int rotation = orientationHelper.getOrientation();
-    OrientationHelper.cameraOrientation = rotation;
-    if (isCameraFrontFacing) {
-      rotation = 360 - rotation;
+    if (FlexatarRenderer.isFlexatarCamera){
+      int rotation = orientationHelper.getOrientation();
+      OrientationHelper.cameraOrientation = rotation;
+      Logging.d(TAG, "rotation "+rotation);
+      return  (180 + rotation) % 360;
+    }else {
+      int rotation = orientationHelper.getOrientation();
+      OrientationHelper.cameraOrientation = rotation;
+      if (isCameraFrontFacing) {
+        rotation = 360 - rotation;
+      }
+      OrientationHelper.cameraRotation = rotation;
+      return (cameraOrientation + rotation) % 360;
     }
-    OrientationHelper.cameraRotation = rotation;
-    return (cameraOrientation + rotation) % 360;
   }
 
   private void checkIsOnCameraThread() {

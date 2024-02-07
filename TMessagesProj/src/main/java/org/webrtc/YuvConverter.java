@@ -182,7 +182,7 @@ public class YuvConverter {
     renderMatrix.preTranslate(0.5f, 0.5f);
 
     if (isFlexatar) {
-      renderMatrix.preRotate(270);
+      renderMatrix.preRotate(90);
 
     }
 //    renderMatrix.preRotate(90);

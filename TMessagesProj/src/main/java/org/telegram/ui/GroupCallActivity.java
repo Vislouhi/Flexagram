@@ -77,6 +77,7 @@ import androidx.recyclerview.widget.ListUpdateCallback;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -5243,8 +5244,13 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                     VoIPService voIPService = VoIPService.getSharedInstance();
                     if (voIPService != null) {
                         Log.d("FLX_INJECT","createCaptureDevice newpreviewDialog");
-                        voIPService.switchToFlexatar(true);
-//                        voIPService.createCaptureDevice(false,true);
+
+//                            voIPService.destroyDevice();
+//                            voIPService.recreate();
+//                            voIPService.switchToFlexatar(true);
+
+                        FlexatarRenderer.isFlexatarCamera = true;
+                        voIPService.createCaptureDevice(false);
 
                     }
                    Log.d("FLX_INJECT","newpreviewDialog");
@@ -5281,6 +5287,8 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                 }
             } else {
                 VoIPService.getSharedInstance().setVideoState(false, Instance.VIDEO_STATE_INACTIVE);
+                VoIPService.getSharedInstance().setFlexatarDelay(false);
+
                 updateState(true, false);
                 updateSpeakerPhoneIcon(false);
                 call.sortParticipants();

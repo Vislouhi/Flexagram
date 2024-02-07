@@ -5,7 +5,7 @@
     <string name="NewFlexatarByPhoto">New Flexatar by Photo</string>
     <string name="MouthByPhoto">Make Mouth by Photo</string>
     <string name="FlexatarFromCloud">Load Flexatars From Cloud</string>
-    <string name="LoadingFlexatarFromCloud">Loading ...</string>
+    <string name="LoadingFlexatarFromCloud">Loading …</string>
     <string name="FlexatarCapture">Flexatar Capture</string>
     <string name="FlexatarsInProgress">Flexatars in progress</string>
     <string name="FlexatarsAvailableForCalls">Flexatars available for calls</string>
@@ -14,7 +14,7 @@
     <string name="DontShowAgain">Don\'t show again. </string>
     <string name="MakeMouthTitle">Make mouth (optional) </string>
     <string name="MakeMouthTitle1">Make Mouth </string>
-    <string name="MakeFlexatarMouthHelp">1. Bite the orange bar taking first picture.\n2. 2. Keep mouth opened.\n3. Take photos turning your head as assistant shows. </string>
+    <string name="MakeFlexatarMouthHelp">1. Bite the orange bar taking first picture.\n2. Keep mouth opened.\n3. Take photos turning your head as assistant shows. </string>
     <string name="FlexatarName">Flexatar Name </string>
     <string name="EnterFlexatarsName">Enter flexatars name </string>
     <string name="ViewInstructions">View Instructions </string>
@@ -48,6 +48,10 @@
     <string name="MixEffectButton">Mix</string>
     <string name="MorphEffectButton">Morph</string>
     <string name="HybridEffectButton">Hybrid</string>
+    <string name="FollowingProblemTitle">There could be following problem:</string>
+    <string name="PhotosDoNotContainFace">Photos you provided don\'t contain face.</string>
+    <string name="YouDidntFollowInstruction">You didn\'t follow instructions taking photos.</string>
+    <string name="UnknownProblem">Unknown problem.</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

@@ -13,6 +13,7 @@ package org.webrtc;
 import android.graphics.Matrix;
 import android.os.Handler;
 
+import org.flexatar.FlexatarRenderer;
 import org.telegram.messenger.FileLog;
 
 import java.nio.ByteBuffer;
@@ -80,7 +81,12 @@ public class TextureBufferImpl implements VideoFrame.TextureBuffer {
     this.height = height;
     this.type = type;
     this.id = id;
-    this.transformMatrix = transformMatrix;
+    if (FlexatarRenderer.isFlexatarCamera){
+      this.transformMatrix = new Matrix();
+    }else{
+      this.transformMatrix = transformMatrix;
+    }
+
     this.toI420Handler = toI420Handler;
     this.yuvConverter = yuvConverter;
     this.refCountDelegate = new RefCountDelegate(() -> refCountMonitor.onDestroy(this));

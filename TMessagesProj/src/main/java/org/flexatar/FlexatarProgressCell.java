@@ -48,7 +48,7 @@ public class FlexatarProgressCell extends LinearLayout {
     private static int TIMEOUT = 11300;
     private int currentPart;
     private File flexatarReadyFile;
-    private String errorCode;
+    private String errorCode = null;
     private Timer checkTmer;
 
     public String getStartTime(){
@@ -292,11 +292,18 @@ public class FlexatarProgressCell extends LinearLayout {
     }
 
     public void setError(String errorCode) {
-        this.errorCode=errorCode;
-        handler.post(()->{
-            removeViewAt(1);
-            addErrorText();
-        });
+        if (errorCode == null) {
+            if (this.errorCode!=null){
+                removeViewAt(1);
+                addView(tmeText,1);
+            }
+        }else{
+            this.errorCode = errorCode;
+            handler.post(() -> {
+                removeViewAt(1);
+                addErrorText();
+            });
+        }
 
     }
 

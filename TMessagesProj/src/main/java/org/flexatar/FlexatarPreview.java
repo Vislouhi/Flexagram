@@ -47,7 +47,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class FlexatarPreview extends FrameLayout {
-    private final FlxDrawerNew drawer;
+    private FlxDrawerNew drawer;
     private final CardView cardview;
     private final LengthBasedFlxUnpack unpackedFlexatar;
     private final BaseFragment parentFragment;
@@ -98,7 +98,7 @@ public class FlexatarPreview extends FrameLayout {
         addView(overlayView,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT, Gravity.CENTER));
         GLSurfaceView surfaceView = new GLSurfaceView(context);
         surfaceView.setEGLContextClientVersion(2);
-        FlexatarRenderer.speechState = new float[]{0,0,-1,0,0};
+//        FlexatarRenderer.speechState = new float[]{0,0,-1,0,0};
         FlexatarViewRenderer renderer = new FlexatarViewRenderer();
         drawer = new FlxDrawerNew();
         renderer.drawer = drawer;
@@ -119,6 +119,23 @@ public class FlexatarPreview extends FrameLayout {
         makeLayout(currentOrientation);
 //        addView(cardview);
 
+    }
+    public void reinitFlexatar(){
+        if (cardview.getChildCount() == 0 ){
+            GLSurfaceView surfaceView = new GLSurfaceView(getContext());
+            surfaceView.setEGLContextClientVersion(2);
+//            FlexatarRenderer.speechState = new float[]{0,0,-1,0,0};
+            FlexatarViewRenderer renderer = new FlexatarViewRenderer();
+            drawer = new FlxDrawerNew();
+            renderer.drawer = drawer;
+            drawer.setFlexatarData(flexatarData);
+            surfaceView.setRenderer(renderer);
+            cardview.addView(surfaceView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT, Gravity.CENTER));
+
+        }
+    }
+    public void destroyFlexatarView(){
+        cardview.removeAllViews();
     }
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {

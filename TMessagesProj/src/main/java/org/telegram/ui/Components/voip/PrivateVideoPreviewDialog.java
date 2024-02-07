@@ -45,6 +45,8 @@ import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.LaunchActivity;
+import org.webrtc.Camera2Capturer;
+
 import org.webrtc.RendererCommon;
 
 import java.io.File;
@@ -422,8 +424,17 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
                 cameraReady = false;
 
                 if (!voipInstance.isFlexatarCamera()) {
+                    FlexatarRenderer.isFlexatarCamera = true;
+                    service.restartCamera();
 //                    Log.d("FLX_INJECT","create camera "+currentPage);
-                    voipInstance.switchToFlexatar(true);
+//                    voipInstance.destroyDevice();
+//                    voipInstance.recreate();
+//                    voipInstance.switchToFlexatar(true);
+//                    voipInstance.setStateActive();
+
+//                    voipInstance.setupCaptureDevice(false,false);
+
+//                    voipInstance.recreate();
                 }
                 textureView.setAlpha(0.0f);
             }
@@ -434,12 +445,19 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             VoIPService voipInstance = VoIPService.getSharedInstance();
             {
                 cameraReady = false;
-                if (voipInstance.isFlexatarCamera()) {
-//                    Log.d("FLX_INJECT","create camera "+currentPage);
-                    voipInstance.switchToFlexatar(false);
-                }
+//                    if (FlexatarRenderer.isFlexatarCamera){
+//                        service.restartCamera();
+//                    }else{
+//                        service.switchCamera();
+//                    }
+                    FlexatarRenderer.isFlexatarCamera = false;
+
+
+
                 if (!currentFrontface) {
-                    VoIPService.getSharedInstance().switchCamera();
+                    service.switchCamera();
+                }else{
+                    service.restartCamera();
                 }
                 textureView.setAlpha(0.0f);
             }
@@ -447,15 +465,14 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         if (currentTexturePage == 3){
             saveLastCameraBitmap();
 
-            VoIPService voipInstance = VoIPService.getSharedInstance();
             {
                 cameraReady = false;
-                if (voipInstance.isFlexatarCamera()) {
-//                    Log.d("FLX_INJECT","create camera "+currentPage);
-                    voipInstance.switchToFlexatar(false);
-                }
+                FlexatarRenderer.isFlexatarCamera = false;
+
                 if (currentFrontface){
-                    VoIPService.getSharedInstance().switchCamera();
+                    service.switchCamera();
+                }else{
+                    service.restartCamera();
                 }
                 textureView.setAlpha(0.0f);
             }

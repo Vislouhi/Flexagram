@@ -21,6 +21,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 
 import org.telegram.messenger.FileLog;
@@ -86,6 +88,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
         TicketsController.stop();
+        TicketsController.removeObserver();
         FlexatarServerAccess.downloadBuiltinObserver = null;
 
     }
@@ -432,8 +435,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             progressItem.setTime(ticket.timePassed());
             progressItem.setNameText(ticket.name);
             progressItem.setOnClickListener(v->{
-                FlexatarProgressCell flexatarProgressCell = (FlexatarProgressCell) v;
-                showMakeFlexatarErrorAlert(flexatarProgressCell,fid,progressItem);
+//                FlexatarProgressCell flexatarProgressCell = (FlexatarProgressCell) v;
+                showMakeFlexatarErrorAlert(fid,progressItem);
             });
             if (ticket.status.equals("error")){
                 progressItem.setError(ticket.errorCode);
@@ -460,16 +463,26 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         item.setFlexatarFile(flexatarFile);
         return item;
     }
-    public void showMakeFlexatarErrorAlert(FlexatarProgressCell cell,String fid,ItemModel item){
+    public void showMakeFlexatarErrorAlert(String fid,ItemModel item){
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+//        Log.d("FLX_INJECT","item.getErrorCode() " +item.getErrorCode());
+        if (item.getErrorCode() != null ){
+            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+            builder.setTitle(LocaleController.getString("FollowingProblemTitle", R.string.FollowingProblemTitle));
 
-            builder.setTitle("There could be following problems:");
-//            builder.setMessage("1. There was no human faces on the photos.\n" +
-//                    "2. Head was turned the wrong side. \n" +
-//                    "3. Flexatar server overloaded.");
 
-            builder.setMessage(cell.getErrorCode());
+            try {
+                int code = new JSONObject(item.getErrorCode()).getInt("code");
+                if (code == 1){
+                    builder.setMessage(LocaleController.getString("YouDidntFollowInstruction", R.string.YouDidntFollowInstruction));
+                }else if (code == 2){
+                    builder.setMessage(LocaleController.getString("PhotosDoNotContainFace", R.string.PhotosDoNotContainFace));
+                }else{
+                    builder.setMessage(LocaleController.getString("UnknownProblem", R.string.UnknownProblem));
+                }
+
+            } catch (JSONException ignored) {}
+
             builder.setPositiveButton("Delete", (dialogInterface, i) -> {
 
                 TicketStorage.removeTicket(fid);
@@ -477,8 +490,11 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
 
             });
-        AlertDialog alertDialog = builder.create();
-        showDialog(alertDialog);
+            AlertDialog alertDialog = builder.create();
+            showDialog(alertDialog);
+        }
+
+
     }
     private void showDeleteAlert(boolean all) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());

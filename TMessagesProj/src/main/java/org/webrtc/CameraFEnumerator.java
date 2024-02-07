@@ -34,7 +34,7 @@ import java.util.Map;
 
 @TargetApi(21)
 public class CameraFEnumerator implements CameraEnumerator {
-  private final static String TAG = "Camera2Enumerator";
+  private final static String TAG = "CameraFEnumerator";
   private final static double NANO_SECONDS_PER_SECOND = 1.0e9;
 
   // Each entry contains the supported formats for a given camera index. The formats are enumerated
@@ -52,7 +52,7 @@ public class CameraFEnumerator implements CameraEnumerator {
 
   @Override
   public String[] getDeviceNames() {
-    return new String[]{"flexatar"};
+    return new String[]{"flexatar","flexatar1"};
   }
 
   @Override

@@ -43,6 +43,7 @@ public class FlexatarPreviewFragment extends BaseFragment{
     private TextView positiveButton;
     private View.OnClickListener onViewInstructionsChosenListener = null;
     private FlexatarPreview flexatarPreview;
+    private FrameLayout frameLayout;
 
     public FlexatarPreviewFragment(){
         super();
@@ -124,20 +125,25 @@ public class FlexatarPreviewFragment extends BaseFragment{
         ActionBarMenu menu = actionBar.createMenu();
         menu.addItem(10, R.drawable.background_selected);
 
-
-        fragmentView = new FrameLayout(context);
-        fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
-        FrameLayout frameLayout = (FrameLayout) fragmentView;
-        flexatarPreview = new FlexatarPreview(getContext(), cell, this);
-        flexatarPreview.setClickable(false);
-        frameLayout.addView(flexatarPreview, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        initLayout();
 
         return fragmentView;
     }
     private boolean finishCalled = false;
+    public void initLayout(){
+        fragmentView = new FrameLayout(getContext());
+        fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+        frameLayout = (FrameLayout) fragmentView;
+        flexatarPreview = new FlexatarPreview(getContext(), cell, this);
+        flexatarPreview.setClickable(false);
+        frameLayout.addView(flexatarPreview, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+
+    }
     @Override
     public void onResume() {
         super.onResume();
+        flexatarPreview.reinitFlexatar();
+//            if (frameLayout == null) initLayout();
         /*if (flexatarPreview.isMakeMouthSelected()){
             if (!finishCalled) {
                 finishCalled = true;
@@ -146,6 +152,13 @@ public class FlexatarPreviewFragment extends BaseFragment{
             }
         }*/
 
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        flexatarPreview.destroyFlexatarView();
+//        finishFragment();
     }
 
     @Override

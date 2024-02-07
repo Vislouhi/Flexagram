@@ -147,6 +147,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
                 item.setFlexatarProgressCell(cell);
                 if (item.getErrorCode() != null){
                     cell.setError(item.getErrorCode());
+                }else{
+                    cell.setError(null);
                 }
                 if (item.getProgressTime() != null){
                     cell.setTime(item.getProgressTime());

@@ -43,6 +43,7 @@ public class FlexatarRenderer {
     public static FlexatarData currentFlxData;
     public static FlexatarData altFlxData;
     public static float[] speechState = {0,0,0,0,0};
+    public static boolean isFlexatarCamera = true;
     private static AudioRecord audioRecord;
     private static ExecutorService executor;
     private static boolean isRecording;

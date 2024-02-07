@@ -50,6 +50,12 @@ public class Camera2Enumerator implements CameraEnumerator {
   @Override
   public String[] getDeviceNames() {
     try {
+      /*String[] cameraIdList = cameraManager.getCameraIdList();
+      String[] repackedIdList = new String[cameraIdList.length + 1];
+      for (int i = 0; i < cameraIdList.length; i++) {
+        repackedIdList[i+1] = cameraIdList[i];
+      }
+      repackedIdList[0] = "flexatar";*/
       return cameraManager.getCameraIdList();
       // On Android OS pre 4.4.2, a class will not load because of VerifyError if it contains a
       // catch statement with an Exception from a newer API, even if the code is never executed.
