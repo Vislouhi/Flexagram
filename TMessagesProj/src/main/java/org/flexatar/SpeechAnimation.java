@@ -102,46 +102,61 @@ public class SpeechAnimation {
         }
 
     }
+
     public static float[] processAudio(float[] audioBuffer){
+
         float[] result = {0f,0f,0f,0f,0f};
+//        try {
+            float[][] inputBuffer = new float[1][800];
+            inputBuffer[0] = audioBuffer;
+            float[][][][] outputBuffer = new float[1][5][80][1];
+            if (wav2melInterpreter != null) {
+                wav2melInterpreter.run(inputBuffer, outputBuffer);
 
-        float[][] inputBuffer = new float[1][800];
-        inputBuffer[0] = audioBuffer;
-        float[][][][] outputBuffer = new float[1][5][80][1];
-        if (wav2melInterpreter!=null) {
-            wav2melInterpreter.run(inputBuffer, outputBuffer);
-
-            mels.add(outputBuffer);
-        }
-        if (mels.size() == 20){
-            float[][][][] inputBuffer1 = new float[1][100][80][1];
-
-            for (int i = 0; i < 20; i++) {
-                System.arraycopy(mels.get(i)[0], 0, inputBuffer1[0], 0 + i * 5, 5);
+                mels.add(outputBuffer);
             }
-            float[][][][] outputBuffer1 = new float[1][20][8][1];
-            if (mel2phoneInterpreter!=null)
-                mel2phoneInterpreter.run(inputBuffer1,outputBuffer1);
+            if (mels.size() == 20) {
+                float[][][][] inputBuffer1 = new float[1][100][80][1];
+
+                for (int i = 0; i < 20; i++) {
+                    System.arraycopy(mels.get(i)[0], 0, inputBuffer1[0],  i * 5, 5);
+                }
+                float[][][][] outputBuffer1 = new float[1][20][8][1];
+                if (mel2phoneInterpreter != null)
+                    mel2phoneInterpreter.run(inputBuffer1, outputBuffer1);
 
 
-            float[][][][] inputBuffer2 = new float[1][20][7][1];
-            float[][][][] outputBuffer2 = new float[1][20][7][1];
-            for (int i = 0; i < 20; i++) {
-                System.arraycopy(outputBuffer1[0][i], 0, inputBuffer2[0][i], 0, 7);
+                float[][][][] inputBuffer2 = new float[1][20][7][1];
+                float[][][][] outputBuffer2 = new float[1][20][7][1];
+                for (int i = 0; i < 20; i++) {
+                    System.arraycopy(outputBuffer1[0][i], 0, inputBuffer2[0][i], 0, 7);
 
-            }
-            if (phon2avecInterpreter!=null)
-                phon2avecInterpreter.run(inputBuffer2,outputBuffer2);
-            for (int i = 0; i < 5; i++) {
-                result[i] = -7f * (outputBuffer2[0][9][i][0] - zeroAnimState[i]) ;
-            }
+                }
+                if (phon2avecInterpreter != null)
+                    phon2avecInterpreter.run(inputBuffer2, outputBuffer2);
+                for (int i = 0; i < 5; i++) {
+                    result[i] = -7f * (outputBuffer2[0][9][i][0] - zeroAnimState[i]);
+                }
 
 //            Log.d("====DEB====","val " +outputBuffer2[0][10][0][0] + " " +outputBuffer2[0][10][1][0]+ " " +outputBuffer2[0][10][2][0]+ " " +outputBuffer2[0][10][3][0]+ " " +outputBuffer2[0][10][4][0]);
 //            Log.d("====DEB====","val " +outputBuffer[0][2][20][0] );
-            mels.remove(0);
-        }
+                mels.remove(0);
+            }
+//            if (mels.size() > 20) {mels.clear();}
+//        }catch (NullPointerException ignored){}
         return result;
 
     }
 
+    public static void dropModels() {
+//        phon2avecInterpreter.setCancelled(true);
+//        mel2phoneInterpreter.setCancelled(true);
+//        wav2melInterpreter.setCancelled(true);
+
+//            phon2avecInterpreter = null;
+//            mel2phoneInterpreter = null;
+//            wav2melInterpreter = null;
+            mels.clear();
+
+    }
 }

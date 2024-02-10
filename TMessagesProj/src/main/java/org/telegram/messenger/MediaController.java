@@ -71,9 +71,11 @@ import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import org.flexatar.Config;
 import org.flexatar.EncodeAndMuxTest;
 import org.flexatar.FlexatarAnimationByAudioFile;
+import org.flexatar.FlexatarNotificator;
 import org.flexatar.FlexatarStorageManager;
 import org.flexatar.FlexatarVideoEncoder;
 import org.flexatar.OpusToAacConverter;
+import org.flexatar.SpeechAnimation;
 import org.flexatar.VideoAudioMuxer;
 import org.telegram.messenger.audioinfo.AudioInfo;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
@@ -115,6 +117,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
@@ -3980,15 +3983,31 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             }
             fileEncodingQueue.postRunnable(() -> {
                 stopRecord();
+                if (recordTimeCount <= 700) {
+                    AndroidUtilities.runOnUIThread(()->{
+                        NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.audioRecordTooShort, recordingGuid, false, (int) recordTimeCount);
+                        AutoDeleteMediaTask.unlockFile(recordingAudioFileToSend);
+                        recordingAudioFileToSend.delete();
+                        requestAudioFocus(false);
+                    });
+                    return;
+                }
+
+
+                String absPath = recordingAudioFileToSend.getAbsolutePath();
+                String audioAacPath = absPath.substring(0,absPath.lastIndexOf('.')) + ".aac";
+
                 Config.stopRecordingAudioSemaphore = new CountDownLatch(1);
                 Config.runAudioCallback();
-                String absPath = recordingAudioFileToSend.getAbsolutePath();
-                Log.d("FLX_INJECT","absPath sound "+absPath);
-                String audioAacPath = absPath.substring(0,absPath.lastIndexOf('.')) + ".aac";
+                Config.sendFlexatarRoundVideoCanceled = false;
+                Config.chosenSendFlexatarRoundVideo = false;
+                Config.startSendFlexatarRoundSemaphore = new CountDownLatch(1);
+
+                FlexatarNotificator.isMakingFlexatarRoundVideo = true;
                 OpusToAacConverter converter = new OpusToAacConverter();
                 converter.convertOpusToAac(new File(absPath),new File(audioAacPath),()->{
-
-//                    Config.runAudioCallback();
+                    FlexatarNotificator.isMakingFlexatarRoundVideo = false;
+                    SpeechAnimation.dropModels();
                     try {
                         Config.stopRecordingAudioSemaphore.await();
                     } catch (InterruptedException e) {
@@ -3996,45 +4015,61 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     }
                     Log.d("FLX_INJECT"," sending thread unblocked");
                     if (Config.chosenAudioWithFlexatar) {
-                        Config.startSendFlexatarRoundSemaphore = new CountDownLatch(1);
-                        Config.runChooseFlexatarForAudioCallback();
+
+//                        Config.runChooseFlexatarForAudioCallback();
                         try {
                             Config.startSendFlexatarRoundSemaphore.await();
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        Log.d("FLX_INJECT"," send video option chosen");
-                        new File(absPath).delete();
-                        File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "tmpvid.mp4");
-                        new FlexatarVideoEncoder(360, 360, converter.speechAnimation, videoFile, new File(audioAacPath), () -> {
-                            new File(audioAacPath).delete();
-                            AndroidUtilities.runOnUIThread(() -> {
+                        if (Config.chosenSendFlexatarRoundVideo) {
+                            Log.d("FLX_INJECT", " send video option chosen");
+                            AutoDeleteMediaTask.unlockFile(recordingAudioFileToSend);
+                            recordingAudioFileToSend.delete();
+                            File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), UUID.randomUUID().toString() + ".mp4");
+
+                            new FlexatarVideoEncoder(360, 360, converter.speechAnimation, videoFile, new File(audioAacPath), () -> {
+                                new File(audioAacPath).delete();
+//                                FlexatarNotificator.isMakingFlexatarRoundVideo = false;
+                                AndroidUtilities.runOnUIThread(() -> {
 
 
-                                VideoEditedInfo videoEditedInfo = new VideoEditedInfo();
-                                videoEditedInfo.roundVideo = true;
+                                    VideoEditedInfo videoEditedInfo = new VideoEditedInfo();
+                                    videoEditedInfo.roundVideo = true;
 //                    videoEditedInfo.startTime = 0L;
 //                    videoEditedInfo.endTime = 2L * 1000000L;
-                                videoEditedInfo.startTime = -1;
-                                videoEditedInfo.endTime = -1;
+                                    videoEditedInfo.startTime = -1;
+                                    videoEditedInfo.endTime = -1;
 //                    videoEditedInfo.file = file;
 //                    videoEditedInfo.encryptedFile = encryptedFile;
 //                    videoEditedInfo.key = key;
 //                    videoEditedInfo.iv = iv;
-                                videoEditedInfo.estimatedSize = 1;
-                                videoEditedInfo.framerate = 20;
-                                videoEditedInfo.originalWidth = 360;
-                                videoEditedInfo.originalHeight = 360;
-                                videoEditedInfo.resultWidth = 360;
-                                videoEditedInfo.resultHeight = 360;
-                                videoEditedInfo.originalPath = videoFile.getAbsolutePath();
-                                videoEditedInfo.estimatedDuration = 3L * 1000000L;
+                                    videoEditedInfo.estimatedSize = 1;
+                                    videoEditedInfo.framerate = 20;
+                                    videoEditedInfo.originalWidth = 360;
+                                    videoEditedInfo.originalHeight = 360;
+                                    videoEditedInfo.resultWidth = 360;
+                                    videoEditedInfo.resultHeight = 360;
+                                    videoEditedInfo.originalPath = videoFile.getAbsolutePath();
+                                    videoEditedInfo.estimatedDuration = 3L * 1000000L;
 
-                                AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
-                                SendMessagesHelper.prepareSendingVideo(accountInstance, videoFile.getAbsolutePath(), videoEditedInfo, recordDialogId, null, null, null, null, null, 0, null, true, 0, true, false, "");
+                                    AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
+                                    SendMessagesHelper.prepareSendingVideo(accountInstance, videoFile.getAbsolutePath(), videoEditedInfo, recordDialogId, null, null, null, null, null, 0, null, true, 0, true, false, "");
+//                                    videoFile.delete();
+                                    requestAudioFocus(false);
+                                    Log.d("FLX_INJECT", " flexatar round video was sent");
+                                });
+                            });
+                        }else{
+                            AndroidUtilities.runOnUIThread(() -> {
+                                Log.d("FLX_INJECT","flexatar round video send canceled");
+                                new File(audioAacPath).delete();
+                                AutoDeleteMediaTask.unlockFile(recordingAudioFileToSend);
+
+                                recordingAudioFileToSend.delete();
                                 requestAudioFocus(false);
                             });
-                        });
+                        }
                     }else{
                         new File(audioAacPath).delete();
                         Log.d("FLX_INJECT"," send sound option chosen");

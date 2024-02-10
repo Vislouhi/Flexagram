@@ -42,7 +42,11 @@ public class FlxDrawer {
     private int width;
     private int height;
     private boolean isFrame = false;
+    private boolean isEffectsOnVal = false;
+    public FlxDrawer(){
+        FlexatarNotificator.incDrawerCounter();
 
+    }
     public void setRealtimeAnimation(boolean realtimeAnimation) {
         isRealtimeAnimation = realtimeAnimation;
     }
@@ -337,6 +341,24 @@ public class FlxDrawer {
     }
 
     private static final Object loadBufferMutex = new Object();
+
+    private FlexatarData changeFlexatar = null;
+    public void changeFlexatar(FlexatarData flxData){
+        changeFlexatar = flxData;
+    }
+
+    private int effectIdVal = 0;
+    private float mixWeightVal = 1f;
+    public void setEffectIdVal(int effectID){
+        effectIdVal = effectID;
+    }
+    public void setMixWeightVal(float val){
+        mixWeightVal = val;
+    }
+    public void setisEffectOnVal(boolean val){
+        isEffectsOnVal = val;
+    }
+    FlexatarAnimator builtinAnimator = new FlexatarAnimator();
     public void draw() {
 //        GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -359,6 +381,18 @@ public class FlxDrawer {
             mixWeight = FlexatarRenderer.effectsMixWeight;
             isEffectsOn = FlexatarRenderer.isEffectsOn;
             speechState = FlexatarRenderer.speechState;
+        }else{
+            effectID = effectIdVal;
+            mixWeight = mixWeightVal;
+            isEffectsOn = isEffectsOnVal;
+        }
+        if (changeFlexatar!=null){
+            buffers2.destroy();
+            flexatarDataAlt = flexatarData;
+            flexatarData = changeFlexatar;
+            buffers2 = buffers1;
+            buffers1 = null;
+            changeFlexatar= null;
         }
         synchronized (loadBufferMutex) {
             initCommonBuffers();
@@ -369,14 +403,18 @@ public class FlxDrawer {
             initMouthAltProgram();
             initFlexatarBuffers();
         }
-        FlexatarAnimator animator = FlexatarRenderer.animator;
+        if (isStaticControlBind){
+
+        }
+        FlexatarAnimator animator = isStaticControlBind ? FlexatarRenderer.animator : builtinAnimator;
         if (isRealtimeAnimation) {
 
             animator.start();
         }else{
             animator.next();
         }
-        InterUnit interUnit = FlexatarRenderer.animator.getInterUnit(flexatarData);
+//        Log.d("FLX_INJECT", "drawer loop");
+        InterUnit interUnit = animator.getInterUnit(flexatarData);
         if (interUnit == null || buffers1 == null || animator.animUnit == null) return;
 
         float[] zRotMatrix = new float[16];
@@ -400,9 +438,10 @@ public class FlxDrawer {
 
 
 
-        float opFactor = 0;
-//        float opFactor = 0.03f + (-speechState[2] + speechState[3]) * 0.9f;
-
+//        float opFactor = 0;
+        float opFactor = 0.03f + (-speechState[2] + speechState[3]) * 0.5f;
+        if (opFactor<0) opFactor =0; else if (opFactor>1) opFactor = 1;
+//        Log.d("FLX_INJECT","opFactor "+opFactor);
         List<float[]> keyVtxList;
         if (isEffectsOn) {
             List<float[]> keyVtxList1 = flexatarData.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
@@ -515,5 +554,13 @@ public class FlxDrawer {
         }
         return keyVtxList;
 
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        FlexatarRenderer.animator.release();
+        builtinAnimator.release();
+        FlexatarNotificator.decDrawerCounter();
     }
 }

@@ -1,5 +1,9 @@
 package org.flexatar;
 
+import static org.flexatar.FlexatarNotificator.ChosenStateForRoundVideo.MIX;
+import static org.flexatar.FlexatarNotificator.ChosenStateForRoundVideo.MORPH;
+import static org.flexatar.FlexatarNotificator.ChosenStateForRoundVideo.HYBRID;
+
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaExtractor;
@@ -15,10 +19,13 @@ import android.opengl.GLES20;
 import android.util.Log;
 import android.view.Surface;
 
+import org.flexatar.DataOps.FlexatarData;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+
 
 public class FlexatarVideoEncoder {
     private static final String MIME_TYPE = "video/avc";
@@ -41,8 +48,30 @@ public class FlexatarVideoEncoder {
         this.completion=completion;
         FlxDrawer flxDrawer;
         flxDrawer = new FlxDrawer();
-        flxDrawer.setFlexatarData(FlexatarRenderer.currentFlxData);
+        flxDrawer.setRealtimeAnimation(false);
+        flxDrawer.setFlexatarData(FlexatarData.factory(FlexatarNotificator.chosenStateForRoundVideo.firstFile));
+
         flxDrawer.screenRatio = (float) mWidth / (float) mHeight;
+        if (FlexatarNotificator.chosenStateForRoundVideo.effect == MIX){
+            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(FlexatarNotificator.chosenStateForRoundVideo.secondFile));
+            flxDrawer.setisEffectOnVal(true);
+            flxDrawer.setEffectIdVal(0);
+            flxDrawer.setMixWeightVal(FlexatarNotificator.chosenStateForRoundVideo.mixWeight);
+        }
+        else if (FlexatarNotificator.chosenStateForRoundVideo.effect == MORPH){
+            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(FlexatarNotificator.chosenStateForRoundVideo.secondFile));
+            flxDrawer.setisEffectOnVal(true);
+            flxDrawer.setEffectIdVal(0);
+            flxDrawer.setMixWeightVal(1f);
+        }
+        else if (FlexatarNotificator.chosenStateForRoundVideo.effect == HYBRID){
+            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(FlexatarNotificator.chosenStateForRoundVideo.secondFile));
+            flxDrawer.setisEffectOnVal(true);
+            flxDrawer.setEffectIdVal(1);
+            flxDrawer.setMixWeightVal(0f);
+        }
+
+
         try {
             mBufferInfo = new MediaCodec.BufferInfo();
             MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, mWidth, mHeight);
@@ -74,8 +103,20 @@ public class FlexatarVideoEncoder {
 
 
             for (int i = 0; i < animationPattern.size(); i++) {
-                // Feed any pending encoder output into the muxer.
                 drainEncoder(false);
+
+                if (FlexatarNotificator.chosenStateForRoundVideo.effect == MORPH){
+
+                    float weight = 1f - (float) i / (float) animationPattern.size();
+                    flxDrawer.setMixWeightVal(weight);
+                }else
+                if (FlexatarNotificator.chosenStateForRoundVideo.effect == HYBRID){
+                    float weight = (float) i * 0.005f;
+                    flxDrawer.setMixWeightVal(weight);
+                }
+                if (i == animationPattern.size()/2)
+                    flxDrawer.builtinAnimator.reverse();
+
                 GLES20.glClearColor(0f,0f,0f,0f);
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
                 flxDrawer.setSpeechState(animationPattern.get(i));

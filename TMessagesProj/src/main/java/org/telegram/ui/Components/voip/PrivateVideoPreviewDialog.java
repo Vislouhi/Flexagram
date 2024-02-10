@@ -409,12 +409,19 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
 //            service.destroyCameraCapturer();
 //            service.state
 //        }
+//        if (currentPage == 0){
+//            FlexatarRenderer.isFlexatarCamera = false;
+//        }
+
         if (currentTexturePage == visibleCameraPage || service == null) {
             return;
         }
 
         boolean currentFrontface = service.isFrontFaceCamera();
-
+        if (currentPage == 0 && needScreencast) {
+            Log.d("FLX_INJECT","screen cast selected "+currentPage);
+            FlexatarRenderer.isFlexatarCamera = false;
+        }
 
         if (currentTexturePage == 1){
             saveLastCameraBitmap();

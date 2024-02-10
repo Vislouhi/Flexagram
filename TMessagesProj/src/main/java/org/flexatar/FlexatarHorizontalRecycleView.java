@@ -32,12 +32,20 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
         private final Context mContext;
         private final File[] flexatarsInLocalStorage;
         private final FlexatarUI.FlexatarChooseListener onChooseListener;
+        private OnFlexatarChosen onFlexatarChosenListener = null;
 
         public Adapter(Context context, FlexatarUI.FlexatarChooseListener onChooseListener){
             mContext = context;
             flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
             this.onChooseListener = onChooseListener;
         }
+        public interface OnFlexatarChosen{
+            void onFlexatarChosen(File file);
+        }
+        public void setAndOverrideOnItemClickListener(OnFlexatarChosen onFlexatarChosenListener){
+            this.onFlexatarChosenListener=onFlexatarChosenListener;
+        }
+
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -59,18 +67,21 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
             float imageWidth = 70;
             holder.itemView.setLayoutParams(new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth*ratio)));
             holder.itemView.setOnClickListener((v) -> {
-
-                if (FlexatarUI.chosenFirst.getName().equals(flexatarFile.getName())) return;
-                FlexatarUI.chosenSecond = FlexatarUI.chosenFirst;
-                FlexatarUI.chosenFirst = flexatarFile;
-                FlexatarRenderer.altFlxData = FlexatarRenderer.currentFlxData;
-                byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarFile);
-                FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(flxBytes));
-                if (FlexatarUI.chosenEffect.equals("Morph")){
-                    FlexatarRenderer.effectsMixWeight = 0;
+                if (onFlexatarChosenListener == null) {
+                    if (FlexatarUI.chosenFirst.getName().equals(flexatarFile.getName())) return;
+                    FlexatarUI.chosenSecond = FlexatarUI.chosenFirst;
+                    FlexatarUI.chosenFirst = flexatarFile;
+                    FlexatarRenderer.altFlxData = FlexatarRenderer.currentFlxData;
+                    byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarFile);
+                    FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(flxBytes));
+                    if (FlexatarUI.chosenEffect.equals("Morph")) {
+                        FlexatarRenderer.effectsMixWeight = 0;
+                    }
+                    if (onChooseListener != null)
+                        onChooseListener.onChoose(((ImageView) holder.itemView));
+                }else{
+                    onFlexatarChosenListener.onFlexatarChosen(flexatarFile);
                 }
-                if (onChooseListener != null)
-                    onChooseListener.onChoose(((ImageView) holder.itemView));
 
             });
         }

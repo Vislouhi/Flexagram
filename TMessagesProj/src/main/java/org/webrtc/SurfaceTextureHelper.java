@@ -281,6 +281,7 @@ public class SurfaceTextureHelper {
   }
 
   public void stopFrameTimer(){
+    if (timer == null) return;
     timer.cancel();
     timer.purge();
   }

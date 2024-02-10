@@ -125,9 +125,7 @@ import com.google.zxing.common.detector.MathUtils;
 import org.flexatar.AlertDialogs;
 import org.flexatar.Config;
 import org.flexatar.FlexatarCabinetActivity;
-import org.flexatar.FlexatarStorageManager;
-import org.flexatar.FlexatarUI;
-import org.flexatar.ServerDataProc;
+import org.flexatar.FlexatarControlPanelLayout;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -216,7 +214,6 @@ import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Premium.GiftPremiumBottomSheet;
-import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.BoostDialogs;
@@ -227,10 +224,8 @@ import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.Components.voip.CellFlickerDrawable;
-import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
-import org.telegram.ui.Stories.DialogStoriesCell;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.recorder.PreviewView;
@@ -704,6 +699,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private boolean firstMessagesLoaded;
     private Runnable closeInstantCameraAnimation;
     private PopupWindow flexatarPopUp = null;
+    private FlexatarControlPanelLayout flexatarControlPanelLayout;
 
     {
         skeletonOutlinePaint.setStyle(Paint.Style.STROKE);
@@ -2128,15 +2124,43 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         Config.chooseFlexatarForAudioCallback = ()->{
             AndroidUtilities.runOnUIThread(()->{
 //                PopupWindow flexatarUiPopupPanel = FlexatarUI.panelPopup(getContext(), fragmentView);
-                VoIPBackgroundProvider bkgProvider = new VoIPBackgroundProvider();
-                bkgProvider.setHasVideo(true);
-
-                bkgProvider.setTotalSize(200,200);
-
-                FlexatarUI.FlexatarPanelLayout flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(getContext(), bkgProvider);
+//                VoIPBackgroundProvider bkgProvider = new VoIPBackgroundProvider();
+//                bkgProvider.setHasVideo(true);
+//
+//                bkgProvider.setTotalSize(200,200);
+                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext());
+//                FlexatarUI.FlexatarPanelLayout flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(getContext(), bkgProvider);
 //                flexatarPanelView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
-                ((FrameLayout)fragmentView).addView(flexatarPanelView,
+                actionBar.setEnabled(false);
+                View blockingView = new View(getContext());
+                blockingView.setClickable(true);
+                flexatarControlPanelLayout.setOnCancelListener(layout->{
+                    actionBar.setEnabled(true);
+                    ((FrameLayout)fragmentView).removeView(blockingView);
+                    ((FrameLayout)fragmentView).removeView(layout);
+                    flexatarControlPanelLayout = null;
+                    Config.chosenSendFlexatarRoundVideo = false;
+                    Config.sendFlexatarRoundVideoCanceled = true;
+                    Config.signalSendFlexatarSemaphore();
+                    Log.d("FLX_INJECT","flexatar Control panel canceled");
+                });
+                flexatarControlPanelLayout.setOnSendListener(layout->{
+                    actionBar.setEnabled(true);
+                    ((FrameLayout)fragmentView).removeView(blockingView);
+                    ((FrameLayout)fragmentView).removeView(layout);
+                    flexatarControlPanelLayout = null;
+                    Config.chosenSendFlexatarRoundVideo = true;
+
+                    Config.signalSendFlexatarSemaphore();
+                    Log.d("FLX_INJECT","flexatar Control panel send");
+                });
+
+                ((FrameLayout)fragmentView).addView(blockingView,
+                        LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
+                ((FrameLayout)fragmentView).addView(flexatarControlPanelLayout,
                         LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,12,12,12,12));
+
+
 
             });
 
@@ -2655,6 +2679,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
+        if (flexatarControlPanelLayout !=null){
+            flexatarControlPanelLayout.cancel();
+            flexatarControlPanelLayout = null;
+        }
         if (chatActivityEnterView != null) {
             chatActivityEnterView.onDestroy();
         }
@@ -27610,6 +27638,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public boolean onBackPressed() {
+        if (flexatarControlPanelLayout !=null){
+            flexatarControlPanelLayout.cancel();
+            flexatarControlPanelLayout = null;
+            return false;
+        }
         if (flexatarPopUp!=null){
             flexatarPopUp.dismiss();
         }

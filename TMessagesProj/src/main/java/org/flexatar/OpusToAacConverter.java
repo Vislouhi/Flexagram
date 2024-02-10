@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
@@ -123,25 +124,31 @@ public class OpusToAacConverter {
                     buffer.limit(bufferInfo.offset + bufferInfo.size);
                     ShortBuffer shortBuffer = buffer.asShortBuffer();
                     short[] shortArray = new short[bufferInfo.size/2];
-                    shortBuffer.get(shortArray);
+                    try {
+                        shortBuffer.get(shortArray);
+                    }catch (BufferUnderflowException ignored){}
                     calcAnimQueue.postRunnable(()->{
-                        float[] floatBuffer = VPUtil.shortToFloat(shortArray);
-                        int lenResampled = (int) (floatBuffer.length*resampleFactor);
-                        float[] resampledBuffer = new float[lenResampled];
-                        resampler.process(resampleFactor,floatBuffer,0,floatBuffer.length,false,resampledBuffer,0,lenResampled);
-                        if (bufferCollector(resampledBuffer)){
+                        if (!Config.sendFlexatarRoundVideoCanceled) {
+                            float[] floatBuffer = VPUtil.shortToFloat(shortArray);
+                            int lenResampled = (int) (floatBuffer.length * resampleFactor);
+                            float[] resampledBuffer = new float[lenResampled];
+                            resampler.process(resampleFactor, floatBuffer, 0, floatBuffer.length, false, resampledBuffer, 0, lenResampled);
+                            if (bufferCollector(resampledBuffer)) {
 
-                            long f = System.nanoTime();
+                                long f = System.nanoTime();
 //                            Log.d(TAG,"resamp proc time "+ ((f-startTime)/1000000L));
-                            float[] spst = SpeechAnimation.processAudio(animBuffer);
-                            speechAnimation.add(spst);
+                                float[] spst = SpeechAnimation.processAudio(animBuffer);
+                                speechAnimation.add(spst);
 
 //                            Log.d(TAG,"animation ready "+ Arrays.toString(spst));
+                            }
                         }
                         if (isFinished){
-                            for (int i = 0; i < 10; i++) {
-                                float[] spst = SpeechAnimation.processAudio(new float[I800]);
-                                speechAnimation.add(spst);
+                            if (!Config.sendFlexatarRoundVideoCanceled) {
+                                for (int i = 0; i < 10; i++) {
+                                    float[] spst = SpeechAnimation.processAudio(new float[I800]);
+                                    speechAnimation.add(spst);
+                                }
                             }
                             for (int i = 0; i < 10; i++) {
                                 speechAnimation.add(new float[]{0,0,0.05f,0,0});

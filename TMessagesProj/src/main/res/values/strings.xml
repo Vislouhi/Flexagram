@@ -53,6 +53,8 @@
     <string name="YouDidntFollowInstruction">You didn\'t follow instructions taking photos.</string>
     <string name="UnknownProblem">Unknown problem.</string>
     <string name="FlexatarCabinet">Flexatar Cabinet</string>
+    <string name="FlexatarInfo">Flexatar Info</string>
+    <string name="FlexatarRoundQuestion">Do yo want to make round video with flexatar?</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

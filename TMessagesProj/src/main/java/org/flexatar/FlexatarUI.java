@@ -389,27 +389,6 @@ public class FlexatarUI {
         }
         linearLayout.addView(seekBar,LayoutHelper.createFrame(200, 20,Gravity.CENTER,0,6,0,0));
 
-        byte[] flxBytes = FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst);
-        LengthBasedFlxUnpack unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
-        FlexatarData flexatarData = new FlexatarData(unpackedFlexatar);
-
-        GLSurfaceView surfaceView = new GLSurfaceView(context);
-        surfaceView.setEGLContextClientVersion(2);
-        FlexatarViewRenderer renderer = new FlexatarViewRenderer();
-        renderer.isRounded = true;
-        FlxDrawer drawer = new FlxDrawer();
-
-        renderer.drawer = drawer;
-        drawer.setFlexatarData(flexatarData);
-        surfaceView.setZOrderOnTop(true);
-        surfaceView.setBackgroundColor(Color.TRANSPARENT);
-        surfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
-        surfaceView.getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);
-
-        surfaceView.setRenderer(renderer);
-        FrameLayout frameWarper = new FrameLayout(context);
-        frameWarper.addView(surfaceView,LayoutHelper.createLinear(150,200));
-        linearLayout.addView(frameWarper,LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER_HORIZONTAL,12,12,12,12));
 
         FrameLayout bottomButtonsLayout = new FrameLayout(context);
 
@@ -425,7 +404,9 @@ public class FlexatarUI {
             linearLayout.fulfillClose();
         });
         bottomButtonsLayout.addView(closePanelIcon,LayoutHelper.createFrame(32, 32, Gravity.RIGHT, 0, 0, 12, 0));
+
         bottomButtonsLayout.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6));
+
 
 
 

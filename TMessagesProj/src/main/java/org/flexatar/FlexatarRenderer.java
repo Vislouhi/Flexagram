@@ -227,6 +227,7 @@ public class FlexatarRenderer {
     private static Timer checkTmer;
     private static final Object mutexObject = new Object();
     public static void startVoiceProcessingIfNotRunning(){
+
         synchronized (mutexObject) {
             isVoiceProcessingNeed = true;
             if (checkTmer == null) {
@@ -292,8 +293,10 @@ public class FlexatarRenderer {
 
         return resultArray;
     }
-    private static Object processingMutex = new Object();
+    private static final Object processingMutex = new Object();
     public static void processSpeechAnimation(float[] audioBuffer){
+
+        if(FlexatarNotificator.isMakingFlexatarRoundVideo) return;
 //        Log.d("FLX_INJECT", "processSpeechAnimation");
         synchronized (processingMutex) {
             LaunchActivity context = LaunchActivity.instance;
@@ -301,9 +304,10 @@ public class FlexatarRenderer {
             audioToTF.add(audioBuffer);
             if (audioToTF.size() == 5) {
                 float[] buffer = concatenateFloatArrays(audioToTF);
-                if (buffer.length == 800)
+                if (buffer.length == 800) {
                     FlexatarRenderer.speechState = SpeechAnimation.processAudio(concatenateFloatArrays(audioToTF));
-                else
+//                    Log.d("FLX_INJECT", "anim voice call " + Arrays.toString(FlexatarRenderer.speechState));
+                }else
                     Log.d("processSpeechAnimation", "incorect size");
                 audioToTF.clear();
             }

@@ -1,7 +1,10 @@
 package org.flexatar;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.flexatar.DataOps.FlexatarData;
 
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -9,11 +12,14 @@ public class FlexatarAnimator {
     private Timer timer;
     private int animationPatternIdx = 0;
 //    InterUnit interUnit;
-    int animIdx = 50;
+    private int animIdx = 50;
     public AnimationUnit animUnit;
     private float[] point = {0.5f,0.45f};
     public boolean isActive = false;
     public FlexatarAnimator(){
+        Random random = new Random();
+        random.setSeed(System.nanoTime());
+        animIdx = 50 + random.nextInt(200);
        /* timer = new Timer();
 
         TimerTask task = new TimerTask() {
@@ -48,7 +54,10 @@ public class FlexatarAnimator {
     }
     private static final Object mutexObject = new Object();
 //    private float effectsWeightStep = 0.05f;
+    public int usageCounter = 0;
+    public int counter5 = 0;
     public void start(){
+        usageCounter++;
         synchronized (mutexObject) {
             if (!isActive) {
                 timer = new Timer();
@@ -60,7 +69,14 @@ public class FlexatarAnimator {
                     public void run() {
 
                        next();
-
+                        counter5++;
+                        if (counter5>5){
+                            counter5 = 0;
+                            if (usageCounter == 0){
+                                release();
+                            }
+                            usageCounter = 0;
+                        }
                         // Code to be executed repeatedly
 //                System.out.println("Task executed at regular interval.");
                     }
@@ -69,6 +85,10 @@ public class FlexatarAnimator {
                 // Schedule the task to run every 1000 milliseconds (1 second)
                 timer.scheduleAtFixedRate(task, 0, 40);
                 isActive = true;
+
+
+
+
             }
         }
     }
@@ -80,12 +100,14 @@ public class FlexatarAnimator {
     }
     public void release(){
         synchronized (mutexObject) {
+            isActive = false;
+            if (timer == null) return;
             timer.cancel();
             timer.purge();
-            isActive = false;
+
         }
     }
-
+    private int delta = 2;
     public void next() {
         float tx = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[0];
         float ty = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[1] + 0.0f;
@@ -100,11 +122,13 @@ public class FlexatarAnimator {
 
 
         animUnit = new AnimationUnit(tx, ty, sc, rz, eyebrow, BlinkGenerator.nextBlinkWeight());
-        animIdx += 4;
+        animIdx += delta;
 
-        if (animIdx >= FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).size()) {
-            animIdx = 0;
+        if (animIdx >= FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).size() || animIdx<0) {
+            delta = -delta;
+            animIdx += delta;
         }
+
         if (FlexatarRenderer.isEffectsOn && FlexatarRenderer.effectID == 1){
             FlexatarRenderer.effectsMixWeight += 0.0025f;
             if (FlexatarRenderer.effectsMixWeight>1){FlexatarRenderer.effectsMixWeight = 0;}
@@ -113,5 +137,10 @@ public class FlexatarAnimator {
             FlexatarRenderer.effectsMixWeight += 0.005f;
             if (FlexatarRenderer.effectsMixWeight>1){FlexatarRenderer.effectsMixWeight = 1;}
         }
+//        Log.d("FLX_INJECT", "animator working");
+    }
+
+    public void reverse() {
+        delta = -delta;
     }
 }

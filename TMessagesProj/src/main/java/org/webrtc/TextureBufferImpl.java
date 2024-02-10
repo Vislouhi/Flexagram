@@ -81,7 +81,7 @@ public class TextureBufferImpl implements VideoFrame.TextureBuffer {
     this.height = height;
     this.type = type;
     this.id = id;
-    if (FlexatarRenderer.isFlexatarCamera){
+    if (type == VideoFrame.TextureBuffer.Type.FLX){
       this.transformMatrix = new Matrix();
     }else{
       this.transformMatrix = transformMatrix;

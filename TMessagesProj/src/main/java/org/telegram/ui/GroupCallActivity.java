@@ -5266,6 +5266,11 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                     previewDialog = new PrivateVideoPreviewDialog(context, true, VoIPService.getSharedInstance().getVideoState(true) != Instance.VIDEO_STATE_ACTIVE) {
                         @Override
                         public void onDismiss(boolean screencast, boolean apply) {
+                            Log.d("FLX_INJECT","group chosen screencast " + screencast);
+                            if (screencast){
+                                FlexatarRenderer.isFlexatarCamera = false;
+                                voIPService.setFlexatarDelay(false);
+                            }
                             boolean showMicIcon = previewDialog.micEnabled;
                             previewDialog = null;
                             VoIPService service = VoIPService.getSharedInstance();

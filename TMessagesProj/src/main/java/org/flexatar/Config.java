@@ -44,6 +44,8 @@ public class Config {
 
     public static CountDownLatch startSendFlexatarRoundSemaphore = null;
     public static boolean chosenAudioWithFlexatar;
+    public static boolean chosenSendFlexatarRoundVideo;
+    public static boolean sendFlexatarRoundVideoCanceled;
 
     public static void runAudioCallback(){
         if (sendAudioCallback != null) sendAudioCallback.run();

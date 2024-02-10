@@ -16,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -27,6 +28,12 @@ import java.util.List;
 import java.util.Map;
 
 public class FlexatarData {
+    public static FlexatarData factory(File file){
+        byte[] flxBytes = FlexatarStorageManager.dataFromFile(file);
+        LengthBasedFlxUnpack unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
+        FlexatarData flexatarData = new FlexatarData(unpackedFlexatar);
+        return flexatarData;
+    }
     private LengtBasedDict mouthData;
     public float mouthRatio;
 //    private  String name;
@@ -144,6 +151,13 @@ public class FlexatarData {
             throw new RuntimeException(e);
         }*/
 
+    }
+    public Bitmap getPreviewImage(){
+        byte[] buffer = this.flxData.get("exp0").get("PreviewImage").get(0);
+        Bitmap bitmapOrig = BitmapFactory.decodeStream(new ByteArrayInputStream(buffer));
+        Bitmap bitmap = Bitmap.createScaledBitmap(bitmapOrig, (int) (bitmapOrig.getWidth() * 0.5f), (int) (bitmapOrig.getHeight() * 0.5f), false);
+        bitmapOrig.recycle();
+        return bitmap;
     }
     public FlexatarStorageManager.FlexatarMetaData getMetaData(){
         return metaData;

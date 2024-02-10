@@ -83,14 +83,15 @@ public class AlertDialogs {
 
     public static AlertDialog askToMakeFlexatarVideo(Context context){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Flexatar info");
+        builder.setTitle(LocaleController.getString("FlexatarInfo",R.string.FlexatarInfo));
 //        builder.setTitle(LocaleController.getString("VerifyAlertCap", R.string.VerifyAlertCap));
-        builder.setMessage("Make video from audio?");
+        builder.setMessage(LocaleController.getString("FlexatarRoundQuestion",R.string.FlexatarRoundQuestion));
 
 
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
             Config.chosenAudioWithFlexatar = true;
             Config.signalRecordAudioSemaphore();
+            Config.runChooseFlexatarForAudioCallback();
         });
         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), (dialogInterface, i) -> {
             Config.chosenAudioWithFlexatar = false;
