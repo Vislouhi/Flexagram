@@ -34,7 +34,7 @@ import java.util.concurrent.Executors;
 
 public class FlexatarRenderer {
     private static final int SAMPLE_RATE = 16000;
-    public static FlxDrawer drawer;
+
     public static FlexatarData data;
     public static FlexatarAnimator animator;
     public static Bitmap icon;

@@ -36,6 +36,7 @@ import androidx.exifinterface.media.ExifInterface;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
+import androidx.lifecycle.Observer;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -112,8 +113,6 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
     }
 
     public void finishPage(){
-        flxPhotoHelperTmer.cancel();
-        flxPhotoHelperTmer.purge();
         lifecycleRegistry.setCurrentState(Lifecycle.State.DESTROYED);
         cameraProvider.unbindAll();
         finishFragment();
@@ -135,15 +134,34 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 //        frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         mPreviewView = new PreviewView(context);
         mPreviewView.setScaleType(PreviewView.ScaleType.FIT_CENTER);
-        mPreviewView.setVisibility(View.INVISIBLE);
-        orangeBarView = new View(context);
+        mPreviewView.setAlpha(0f);
+//        mPreviewView.setVisibility(View.INVISIBLE);
 
         flxPhotoHelperView = new ImageView(context);
         flxPhotoHelperView.setImageResource(R.drawable.flx_photo_helper_front);
+//        flxPhotoHelperView.setVisibility(View.INVISIBLE);
+        flxPhotoHelperView.setAlpha(0f);
+        mPreviewView.getPreviewStreamState().observe(this, new Observer<PreviewView.StreamState>() {
+            @Override
+            public void onChanged(PreviewView.StreamState streamState) {
+                if (streamState == PreviewView.StreamState.STREAMING) { // if preview visible
+                    AndroidUtilities.runOnUIThread(()->{
+                        mPreviewView.setVisibility(View.VISIBLE);
+//                        flxPhotoHelperView.setVisibility(View.VISIBLE);
+                        mPreviewView.getPreviewStreamState().removeObserver(this);
+                        flxPhotoHelperView.animate().alpha(1f).setDuration(250).start();
+                        mPreviewView.animate().alpha(1f).setDuration(250).start();
+                    });
 
-        flxPhotoHelperTmer = new Timer();
+                }
+            }
+        });
 
-        flxPhotoHelperRotated = false;
+        orangeBarView = new View(context);
+
+
+
+
         /*TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -222,11 +240,11 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 //                            mPreviewView.setVisibility(View.VISIBLE);
                         }
                     });
-                    frameLayout.postDelayed(()->{
+                    /*frameLayout.postDelayed(()->{
 
                         mPreviewView.setVisibility(View.VISIBLE);
 
-                        },500);
+                        },500);*/
                 }
             }
         });

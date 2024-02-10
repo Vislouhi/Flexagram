@@ -3,8 +3,6 @@ package org.flexatar;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.GradientDrawable;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.util.TypedValue;
@@ -20,17 +18,13 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-import androidx.cardview.widget.CardView;
-
 import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.AlertDialog;
-import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 
 import java.io.File;
 
@@ -86,6 +80,24 @@ public class AlertDialogs {
         });
         return builder.create();
     }
+
+    public static AlertDialog askToMakeFlexatarVideo(Context context){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Flexatar info");
+//        builder.setTitle(LocaleController.getString("VerifyAlertCap", R.string.VerifyAlertCap));
+        builder.setMessage("Make video from audio?");
+
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+            Config.chosenAudioWithFlexatar = true;
+            Config.signalRecordAudioSemaphore();
+        });
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), (dialogInterface, i) -> {
+            Config.chosenAudioWithFlexatar = false;
+            Config.signalRecordAudioSemaphore();
+        });
+        return builder.create();
+    }
     public static AlertDialog askToSaveFlexatarToGallery(Context context, File flexatarFile){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(LocaleController.getString("Info", R.string.Info));
@@ -97,7 +109,7 @@ public class AlertDialogs {
         GLSurfaceView surfaceView = new GLSurfaceView(context);
         surfaceView.setEGLContextClientVersion(2);
         FlexatarViewRenderer renderer = new FlexatarViewRenderer();
-        FlxDrawerNew drawer = new FlxDrawerNew();
+        FlxDrawer drawer = new FlxDrawer();
         renderer.drawer = drawer;
         drawer.setFlexatarData(flexatarData);
 
@@ -121,7 +133,7 @@ public class AlertDialogs {
         surfaceView.setEGLContextClientVersion(2);
         FlexatarViewRenderer renderer = new FlexatarViewRenderer();
         renderer.isRounded = true;
-        FlxDrawerNew drawer = new FlxDrawerNew();
+        FlxDrawer drawer = new FlxDrawer();
 
         renderer.drawer = drawer;
         drawer.setFlexatarData(flexatarData);

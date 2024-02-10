@@ -13,13 +13,10 @@ package org.webrtc;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.opengl.GLES20;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlxDrawer;
-import org.flexatar.FlxDrawerNew;
 
 import java.nio.ByteBuffer;
 
@@ -30,7 +27,7 @@ import java.nio.ByteBuffer;
  */
 public class VideoFrameDrawer {
   public static final String TAG = "VideoFrameDrawer";
-  private FlxDrawerNew flxDrawer;
+  private FlxDrawer flxDrawer;
 
   /**
    * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb
@@ -288,7 +285,7 @@ public class VideoFrameDrawer {
       if ( isFlexatar) {
 //      if (frame.getIsFlexatar() && isFlexatar) {
         if (flxDrawer == null) {
-          flxDrawer = new FlxDrawerNew();
+          flxDrawer = new FlxDrawer();
           flxDrawer.setFrame();
           flxDrawer.setIsStaticControlBind(true);
 

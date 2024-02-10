@@ -34,6 +34,7 @@ public class FlexatarStorageManager {
     private static String PREF_STORAGE_NAME = "flexatar_storage_pref";
     public static String FLEXATAR_STORAGE_FOLDER = "flexatar_storage";
     public static String FLEXATAR_PREVIEW_STORAGE_FOLDER = "flexatar_preview_storage";
+    public static String FLEXATAR_TMP_VIDEO_STORAGE_FOLDER = "flexatar_tmp_video_storage";
     public static String PUBLIC_PREFIX = "public_";
     public static String FLEXATAR_PREFIX = "flexatar_";
     public static String BUILTIN_PREFIX = "builtin_";
@@ -54,6 +55,15 @@ public class FlexatarStorageManager {
     public static File createFlexatarPreviewStorage(Context context){
         File rootDir = context.getFilesDir();
         File flexatarStorageFolder = new File(rootDir,FLEXATAR_PREVIEW_STORAGE_FOLDER);
+        if (!flexatarStorageFolder.exists()){
+            flexatarStorageFolder.mkdir();
+        }
+        return flexatarStorageFolder;
+    }
+    public static File createTmpVideoStorage(){
+        Context context = ApplicationLoader.applicationContext;
+        File rootDir = context.getFilesDir();
+        File flexatarStorageFolder = new File(rootDir,FLEXATAR_TMP_VIDEO_STORAGE_FOLDER);
         if (!flexatarStorageFolder.exists()){
             flexatarStorageFolder.mkdir();
         }
@@ -100,7 +110,7 @@ public class FlexatarStorageManager {
         }
         return flexataFile;
     }
-    private static void copy(File src, File dst) throws IOException {
+    public static void copy(File src, File dst) throws IOException {
         InputStream in = new FileInputStream(src);
         try {
             OutputStream out = new FileOutputStream(dst);

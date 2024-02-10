@@ -60,6 +60,7 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.ImageSpan;
+import android.util.Log;
 import android.util.Property;
 import android.util.TypedValue;
 import android.view.ActionMode;
@@ -106,6 +107,7 @@ import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.ChatListItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import org.flexatar.AlertDialogs;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
@@ -1363,6 +1365,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
 
         @Override
         public boolean onTouchEvent(MotionEvent event) {
+
             if (sendButtonVisible) {
                 int x = (int) event.getX();
                 int y = (int) event.getY();
@@ -1374,6 +1377,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                             if (isInVideoMode()) {
                                 delegate.needStartRecordVideo(3, true, 0, voiceOnce ? 0x7FFFFFFF : 0);
                             } else {
+
                                 MediaController.getInstance().stopRecording(2, true, 0, voiceOnce);
                                 delegate.needStartRecordAudio(0);
                             }
@@ -5904,6 +5908,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
 
     private boolean premiumEmojiBulletin = true;
     private void sendMessageInternal(boolean notify, int scheduleDate, boolean allowConfirm) {
+
         if (slowModeTimer == Integer.MAX_VALUE && !isInScheduleMode()) {
             if (delegate != null) {
                 delegate.scrollToSendingMessage();
@@ -5935,6 +5940,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             checkSendButton(true);
             return;
         } else if (audioToSend != null) {
+
             MessageObject playing = MediaController.getInstance().getPlayingMessageObject();
             if (playing != null && playing == audioToSendMessageObject) {
                 MediaController.getInstance().cleanupPlayer(true, true);

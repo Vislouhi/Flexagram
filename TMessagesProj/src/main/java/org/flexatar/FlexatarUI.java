@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.RectF;
+import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -114,7 +115,7 @@ public class FlexatarUI {
 
     public static PopupWindow panelPopup(Context context,View location){
         VoIPBackgroundProvider bkgProvider = new VoIPBackgroundProvider();
-        bkgProvider.setTotalSize(200, 200);
+        bkgProvider.setTotalSize(200, 400);
         bkgProvider.setHasVideo(true);
 //        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
@@ -223,6 +224,8 @@ public class FlexatarUI {
         ImageView icnFlx2 = new ImageView(context);
 
         FlexatarPanelLayout linearLayout = new FlexatarPanelLayout(context,backgroundProvider);
+
+
         linearLayout.setImg1(icnFlx1);
         linearLayout.setImg2(icnFlx2);
 
@@ -386,23 +389,33 @@ public class FlexatarUI {
         }
         linearLayout.addView(seekBar,LayoutHelper.createFrame(200, 20,Gravity.CENTER,0,6,0,0));
 
+        byte[] flxBytes = FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst);
+        LengthBasedFlxUnpack unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
+        FlexatarData flexatarData = new FlexatarData(unpackedFlexatar);
+
+        GLSurfaceView surfaceView = new GLSurfaceView(context);
+        surfaceView.setEGLContextClientVersion(2);
+        FlexatarViewRenderer renderer = new FlexatarViewRenderer();
+        renderer.isRounded = true;
+        FlxDrawer drawer = new FlxDrawer();
+
+        renderer.drawer = drawer;
+        drawer.setFlexatarData(flexatarData);
+        surfaceView.setZOrderOnTop(true);
+        surfaceView.setBackgroundColor(Color.TRANSPARENT);
+        surfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
+        surfaceView.getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);
+
+        surfaceView.setRenderer(renderer);
+        FrameLayout frameWarper = new FrameLayout(context);
+        frameWarper.addView(surfaceView,LayoutHelper.createLinear(150,200));
+        linearLayout.addView(frameWarper,LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER_HORIZONTAL,12,12,12,12));
+
         FrameLayout bottomButtonsLayout = new FrameLayout(context);
 
         linearLayout.addView(bottomButtonsLayout);
 
-//        TextView switchToCamera = new HideEmojiTextView(context, backgroundProvider);
-//        switchToCamera.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
-//        switchToCamera.setLayoutParams(layoutParams1);
-//        bottomButtonsLayout.addView(switchToCamera,LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT, 12, 0, 0, 0));
-//        linearLayout.switchToCameraButton = switchToCamera;
-//        switchToCamera.setOnClickListener((v) -> {
-//            FlexatarRenderer.isFlexatarRendering = !FlexatarRenderer.isFlexatarRendering;
-//            VoIPService voipInstance = VoIPService.getSharedInstance();
-//            if (voipInstance != null)
-//                voipInstance.setFlexatarDelay(FlexatarRenderer.isFlexatarRendering);
-//            switchToCamera.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
-//
-//        });
+
 
 
         ImageView closePanelIcon = new ImageView(context);
@@ -413,6 +426,7 @@ public class FlexatarUI {
         });
         bottomButtonsLayout.addView(closePanelIcon,LayoutHelper.createFrame(32, 32, Gravity.RIGHT, 0, 0, 12, 0));
         bottomButtonsLayout.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6));
+
 
 
         /*TextView closePanelText = new HideEmojiTextView(context, backgroundProvider);

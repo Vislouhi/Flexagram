@@ -72,6 +72,8 @@ import androidx.core.graphics.ColorUtils;
 
 import com.google.android.exoplayer2.ExoPlayer;
 
+import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlxDrawer;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ApplicationLoader;
@@ -1259,6 +1261,8 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         private int surfaceWidth;
         private int surfaceHeight;
 
+        private FlxDrawer flxDrawer;
+
         public CameraGLThread(SurfaceTexture surface, int surfaceWidth, int surfaceHeight) {
             super("CameraGLThread");
             surfaceTexture = surface;
@@ -1523,27 +1527,33 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             videoEncoder.frameAvailable(cameraSurface, cameraId, System.nanoTime());
 
             cameraSurface.getTransformMatrix(mSTMatrix);
+            if (flxDrawer == null){
+                flxDrawer = new FlxDrawer();
+                flxDrawer.setFlexatarData(FlexatarRenderer.currentFlxData);
+            }
+            if (true){
+                flxDrawer.draw();
+            }else {
+                GLES20.glUseProgram(drawProgram);
+                GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+                GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexture[0]);
 
-            GLES20.glUseProgram(drawProgram);
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexture[0]);
+                GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer);
+                GLES20.glEnableVertexAttribArray(positionHandle);
 
-            GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer);
-            GLES20.glEnableVertexAttribArray(positionHandle);
+                GLES20.glVertexAttribPointer(textureHandle, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
+                GLES20.glEnableVertexAttribArray(textureHandle);
 
-            GLES20.glVertexAttribPointer(textureHandle, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
-            GLES20.glEnableVertexAttribArray(textureHandle);
+                GLES20.glUniformMatrix4fv(textureMatrixHandle, 1, false, mSTMatrix, 0);
+                GLES20.glUniformMatrix4fv(vertexMatrixHandle, 1, false, mMVPMatrix, 0);
 
-            GLES20.glUniformMatrix4fv(textureMatrixHandle, 1, false, mSTMatrix, 0);
-            GLES20.glUniformMatrix4fv(vertexMatrixHandle, 1, false, mMVPMatrix, 0);
+                GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-
-            GLES20.glDisableVertexAttribArray(positionHandle);
-            GLES20.glDisableVertexAttribArray(textureHandle);
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
-            GLES20.glUseProgram(0);
-
+                GLES20.glDisableVertexAttribArray(positionHandle);
+                GLES20.glDisableVertexAttribArray(textureHandle);
+                GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+                GLES20.glUseProgram(0);
+            }
             egl10.eglSwapBuffers(eglDisplay, eglSurface);
         }
 
@@ -2126,7 +2136,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 FileLog.e(e);
             }
         }
-
+        private FlxDrawer flxDrawer;
         private void handleVideoFrameAvailable(long timestampNanos, Integer cameraId) {
             try {
                 drainEncoder(false);
@@ -2188,46 +2198,53 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 return;
             }
 
-            GLES20.glUseProgram(drawProgram);
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer);
-            GLES20.glEnableVertexAttribArray(positionHandle);
-            GLES20.glVertexAttribPointer(textureHandle, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
-            GLES20.glEnableVertexAttribArray(textureHandle);
-            GLES20.glUniformMatrix4fv(vertexMatrixHandle, 1, false, mMVPMatrix, 0);
-
-            GLES20.glUniform2f(resolutionHandle, videoWidth, videoHeight);
-
-            if (oldCameraTexture[0] != 0 && oldTextureBuffer != null) {
-                if (!blendEnabled) {
-                    GLES20.glEnable(GLES20.GL_BLEND);
-                    blendEnabled = true;
-                }
-                if (oldTexturePreviewSize != null) {
-                    GLES20.glUniform2f(previewSizeHandle, oldTexturePreviewSize.getWidth(), oldTexturePreviewSize.getHeight());
-                }
-                GLES20.glVertexAttribPointer(textureHandle, 2, GLES20.GL_FLOAT, false, 8, oldTextureBuffer);
-
-                GLES20.glUniformMatrix4fv(textureMatrixHandle, 1, false, moldSTMatrix, 0);
-                GLES20.glUniform1f(alphaHandle, 1.0f);
-                GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oldCameraTexture[0]);
-                GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+            if (flxDrawer == null){
+                flxDrawer = new FlxDrawer();
+                flxDrawer.setFlexatarData(FlexatarRenderer.currentFlxData);
             }
+            if (true) {
+                flxDrawer.draw();
+            }else{
+                    GLES20.glUseProgram(drawProgram);
+                    GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+                    GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer);
+                    GLES20.glEnableVertexAttribArray(positionHandle);
+                    GLES20.glVertexAttribPointer(textureHandle, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
+                    GLES20.glEnableVertexAttribArray(textureHandle);
+                    GLES20.glUniformMatrix4fv(vertexMatrixHandle, 1, false, mMVPMatrix, 0);
 
-            if (previewSize != null) {
-                GLES20.glUniform2f(previewSizeHandle, previewSize.getWidth(), previewSize.getHeight());
-            }
+                    GLES20.glUniform2f(resolutionHandle, videoWidth, videoHeight);
 
-            GLES20.glUniformMatrix4fv(textureMatrixHandle, 1, false, mSTMatrix, 0);
-            GLES20.glUniform1f(alphaHandle, cameraTextureAlpha);
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexture[0]);
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+                    if (oldCameraTexture[0] != 0 && oldTextureBuffer != null) {
+                        if (!blendEnabled) {
+                            GLES20.glEnable(GLES20.GL_BLEND);
+                            blendEnabled = true;
+                        }
+                        if (oldTexturePreviewSize != null) {
+                            GLES20.glUniform2f(previewSizeHandle, oldTexturePreviewSize.getWidth(), oldTexturePreviewSize.getHeight());
+                        }
+                        GLES20.glVertexAttribPointer(textureHandle, 2, GLES20.GL_FLOAT, false, 8, oldTextureBuffer);
 
-            GLES20.glDisableVertexAttribArray(positionHandle);
-            GLES20.glDisableVertexAttribArray(textureHandle);
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
-            GLES20.glUseProgram(0);
+                        GLES20.glUniformMatrix4fv(textureMatrixHandle, 1, false, moldSTMatrix, 0);
+                        GLES20.glUniform1f(alphaHandle, 1.0f);
+                        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oldCameraTexture[0]);
+                        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+                    }
 
+                    if (previewSize != null) {
+                        GLES20.glUniform2f(previewSizeHandle, previewSize.getWidth(), previewSize.getHeight());
+                    }
+
+                    GLES20.glUniformMatrix4fv(textureMatrixHandle, 1, false, mSTMatrix, 0);
+                    GLES20.glUniform1f(alphaHandle, cameraTextureAlpha);
+                    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexture[0]);
+                    GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
+                    GLES20.glDisableVertexAttribArray(positionHandle);
+                    GLES20.glDisableVertexAttribArray(textureHandle);
+                    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+                    GLES20.glUseProgram(0);
+                }
             EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, currentTimestamp);
             EGL14.eglSwapBuffers(eglDisplay, eglSurface);
 

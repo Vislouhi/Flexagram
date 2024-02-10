@@ -9,7 +9,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class FlexatarViewRenderer implements GLSurfaceView.Renderer{
-    public FlxDrawerNew drawer;
+    public FlxDrawer drawer;
     public boolean isRounded = false;
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {

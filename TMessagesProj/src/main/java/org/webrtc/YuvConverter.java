@@ -12,13 +12,10 @@ package org.webrtc;
 
 import android.graphics.Matrix;
 import android.opengl.GLES20;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 
-import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlxDrawer;
-import org.flexatar.FlxDrawerNew;
 import org.telegram.messenger.FileLog;
 import org.webrtc.VideoFrame.I420Buffer;
 import org.webrtc.VideoFrame.TextureBuffer;
@@ -51,7 +48,7 @@ public class YuvConverter {
       + "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
       + "      sample(tc + 1.5 * xUnit).rgb);\n"
       + "}\n";
-  private FlxDrawerNew flxDrawer;
+  private FlxDrawer flxDrawer;
 
   private static class ShaderCallbacks implements GlGenericDrawer.ShaderCallbacks {
     // Y'UV444 to RGB888, see https://en.wikipedia.org/wiki/YUV#Y%E2%80%B2UV444_to_RGB888_conversion
@@ -195,7 +192,7 @@ public class YuvConverter {
       i420TextureFrameBuffer.setSize(viewportWidth, totalHeight);
 
       if (flxDrawer == null &&  isFlexatar){
-        flxDrawer = new FlxDrawerNew();
+        flxDrawer = new FlxDrawer();
         flxDrawer.setFrame();
         flxDrawer.setIsStaticControlBind(true);
 //        flxDrawer = new FlxDrawer();

@@ -28,7 +28,11 @@ public class SpeechAnimation {
         FileChannel fileChannel = inputStream.getChannel();
         long startOffset = fileDescriptor.getStartOffset();
         long declaredLength = fileDescriptor.getDeclaredLength();
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+        MappedByteBuffer ret = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+        fileChannel.close();
+        inputStream.close();
+        fileDescriptor.close();
+        return ret;
     }
     public static void loadModels(Context context){
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -49,6 +53,26 @@ public class SpeechAnimation {
                 e.printStackTrace();
             }
         });
+
+    }
+    public static void loadModelsSync(Context context){
+
+            if (wav2melInterpreter != null && mel2phoneInterpreter != null && phon2avecInterpreter != null) return;
+            try {
+                if (wav2melInterpreter == null)
+                    wav2melInterpreter = new Interpreter(loadModelFile(context,"flexatar/nn/wav2mel.tflite"), new Interpreter.Options());
+                Log.d("====DEB====","Successfuli loaded tf model1");
+                if (mel2phoneInterpreter == null)
+                    mel2phoneInterpreter = new Interpreter(loadModelFile(context,"flexatar/nn/mel2phon.tflite"), new Interpreter.Options());
+                Log.d("====DEB====","Successfuli loaded tf model2");
+                if (phon2avecInterpreter == null)
+                    phon2avecInterpreter = new Interpreter(loadModelFile(context,"flexatar/nn/phon2avec.tflite"), new Interpreter.Options());
+                Log.d("====DEB====","Successfuli loaded tf model3");
+            } catch (IOException e) {
+                Log.d("====DEB====","failed loaded tf model");
+                e.printStackTrace();
+            }
+
 
     }
     public static void checkModel(){

@@ -6590,12 +6590,12 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
         boolean isFlexatar = path.contains(FlexatarStorageManager.FLEXATAR_STORAGE_FOLDER);
         boolean isFlexatarPreview = path.contains(FlexatarStorageManager.FLEXATAR_PREVIEW_STORAGE_FOLDER);
-        if (!(isFlexatar||isFlexatarPreview)){
-//        if (!path.endsWith(".p")) {
+        /*if (!(isFlexatar||isFlexatarPreview)){
+
             if (path != null && AndroidUtilities.isInternalUri(Uri.fromFile(new File(path)))) {
                 return ERROR_TYPE_UNSUPPORTED;
             }
-        }
+        }*/
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         TLRPC.TL_documentAttributeAudio attributeAudio = null;
         String extension = null;
@@ -6737,7 +6737,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 //            if (isFlexatarPreview) {
 //                name = FlexatarStorageManager.getFlexatarNameByPreviewFileName(name)+".jpg";
 //            }
-            Log.d("FLX_INJECT","sending file with name "+name);
+//            Log.d("FLX_INJECT","sending file with name "+name);
 
             fileName.file_name = name;
             document.file_reference = new byte[0];

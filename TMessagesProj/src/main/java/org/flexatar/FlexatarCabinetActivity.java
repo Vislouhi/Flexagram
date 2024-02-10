@@ -5,7 +5,6 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -25,13 +24,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 
-import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
 
-import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -43,7 +39,6 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
-import org.telegram.ui.DialogsActivity;
 
 
 import java.io.File;
@@ -52,7 +47,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 public class FlexatarCabinetActivity extends BaseFragment  {
 
@@ -311,6 +305,23 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                             }
                         });
 
+
+                    } else {
+                        showDialog(AlertDialogs.showVerifyInProgress(context));
+                    }
+                });
+
+                itemsAction.add(item);
+            }
+            {
+                ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+                item.setImageResource(R.drawable.msg_delete);
+                item.setNameText("Try to make video");
+                item.setOnClickListener(v -> {
+                    if (Config.isVerified()) {
+
+//                        EncodeAndMuxTest videoWriter = new EncodeAndMuxTest();
+//                        videoWriter.testEncodeVideoToMp4(animationPattern);
 
                     } else {
                         showDialog(AlertDialogs.showVerifyInProgress(context));

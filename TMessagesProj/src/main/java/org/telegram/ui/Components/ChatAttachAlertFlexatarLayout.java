@@ -3,20 +3,15 @@ package org.telegram.ui.Components;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
-import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.flexatar.FlexatarCellNew;
+import org.flexatar.FlexatarCell;
 import org.flexatar.FlexatarStorageManager;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
@@ -25,21 +20,10 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Cells.HeaderCell;
-import org.telegram.ui.Cells.ShadowSectionCell;
-import org.telegram.ui.Cells.SharedDocumentCell;
 import org.telegram.ui.Cells.TextCell;
-import org.telegram.ui.Components.ChatAttachAlert;
-import org.telegram.ui.Components.ChatAttachAlertDocumentLayout;
-import org.telegram.ui.Components.CombinedDrawable;
-import org.telegram.ui.Components.FillLastLinearLayoutManager;
-import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.RecyclerListView;
-import org.telegram.ui.FilteredSearchView;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLayout {
     public interface FlexatarSelectActivityDelegate {
@@ -240,7 +224,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             if (flexatarFiles.length>0) {
-                return new RecyclerListView.Holder(new FlexatarCellNew(mContext));
+                return new RecyclerListView.Holder(new FlexatarCell(mContext));
             }else{
                 return new RecyclerListView.Holder( new TextCell(mContext));
             }
@@ -249,7 +233,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             if (flexatarFiles.length>0) {
-                FlexatarCellNew fCell = (FlexatarCellNew) holder.itemView;
+                FlexatarCell fCell = (FlexatarCell) holder.itemView;
                 fCell.loadFromFile(flexatarFiles[position]);
             }else{
                 ((TextCell) holder.itemView).setTextAndIcon(LocaleController.getString("NoFlexatarsToShare", R.string.NoFlexatarsToShare), R.drawable.filled_unclaimed, false);

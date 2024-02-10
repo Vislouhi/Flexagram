@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.opengl.GLSurfaceView;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,12 +13,10 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 
-import org.checkerframework.checker.units.qual.A;
 import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.Data;
 import org.flexatar.DataOps.FlexatarData;
@@ -27,33 +24,27 @@ import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextDetailCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SeekBarView;
-import org.telegram.ui.Components.voip.HideEmojiTextView;
-import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class FlexatarPreview extends FrameLayout {
-    private FlxDrawerNew drawer;
+    private FlxDrawer drawer;
     private final CardView cardview;
     private final LengthBasedFlxUnpack unpackedFlexatar;
     private final BaseFragment parentFragment;
     private final byte[] flxData;
     private final FlexatarData flexatarData;
-    private final FlexatarCellNew flexatarCell;
+    private final FlexatarCell flexatarCell;
 
     private boolean isMouthOpened = false;
     private LinearLayout layout;
@@ -72,10 +63,10 @@ public class FlexatarPreview extends FrameLayout {
     private int currentPosition;
     private boolean isMakeMouthSelected = false;
 
-    public FlexatarCellNew getFlexatarCell(){
+    public FlexatarCell getFlexatarCell(){
         return flexatarCell;
     }
-    public FlexatarPreview(@NonNull Context context, FlexatarCellNew flexatarCell, BaseFragment parentFragment) {
+    public FlexatarPreview(@NonNull Context context, FlexatarCell flexatarCell, BaseFragment parentFragment) {
         super(context);
         this.flexatarCell=flexatarCell;
         this.parentFragment = parentFragment;
@@ -100,7 +91,7 @@ public class FlexatarPreview extends FrameLayout {
         surfaceView.setEGLContextClientVersion(2);
 //        FlexatarRenderer.speechState = new float[]{0,0,-1,0,0};
         FlexatarViewRenderer renderer = new FlexatarViewRenderer();
-        drawer = new FlxDrawerNew();
+        drawer = new FlxDrawer();
         renderer.drawer = drawer;
         drawer.setFlexatarData(flexatarData);
 //        renderer.drawer.setFlexatarDataAlt(FlexatarRenderer.currentFlxData);
@@ -113,9 +104,17 @@ public class FlexatarPreview extends FrameLayout {
         cardview.setClickable(false);
 //        cardview.setContextClickable(false);
         cardview.setRadius(AndroidUtilities.dp(30));
+        cardview.setAlpha(0f);
 
+//        cardview.setVisibility(View.INVISIBLE);
         cardview.addView(surfaceView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT, Gravity.CENTER));
+        drawer.setOnReadyListener(()->{
+            AndroidUtilities.runOnUIThread(()->{
+                cardview.animate().alpha(1f).setDuration(150).start();
+//                cardview.setVisibility(View.VISIBLE);
+            },100);
 
+        });
         makeLayout(currentOrientation);
 //        addView(cardview);
 
@@ -126,7 +125,7 @@ public class FlexatarPreview extends FrameLayout {
             surfaceView.setEGLContextClientVersion(2);
 //            FlexatarRenderer.speechState = new float[]{0,0,-1,0,0};
             FlexatarViewRenderer renderer = new FlexatarViewRenderer();
-            drawer = new FlxDrawerNew();
+            drawer = new FlxDrawer();
             renderer.drawer = drawer;
             drawer.setFlexatarData(flexatarData);
             surfaceView.setRenderer(renderer);

@@ -2,24 +2,15 @@ package org.flexatar;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.GraySectionCell;
-import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCell;
-import org.telegram.ui.Components.RLottieDrawable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -88,7 +79,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
     }
 
     public interface ClickListener{
-        void onClick(ItemModel item,FlexatarCellNew cell);
+        void onClick(ItemModel item, FlexatarCell cell);
     }
     public void setFlexatarCellOnClickListener(ClickListener flexatarCellOnClickListener) {
         this.flexatarCellOnClickListener = flexatarCellOnClickListener;
@@ -119,7 +110,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
 
             return new ViewHolder(flexatarProgressCell);
         }else if (viewType == ItemModel.FLEXATAR_CELL){
-            FlexatarCellNew flexatarCell = new FlexatarCellNew(context);
+            FlexatarCell flexatarCell = new FlexatarCell(context);
             flexatarCell.setResourceProvider(resourceProvider);
 //            Log.d("FLX_INJECT","create flexatar cell" );
             return new ViewHolder(flexatarCell);
@@ -157,7 +148,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
                 break;
             case ItemModel.FLEXATAR_CELL:
 //                Log.d("FLX_INJECT","add flx cell " + position);
-                FlexatarCellNew fCell = (FlexatarCellNew) holder.itemView;
+                FlexatarCell fCell = (FlexatarCell) holder.itemView;
 
                 if (item.getFlexatarFile() == null) {
                     fCell.setLoading();

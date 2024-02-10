@@ -52,6 +52,7 @@
     <string name="PhotosDoNotContainFace">Photos you provided don\'t contain face.</string>
     <string name="YouDidntFollowInstruction">You didn\'t follow instructions taking photos.</string>
     <string name="UnknownProblem">Unknown problem.</string>
+    <string name="FlexatarCabinet">Flexatar Cabinet</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

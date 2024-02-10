@@ -123,7 +123,10 @@ import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.zxing.common.detector.MathUtils;
 
 import org.flexatar.AlertDialogs;
+import org.flexatar.Config;
+import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarStorageManager;
+import org.flexatar.FlexatarUI;
 import org.flexatar.ServerDataProc;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -206,6 +209,7 @@ import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.Cells.MentionCell;
 import org.telegram.ui.Cells.ShareDialogCell;
 import org.telegram.ui.Cells.StickerCell;
+import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextSelectionHelper;
 import org.telegram.ui.Components.*;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
@@ -223,6 +227,7 @@ import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.Components.voip.CellFlickerDrawable;
+import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
 import org.telegram.ui.Stories.DialogStoriesCell;
@@ -1555,6 +1560,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         @Override
         public void onMessageSend(CharSequence message, boolean notify, int scheduleDate) {
+
             if (chatListItemAnimator != null) {
                 chatActivityEnterViewAnimateFromTop = chatActivityEnterView.getBackgroundTop();
                 if (chatActivityEnterViewAnimateFromTop != 0) {
@@ -2113,6 +2119,28 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public boolean onFragmentCreate() {
+        Config.sendAudioCallback = ()->{
+            AndroidUtilities.runOnUIThread(()->{
+                showDialog(AlertDialogs.askToMakeFlexatarVideo(getContext()));
+            });
+
+        };
+        Config.chooseFlexatarForAudioCallback = ()->{
+            AndroidUtilities.runOnUIThread(()->{
+//                PopupWindow flexatarUiPopupPanel = FlexatarUI.panelPopup(getContext(), fragmentView);
+                VoIPBackgroundProvider bkgProvider = new VoIPBackgroundProvider();
+                bkgProvider.setHasVideo(true);
+
+                bkgProvider.setTotalSize(200,200);
+
+                FlexatarUI.FlexatarPanelLayout flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(getContext(), bkgProvider);
+//                flexatarPanelView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+                ((FrameLayout)fragmentView).addView(flexatarPanelView,
+                        LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,12,12,12,12));
+
+            });
+
+        };
         final long chatId = arguments.getLong("chat_id", 0);
         final long userId = arguments.getLong("user_id", 0);
         final int encId = arguments.getInt("enc_id", 0);
@@ -5700,6 +5728,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         progressView.setVisibility(View.INVISIBLE);
         contentView.addView(progressView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT));
 
+        if (currentUser!=null && currentUser.id == Config.authBotId) {
+            TextCell flexatarCabinetButton = new TextCell(context);
+            flexatarCabinetButton.setTextAndIcon(LocaleController.getString("FlexatarCabinet", R.string.FlexatarCabinet), R.drawable.menu_flexatar, false);
+            flexatarCabinetButton.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+            flexatarCabinetButton.setOnClickListener(v -> {
+                presentFragment(new FlexatarCabinetActivity());
+            });
+            ((FrameLayout) fragmentView).addView(flexatarCabinetButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
+        }
         progressView2 = new View(context) {
             private final RectF rect = new RectF();
             @Override
@@ -27971,6 +28008,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     public void sendAudio(ArrayList<MessageObject> audios, CharSequence caption, boolean notify, int scheduleDate) {
+
         if (checkSlowModeAlert()) {
             fillEditingMediaWithCaption(caption, null);
             SendMessagesHelper.prepareSendingAudioDocuments(getAccountInstance(), audios, caption != null ? caption : null, dialog_id, replyingMessageObject, getThreadMessage(), null, notify, scheduleDate, editingMessageObject);
@@ -27993,6 +28031,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     public void sendMedia(MediaController.PhotoEntry photoEntry, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, boolean forceDocument) {
+        Log.d("FLX_INJECT","sending circle");
         if (photoEntry == null) {
             return;
         }

@@ -54,6 +54,7 @@ import android.provider.OpenableColumns;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 import android.view.HapticFeedbackConstants;
@@ -67,6 +68,13 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 
+import org.flexatar.Config;
+import org.flexatar.EncodeAndMuxTest;
+import org.flexatar.FlexatarAnimationByAudioFile;
+import org.flexatar.FlexatarStorageManager;
+import org.flexatar.FlexatarVideoEncoder;
+import org.flexatar.OpusToAacConverter;
+import org.flexatar.VideoAudioMuxer;
 import org.telegram.messenger.audioinfo.AudioInfo;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
 import org.telegram.messenger.voip.VoIPService;
@@ -86,11 +94,13 @@ import org.telegram.ui.Components.PipRoundVideoView;
 import org.telegram.ui.Components.VideoPlayer;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PhotoViewer;
+import org.webrtc.Logging;
 
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
@@ -101,6 +111,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -3969,42 +3980,103 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             }
             fileEncodingQueue.postRunnable(() -> {
                 stopRecord();
-                if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d("stop recording internal in queue " + recordingAudioFileToSend.exists() + " " + recordingAudioFileToSend.length());
-                }
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (BuildVars.LOGS_ENABLED) {
-                        FileLog.d("stop recording internal " + recordingAudioFileToSend.exists() + " " + recordingAudioFileToSend.length() + " " + " recordTimeCount " + recordTimeCount + " writedFrames" + writedFrame);
+                Config.stopRecordingAudioSemaphore = new CountDownLatch(1);
+                Config.runAudioCallback();
+                String absPath = recordingAudioFileToSend.getAbsolutePath();
+                Log.d("FLX_INJECT","absPath sound "+absPath);
+                String audioAacPath = absPath.substring(0,absPath.lastIndexOf('.')) + ".aac";
+                OpusToAacConverter converter = new OpusToAacConverter();
+                converter.convertOpusToAac(new File(absPath),new File(audioAacPath),()->{
+
+//                    Config.runAudioCallback();
+                    try {
+                        Config.stopRecordingAudioSemaphore.await();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
-                    boolean fileExist = recordingAudioFileToSend.exists();
-                    if (!fileExist && BuildVars.DEBUG_VERSION) {
-                        FileLog.e(new RuntimeException("file not found :( recordTimeCount " + recordTimeCount + " writedFrames" + writedFrame));
-                    }
-                    audioToSend.date = ConnectionsManager.getInstance(recordingCurrentAccount).getCurrentTime();
-                    audioToSend.size = (int) recordingAudioFileToSend.length();
-                    TLRPC.TL_documentAttributeAudio attributeAudio = new TLRPC.TL_documentAttributeAudio();
-                    attributeAudio.voice = true;
-                    attributeAudio.waveform = getWaveform2(recordSamples, recordSamples.length);
-                    if (attributeAudio.waveform != null) {
-                        attributeAudio.flags |= 4;
-                    }
-                    long duration = recordTimeCount;
-                    attributeAudio.duration = (int) (recordTimeCount / 1000);
-                    audioToSend.attributes.add(attributeAudio);
-                    if (duration > 700) {
-                        if (send == 1) {
-                            SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(audioToSend, null, recordingAudioFileToSend.getAbsolutePath(), recordDialogId, recordReplyingMsg, recordReplyingTopMsg, null, null, null, null, notify, scheduleDate, once ? 0x7FFFFFFF : 0, null, null, false);
-                            params.replyToStoryItem = recordReplyingStory;
-                            SendMessagesHelper.getInstance(recordingCurrentAccount).sendMessage(params);
+                    Log.d("FLX_INJECT"," sending thread unblocked");
+                    if (Config.chosenAudioWithFlexatar) {
+                        Config.startSendFlexatarRoundSemaphore = new CountDownLatch(1);
+                        Config.runChooseFlexatarForAudioCallback();
+                        try {
+                            Config.startSendFlexatarRoundSemaphore.await();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
                         }
-                        NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.audioDidSent, recordingGuid, send == 2 ? audioToSend : null, send == 2 ? recordingAudioFileToSend.getAbsolutePath() : null);
-                    } else {
-                        NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.audioRecordTooShort, recordingGuid, false, (int) duration);
-                        AutoDeleteMediaTask.unlockFile(recordingAudioFileToSend);
-                        recordingAudioFileToSend.delete();
+                        Log.d("FLX_INJECT"," send video option chosen");
+                        new File(absPath).delete();
+                        File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "tmpvid.mp4");
+                        new FlexatarVideoEncoder(360, 360, converter.speechAnimation, videoFile, new File(audioAacPath), () -> {
+                            new File(audioAacPath).delete();
+                            AndroidUtilities.runOnUIThread(() -> {
+
+
+                                VideoEditedInfo videoEditedInfo = new VideoEditedInfo();
+                                videoEditedInfo.roundVideo = true;
+//                    videoEditedInfo.startTime = 0L;
+//                    videoEditedInfo.endTime = 2L * 1000000L;
+                                videoEditedInfo.startTime = -1;
+                                videoEditedInfo.endTime = -1;
+//                    videoEditedInfo.file = file;
+//                    videoEditedInfo.encryptedFile = encryptedFile;
+//                    videoEditedInfo.key = key;
+//                    videoEditedInfo.iv = iv;
+                                videoEditedInfo.estimatedSize = 1;
+                                videoEditedInfo.framerate = 20;
+                                videoEditedInfo.originalWidth = 360;
+                                videoEditedInfo.originalHeight = 360;
+                                videoEditedInfo.resultWidth = 360;
+                                videoEditedInfo.resultHeight = 360;
+                                videoEditedInfo.originalPath = videoFile.getAbsolutePath();
+                                videoEditedInfo.estimatedDuration = 3L * 1000000L;
+
+                                AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
+                                SendMessagesHelper.prepareSendingVideo(accountInstance, videoFile.getAbsolutePath(), videoEditedInfo, recordDialogId, null, null, null, null, null, 0, null, true, 0, true, false, "");
+                                requestAudioFocus(false);
+                            });
+                        });
+                    }else{
+                        new File(audioAacPath).delete();
+                        Log.d("FLX_INJECT"," send sound option chosen");
+                        AndroidUtilities.runOnUIThread(() -> {
+                            if (BuildVars.LOGS_ENABLED) {
+                                FileLog.d("stop recording internal " + recordingAudioFileToSend.exists() + " " + recordingAudioFileToSend.length() + " " + " recordTimeCount " + recordTimeCount + " writedFrames" + writedFrame);
+                            }
+                            boolean fileExist = recordingAudioFileToSend.exists();
+                            if (!fileExist && BuildVars.DEBUG_VERSION) {
+                                FileLog.e(new RuntimeException("file not found :( recordTimeCount " + recordTimeCount + " writedFrames" + writedFrame));
+                            }
+
+
+                            audioToSend.date = ConnectionsManager.getInstance(recordingCurrentAccount).getCurrentTime();
+                            audioToSend.size = (int) recordingAudioFileToSend.length();
+                            TLRPC.TL_documentAttributeAudio attributeAudio = new TLRPC.TL_documentAttributeAudio();
+                            attributeAudio.voice = true;
+                            attributeAudio.waveform = getWaveform2(recordSamples, recordSamples.length);
+                            if (attributeAudio.waveform != null) {
+                                attributeAudio.flags |= 4;
+                            }
+                            long duration = recordTimeCount;
+                            attributeAudio.duration = (int) (recordTimeCount / 1000);
+                            audioToSend.attributes.add(attributeAudio);
+                            if (duration > 700) {
+                                if (send == 1) {
+                                    SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(audioToSend, null, recordingAudioFileToSend.getAbsolutePath(), recordDialogId, recordReplyingMsg, recordReplyingTopMsg, null, null, null, null, notify, scheduleDate, once ? 0x7FFFFFFF : 0, null, null, false);
+                                    params.replyToStoryItem = recordReplyingStory;
+                                    SendMessagesHelper.getInstance(recordingCurrentAccount).sendMessage(params);
+                                }
+                                NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.audioDidSent, recordingGuid, send == 2 ? audioToSend : null, send == 2 ? recordingAudioFileToSend.getAbsolutePath() : null);
+                            } else {
+                                NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.audioRecordTooShort, recordingGuid, false, (int) duration);
+                                AutoDeleteMediaTask.unlockFile(recordingAudioFileToSend);
+                                recordingAudioFileToSend.delete();
+                            }
+                            requestAudioFocus(false);
+                        });
                     }
-                    requestAudioFocus(false);
                 });
+
+
             });
         } else {
             AutoDeleteMediaTask.unlockFile(recordingAudioFile);

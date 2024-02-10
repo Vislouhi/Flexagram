@@ -2,8 +2,6 @@ package org.flexatar;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import org.flexatar.DataOps.AssetAccess;
@@ -12,19 +10,16 @@ import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.FileLog;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
-import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Config {
+    public static long authBotId = 6818271084L;
     public static final boolean debugMode = true;
 
     public static final String version = "pre-historic";
@@ -41,6 +37,28 @@ public class Config {
     private static final String VERIFY_FIELD = "verify";
     private static final String STORAGE_FIELD = "storage";
     private static final String STAT_FIELD = "stat";
+
+    public static CountDownLatch stopRecordingAudioSemaphore = null;
+    public static Runnable sendAudioCallback = null;
+    public static Runnable chooseFlexatarForAudioCallback = null;
+
+    public static CountDownLatch startSendFlexatarRoundSemaphore = null;
+    public static boolean chosenAudioWithFlexatar;
+
+    public static void runAudioCallback(){
+        if (sendAudioCallback != null) sendAudioCallback.run();
+    }
+    public static void runChooseFlexatarForAudioCallback(){
+        if (chooseFlexatarForAudioCallback != null) chooseFlexatarForAudioCallback.run();
+    }
+    public static void signalRecordAudioSemaphore(){
+        if (Config.stopRecordingAudioSemaphore !=null)
+            Config.stopRecordingAudioSemaphore.countDown();
+    }
+    public static void signalSendFlexatarSemaphore(){
+        if (Config.startSendFlexatarRoundSemaphore !=null)
+            Config.startSendFlexatarRoundSemaphore.countDown();
+    }
 
     public static String token = null;
     public static String verify = null;
@@ -151,7 +169,7 @@ public class Config {
             storage = sharedPreferences.getString(STORAGE_FIELD, null);
             stat = sharedPreferences.getString(STAT_FIELD, null);
             Log.d("FLX_INJECT","init flexatar config");
-
+            OpusToAacConverter.testConverter();
             synchronized (verifyMutex) {
                 if (token!=null)
                     verifyInProgress = false;
@@ -162,7 +180,7 @@ public class Config {
     private interface AuthBotUserObtainedListener{
         void userReady(TLRPC.User user);
     }
-    private static long authBotId = 6818271084L;
+
     private static void getAuthBotUser(AuthBotUserObtainedListener listener) {
         AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
         MessagesController messageController = accountInstance.getMessagesController();

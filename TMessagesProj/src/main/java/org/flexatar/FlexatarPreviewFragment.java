@@ -1,31 +1,16 @@
 package org.flexatar;
 
-import android.app.Dialog;
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.os.Build;
-import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
-
-import androidx.core.graphics.ColorUtils;
 
 import com.google.android.exoplayer2.util.Log;
 
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
-import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -39,7 +24,7 @@ public class FlexatarPreviewFragment extends BaseFragment{
     private final BitmapShaderTools bgGreenShaderTools = new BitmapShaderTools(80, 80);
     private final BitmapShaderTools bgBlueVioletShaderTools = new BitmapShaderTools(80, 80);
     private final MotionBackgroundDrawable bgBlueViolet = new MotionBackgroundDrawable(0xFF00A3E6, 0xFF296EF7, 0xFF18CEE2, 0xFF3FB2FF, 0, false, true);
-    private FlexatarCellNew cell;
+    private FlexatarCell cell;
     private TextView positiveButton;
     private View.OnClickListener onViewInstructionsChosenListener = null;
     private FlexatarPreview flexatarPreview;
@@ -50,7 +35,7 @@ public class FlexatarPreviewFragment extends BaseFragment{
     }
 
     FlexatarCabinetActivity parentFragment;
-    public  FlexatarPreviewFragment(FlexatarCellNew cell,FlexatarCabinetActivity parentFragment){
+    public  FlexatarPreviewFragment(FlexatarCell cell, FlexatarCabinetActivity parentFragment){
         super();
         this.cell=cell;
         this.parentFragment=parentFragment;

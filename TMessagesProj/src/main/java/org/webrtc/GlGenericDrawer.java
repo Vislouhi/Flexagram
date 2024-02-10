@@ -14,13 +14,9 @@ import android.graphics.Bitmap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
-import org.flexatar.FlexatarRenderer;
-import org.flexatar.FlxDrawer;
 import org.telegram.messenger.FileLog;
 
 import androidx.annotation.Nullable;
-
-import com.google.android.exoplayer2.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -177,7 +173,7 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
   public GlGenericDrawer(String genericFragmentSource, ShaderCallbacks shaderCallbacks) {
     this(DEFAULT_VERTEX_SHADER_STRING, genericFragmentSource, shaderCallbacks);
   }
-  private FlxDrawer flxDrawer;
+
   public GlGenericDrawer(
       String vertexShader, String genericFragmentSource, ShaderCallbacks shaderCallbacks) {
     this.vertexShader = vertexShader;
@@ -556,9 +552,6 @@ public class GlGenericDrawer implements RendererCommon.GlDrawer {
       GLES20.glDeleteFramebuffers(2, renderFrameBuffer, 0);
       GLES20.glDeleteTextures(2, renderTexture, 0);
     }
-//    if (flxDrawer!=null) flxDrawer.release();
-    flxDrawer = null;
-//    drawerReleased = true;
 
   }
 
