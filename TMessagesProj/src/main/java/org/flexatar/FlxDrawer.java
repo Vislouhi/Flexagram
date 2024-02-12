@@ -364,15 +364,15 @@ public class FlxDrawer {
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if (isStaticControlBind) {
             if (!FlexatarRenderer.isFlexatarCamera) return;
-            if (flexatarData != FlexatarRenderer.currentFlxData) {
+            if (flexatarData != FlexatarStorageManager.callFlexatarChooser.getFirstFlxData()) {
                 if (flexatarData == null) {
-                    flexatarDataAlt = FlexatarRenderer.altFlxData;
+                    flexatarDataAlt = FlexatarStorageManager.callFlexatarChooser.getSecondFlxData();
 //                    buffers2 = new FlxDrawerNew.GlBuffers(flexatarDataAlt);
-                    flexatarData = FlexatarRenderer.currentFlxData;
+                    flexatarData = FlexatarStorageManager.callFlexatarChooser.getFirstFlxData();
                 } else {
                     buffers2.destroy();
                     flexatarDataAlt = flexatarData;
-                    flexatarData = FlexatarRenderer.currentFlxData;
+                    flexatarData = FlexatarStorageManager.callFlexatarChooser.getFirstFlxData();
                     buffers2 = buffers1;
                     buffers1 = null;
                 }

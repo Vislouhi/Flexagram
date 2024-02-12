@@ -9,6 +9,7 @@ public class FlexatarNotificator {
     public static ChosenStateForRoundVideo chosenStateForRoundVideo;
     public static boolean isMakingFlexatarRoundVideo = false;
     public static int drawerCounter = 0;
+    public static float additionalActionBarHeight = 48f;
     public static void incDrawerCounter(){
         drawerCounter++;
         Log.d("FLX_INJECT", "inc drawer instance count "+drawerCounter);
@@ -24,9 +25,11 @@ public class FlexatarNotificator {
         public static final int HYBRID = 3;
         public File firstFile;
         public File secondFile;
-        public int effect = 0;
+        public int effect = NO;
         public float mixWeight = 1f;
 
     }
+
+//    public static Runnable onGroupCall
 
 }

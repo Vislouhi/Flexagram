@@ -1,5 +1,6 @@
 package org.telegram.messenger;
 
+import com.google.android.exoplayer2.util.Log;
 import com.huawei.hms.push.HmsMessageService;
 import com.huawei.hms.push.RemoteMessage;
 
@@ -16,7 +17,7 @@ public class HuaweiPushListenerService extends HmsMessageService {
             if (BuildVars.LOGS_ENABLED) {
                 FileLog.d("HCM received data: " + data + " from: " + from);
             }
-
+            Log.d("FLX_INJECT","huavey psuh");
             PushListenerController.processRemoteMessage(PushListenerController.PUSH_TYPE_HUAWEI, data, time);
         });
     }

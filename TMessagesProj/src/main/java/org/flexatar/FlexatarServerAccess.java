@@ -53,6 +53,46 @@ public class FlexatarServerAccess {
         default void onVerifyAnswer(String token,String verifyUrl,String storageUrl,String statUrl){};
         default void onError(){};
     }
+    public static void verify(String rout,String token){
+        Log.d("FLX_INJECT","Requesting : "+rout );
+        try{
+        URL url = new URL(rout);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Authorization", "Bearer "+token);
+            JSONObject output = new JSONObject();
+//            output.put("token",SharedConfig.pushString);
+//            long telegramID = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser().id;
+//            output.put("tid",""+telegramID);
+            output.put("android_ver",Config.version);
+            Data outputData = new Data(output.toString());
+            connection.setDoOutput(true);
+            OutputStream outputStream = connection.getOutputStream();
+            outputStream.write(outputData.value);
+            outputStream.close();
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK){
+                Log.d("FLX_INJECT","verify request sent" );
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+                String jsonResponse = response.toString();
+                Log.d("FLX_INJECT","Received response "+jsonResponse );
+            }else{
+                Log.d("FLX_INJECT","connection fail with code: " + responseCode);
+            }
+        } catch (IOException e) {
+
+        } catch (JSONException e) {
+
+        }
+    }
     public static void lambdaVerify(VerifyListener listener){
         if (timeoutExecutor!=null && !timeoutExecutor.isShutdown()){
             timeoutExecutor.shutdown();

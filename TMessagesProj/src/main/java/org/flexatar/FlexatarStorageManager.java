@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import org.flexatar.DataOps.Data;
+import org.flexatar.DataOps.FlexatarData;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,14 +32,207 @@ import java.util.List;
 
 
 public class FlexatarStorageManager {
-    private static String PREF_STORAGE_NAME = "flexatar_storage_pref";
-    public static String FLEXATAR_STORAGE_FOLDER = "flexatar_storage";
-    public static String FLEXATAR_PREVIEW_STORAGE_FOLDER = "flexatar_preview_storage";
-    public static String FLEXATAR_TMP_VIDEO_STORAGE_FOLDER = "flexatar_tmp_video_storage";
-    public static String PUBLIC_PREFIX = "public_";
-    public static String FLEXATAR_PREFIX = "flexatar_";
-    public static String BUILTIN_PREFIX = "builtin_";
-    private static String FLEXATAR_FILES = "flexatar_files";
+    private static final String PREF_STORAGE_NAME = "flexatar_storage_pref";
+    private static final String PREF_STORAGE_NAME_CHOSEN = "flexatar_storage_pref";
+    public static final String FLEXATAR_STORAGE_FOLDER = "flexatar_storage";
+    public static final String FLEXATAR_PREVIEW_STORAGE_FOLDER = "flexatar_preview_storage";
+    public static final String FLEXATAR_TMP_VIDEO_STORAGE_FOLDER = "flexatar_tmp_video_storage";
+    public static final String PUBLIC_PREFIX = "public_";
+    public static final String FLEXATAR_PREFIX = "flexatar_";
+    public static final String BUILTIN_PREFIX = "builtin_";
+    private static final String FLEXATAR_FILES = "flexatar_files";
+
+    public static final FlexatarChooser callFlexatarChooser = new FlexatarChooser("call");
+    public static final FlexatarChooser roundFlexatarChooser = new FlexatarChooser("round");
+    public static class FlexatarChooser {
+        private static final String FIRST = "first";
+        private static final String SECOND = "second";
+        private final String tag;
+
+        private File first;
+        private File second;
+
+        private FlexatarData firstFlxData;
+        private FlexatarData secondFlxData;
+        private final Object flexatarDataLoadMutex = new Object();
+        private final Object flexatarFileLoadMutex = new Object();
+        private int effectIndex = -1;
+        private float mixWeight = -1;
+
+        public FlexatarChooser(String tag){
+            this.tag=tag;
+        }
+
+        public FlexatarData getFirstFlxData() {
+            synchronized (flexatarDataLoadMutex) {
+                if (firstFlxData != null) return firstFlxData;
+                firstFlxData = FlexatarData.factory(getChosenFirst());
+                return firstFlxData;
+            }
+        }
+
+        public FlexatarData getSecondFlxData() {
+            synchronized (flexatarDataLoadMutex) {
+                if (secondFlxData != null) return secondFlxData;
+                secondFlxData = FlexatarData.factory(getChosenSecond());
+                return secondFlxData;
+            }
+        }
+
+        public void setEffectIndex(int effectIndex){
+            synchronized (flexatarFileLoadMutex) {
+                this.effectIndex = effectIndex;
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putInt("EffectIndex", effectIndex);
+                editor.apply();
+            }
+        }
+        public int getEffectIndex(){
+            if (effectIndex!=-1) return effectIndex;
+            synchronized (flexatarFileLoadMutex) {
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                this.effectIndex = sharedPreferences.getInt("EffectIndex", 0);
+                return this.effectIndex;
+            }
+        }
+
+        public void setMixWeight(float mixWeight){
+            synchronized (flexatarFileLoadMutex) {
+                this.mixWeight = mixWeight;
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putFloat("MixWeight", mixWeight);
+                editor.apply();
+            }
+        }
+        public float getMixWeight(){
+            if (mixWeight>=0) return mixWeight;
+            synchronized (flexatarFileLoadMutex) {
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                this.mixWeight = sharedPreferences.getFloat("MixWeight", 0.5f);
+                return this.mixWeight;
+            }
+        }
+
+        public void setChosenFlexatar(String path) {
+            synchronized (flexatarFileLoadMutex) {
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                String oldFirstPath = sharedPreferences.getString(FIRST, null);
+
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(FIRST, path);
+                editor.putString(SECOND, oldFirstPath);
+                editor.apply();
+                first = new File(path);
+                if (oldFirstPath != null)
+                    second = new File(oldFirstPath);
+                secondFlxData = firstFlxData;
+                firstFlxData = null;
+            }
+        }
+
+        public File getChosenFirst() {
+            synchronized (flexatarFileLoadMutex) {
+                if (first != null && first.exists()) return first;
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                String firstPath = sharedPreferences.getString(FIRST, null);
+                if (firstPath == null) {
+                    for (File file : getFlexatarFileList(context)) {
+                        if (second == null) {
+                            first = file;
+                            return first;
+                        }
+                        if (!file.equals(second)) {
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString(FIRST, file.getAbsolutePath());
+                            editor.apply();
+                            first = file;
+                            return first;
+                        }
+                    }
+                    return first;
+                }
+                File firstFile = new File(firstPath);
+                if (firstFile.exists()) {
+                    first = firstFile;
+                } else {
+                    for (File file : getFlexatarFileList(context)) {
+                        if (second == null) {
+                            first = file;
+                            break;
+                        }
+                        if (!file.equals(second)) {
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString(FIRST, file.getAbsolutePath());
+                            editor.apply();
+                            first = file;
+                            break;
+                        }
+                    }
+                }
+                return first;
+            }
+        }
+
+        public File getChosenSecond() {
+            synchronized (flexatarFileLoadMutex) {
+                if (second != null && second.exists()) return second;
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                String firstPath = sharedPreferences.getString(SECOND, null);
+
+                if (firstPath == null) {
+                    for (File file : getFlexatarFileList(context)) {
+                        if (first == null) {
+                            second = file;
+                            return second;
+                        }
+                        if (!file.equals(first)) {
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString(SECOND, file.getAbsolutePath());
+                            editor.apply();
+                            second = file;
+                            return second;
+                        }
+                    }
+                    return second;
+                }
+                File firstFile = new File(firstPath);
+                if (firstFile.exists()) {
+                    second = firstFile;
+                } else {
+                    for (File file : getFlexatarFileList(context)) {
+                        if (first == null) {
+                            second = file;
+                            break;
+                        }
+                        if (!file.equals(first)) {
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString(SECOND, file.getAbsolutePath());
+                            editor.apply();
+                            second = file;
+                            break;
+                        }
+                    }
+                }
+                return second;
+            }
+        }
+    }
 
     public static File getFlexatarStorage(Context context){
         File rootDir = context.getFilesDir();

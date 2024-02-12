@@ -48,6 +48,8 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     private final RectF bgRect = new RectF();
     private final Paint paint;
     private final SeekBarView seekBar;
+    private final FlexatarStorageManager.FlexatarChooser currentFlexatarChooser;
+    private final boolean isWithPreview;
     private String chosenEffect = "No";
     private GLSurfaceView surfaceView;
     private final FrameLayout bottomButtonsLayout;
@@ -74,13 +76,16 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     public void setOnSendListener(OnSendListener onSendListener){
         this.onSendListener=onSendListener;
     }
-    private File chosenFirst;
-    private File chosenSecond;
-    public FlexatarControlPanelLayout(Context context){
+//    private File chosenFirst;
+//    private File chosenSecond;
+    public FlexatarControlPanelLayout(Context context,boolean isWithPreview){
         super(context);
-        File[] files = FlexatarStorageManager.getFlexatarFileList(context);
-        chosenFirst = files[0];
-        chosenSecond = files[1];
+        this.isWithPreview=isWithPreview;
+       currentFlexatarChooser = FlexatarStorageManager.roundFlexatarChooser;
+       mixWeight = currentFlexatarChooser.getMixWeight();
+//        File[] files = FlexatarStorageManager.getFlexatarFileList(context);
+//        chosenFirst = files[0];
+//        chosenSecond = files[1];
         icnFlx1= new ImageView(context);
         icnFlx2 = new ImageView(context);
 
@@ -106,9 +111,10 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 
         });
         ((FlexatarHorizontalRecycleView.Adapter)flexatarRecyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
-            if (file.equals(chosenFirst) ) return;
-            chosenSecond = chosenFirst;
-            chosenFirst = file;
+            if (file.equals(currentFlexatarChooser.getChosenFirst()) ) return;
+            currentFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
+//            chosenSecond = chosenFirst;
+//            chosenFirst = file;
             if (drawer!=null){
                 FlexatarData flexatarData = FlexatarData.factory(file);
                 flexatarData.getPreviewImage();
@@ -134,7 +140,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
             icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
 
-            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(chosenFirst,true).previewImage;
+            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(currentFlexatarChooser.getChosenFirst(),true).previewImage;
             RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
             dr.setCornerRadius(AndroidUtilities.dp(8));
             icnFlx.setImageDrawable(dr);
@@ -149,7 +155,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             icnFlx.setContentDescription("flexatar button");
             icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
             icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
-            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(chosenSecond,true).previewImage;
+            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(currentFlexatarChooser.getChosenSecond(),true).previewImage;
             RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
             dr.setCornerRadius(AndroidUtilities.dp(8));
             icnFlx.setImageDrawable(dr);
@@ -182,6 +188,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         layoutParams1.rightMargin = AndroidUtilities.dp(3);
         TextView[] effectTextViews = new TextView[effectNames.length];
         seekBar = new SeekBarView(context);
+        chosenEffect = effectNames[currentFlexatarChooser.getEffectIndex()];
         for (int i = 0; i < effectNames.length; i++) {
 
             String name = effectNames[i];
@@ -211,6 +218,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
                 }else{
                     seekBar.setVisibility(View.GONE);
                 }
+                currentFlexatarChooser.setEffectIndex(finalI);
             });
             effectLayout.addView(tv);
         }
@@ -225,6 +233,10 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             public void onSeekBarDrag(boolean stop, float progress) {
                 mixWeight = 1f-seekBar.getProgress();
                 drawer.setMixWeightVal(mixWeight);
+                if (stop){
+                    Log.d("FLX_INJECT", "mix weight set to "+mixWeight);
+                    currentFlexatarChooser.setMixWeight(mixWeight);
+                }
 //                FlexatarRenderer.chosenMixWeight = 1-progress;
 //                FlexatarRenderer.effectsMixWeight = FlexatarRenderer.chosenMixWeight;
             }
@@ -245,7 +257,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         });
 
         seekBar.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        seekBar.setProgress(0.5f);
+        seekBar.setProgress(1f - currentFlexatarChooser.getMixWeight());
         if (!chosenEffect.equals("Mix")){
             seekBar.setVisibility(View.GONE);
         }
@@ -254,10 +266,10 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 
         previewLayout.setOrientation(LinearLayout.VERTICAL);
         mainLayout.addView(previewLayout);
-        createFlexatarView();
-//        FrameLayout frameWarper = new FrameLayout(context);
-//        frameWarper.addView(surfaceView,LayoutHelper.createLinear(150,200));
-        previewLayout.addView(surfaceView);
+        if (isWithPreview) {
+            createFlexatarView();
+            previewLayout.addView(surfaceView);
+        }
 
 
 
@@ -281,12 +293,12 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 //            linearLayout.fulfillClose();
         });
         bottomButtonsLayout.addView(closePanelIcon,LayoutHelper.createFrame(46, 46, Gravity.RIGHT, 0, 0, 12, 0));
-
-        ImageView sendIcon = new ImageView(context){
-            @Override
-            protected void onDraw(Canvas canvas) {
-                bgRect.set(0, 0, getWidth(), getHeight());
-                canvas.drawRoundRect(bgRect, dp(getWidth()/2), dp(getHeight()/2), paint);
+        if (isWithPreview) {
+            ImageView sendIcon = new ImageView(context) {
+                @Override
+                protected void onDraw(Canvas canvas) {
+                    bgRect.set(0, 0, getWidth(), getHeight());
+                    canvas.drawRoundRect(bgRect, dp(getWidth() / 2), dp(getHeight() / 2), paint);
 
 //                Drawable drawable = getDrawable();
 //                int drawableWidth = getWidth();
@@ -294,23 +306,23 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 //                float scale = 0.8f;
 //                drawable.setBounds((int) (drawableWidth*(1f-scale)/2f), (int) (drawableHeight*(1f-scale)/2f), (int) (drawableWidth * scale), (int) (drawableHeight * scale));
 //                drawable.draw(canvas);
-                super.onDraw(canvas);
-            }
-        };
-        sendIcon.setImageResource(R.drawable.attach_send);
-        sendIcon.setOnClickListener((v) -> {
-            FlexatarNotificator.chosenStateForRoundVideo = new FlexatarNotificator.ChosenStateForRoundVideo();
-            FlexatarNotificator.chosenStateForRoundVideo.effect = effectIndex;
-            FlexatarNotificator.chosenStateForRoundVideo.firstFile = chosenFirst;
-            FlexatarNotificator.chosenStateForRoundVideo.secondFile = chosenSecond;
-            FlexatarNotificator.chosenStateForRoundVideo.mixWeight = mixWeight;
+                    super.onDraw(canvas);
+                }
+            };
+            sendIcon.setImageResource(R.drawable.attach_send);
+            sendIcon.setOnClickListener((v) -> {
+                FlexatarNotificator.chosenStateForRoundVideo = new FlexatarNotificator.ChosenStateForRoundVideo();
+                FlexatarNotificator.chosenStateForRoundVideo.effect = effectIndex;
+                FlexatarNotificator.chosenStateForRoundVideo.firstFile = currentFlexatarChooser.getChosenFirst();
+                FlexatarNotificator.chosenStateForRoundVideo.secondFile = currentFlexatarChooser.getChosenSecond();
+                FlexatarNotificator.chosenStateForRoundVideo.mixWeight = mixWeight;
 
-            if (onSendListener!=null)onSendListener.onSend(this);
+                if (onSendListener != null) onSendListener.onSend(this);
 //            linearLayout.setVisibility(View.GONE);
 //            linearLayout.fulfillClose();
-        });
-        bottomButtonsLayout.addView(sendIcon,LayoutHelper.createFrame(46, 46, Gravity.LEFT, 12, 0, 12, 0));
-
+            });
+            bottomButtonsLayout.addView(sendIcon, LayoutHelper.createFrame(46, 46, Gravity.LEFT, 12, 0, 12, 0));
+        }
         bottomButtonsLayout.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6));
 
         setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(6), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
@@ -319,14 +331,12 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     }
     private int effectIndex = 0;
     private void setupEffects(){
-
+        if (!isWithPreview) return;
         if (seekBar == null)return;
         if (chosenEffect.equals("No")){
             effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.NO;
             invalidateMorphTimer();
             drawer.setisEffectOnVal(false);
-//                    FlexatarRenderer.isEffectsOn = false;
-//                    FlexatarRenderer.isMorphEffect = false;
 
         } else if (chosenEffect.equals("Mix")){
             effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.MIX;
@@ -335,12 +345,6 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             drawer.setisEffectOnVal(true);
             drawer.setEffectIdVal(0);
             drawer.setMixWeightVal(1f-seekBar.getProgress());
-
-
-//                    FlexatarRenderer.isEffectsOn = true;
-//                    FlexatarRenderer.effectID = 0;
-//                    FlexatarRenderer.effectsMixWeight = FlexatarRenderer.chosenMixWeight;
-//                    FlexatarRenderer.isMorphEffect = false;
         }else if (chosenEffect.equals("Morph")){
             effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.MORPH;
             invalidateMorphTimer();
@@ -349,11 +353,6 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             drawer.setEffectIdVal(0);
             drawer.setMixWeightVal(1f-seekBar.getProgress());
 
-//                    FlexatarRenderer.isEffectsOn = true;
-//                    FlexatarRenderer.effectID = 0;
-//                    FlexatarRenderer.isMorphEffect = true;
-//                    FlexatarRenderer.effectsMixWeight = 0;
-
         }else if (chosenEffect.equals("Hybrid")){
             effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.HYBRID;
             invalidateMorphTimer();
@@ -361,9 +360,6 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             drawer.setisEffectOnVal(true);
             drawer.setEffectIdVal(1);
             drawer.setMixWeightVal(1f-seekBar.getProgress());
-//                    FlexatarRenderer.isEffectsOn = true;
-//                    FlexatarRenderer.effectID = 1;
-//                    FlexatarRenderer.isMorphEffect = false;
 
         }
     }
@@ -414,7 +410,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     }
 
     public void createFlexatarView(){
-
+        if (!isWithPreview) return;
 
         if (surfaceView == null) surfaceView = new GLSurfaceView(getContext());
         surfaceView.setEGLContextClientVersion(2);
@@ -423,8 +419,8 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         drawer = new FlxDrawer();
 
         renderer.drawer = drawer;
-        drawer.setFlexatarData(FlexatarData.factory(chosenFirst));
-        drawer.setFlexatarDataAlt(FlexatarData.factory(chosenSecond));
+        drawer.setFlexatarData(currentFlexatarChooser.getFirstFlxData());
+        drawer.setFlexatarDataAlt(currentFlexatarChooser.getSecondFlxData());
         surfaceView.setZOrderOnTop(true);
         surfaceView.setBackgroundColor(Color.TRANSPARENT);
         surfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
@@ -434,6 +430,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         setupEffects();
     }
     private void configureLayoutOrientation(boolean isPortrait){
+        if (!isWithPreview) return;
         if (isPortrait){
             panelLayout.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT));
             previewLayout.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT));
@@ -468,9 +465,12 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     @Override
     protected void onDetachedFromWindow() {
         invalidateMorphTimer();
-        surfaceViewLayoutIndex = previewLayout.indexOfChild(surfaceView);
-        previewLayout.removeView(surfaceView);
-        surfaceView = null;
+        if (surfaceView!=null) {
+            surfaceViewLayoutIndex = previewLayout.indexOfChild(surfaceView);
+            previewLayout.removeView(surfaceView);
+            surfaceView = null;
+        }
+
         super.onDetachedFromWindow();
         Log.d("FLX_INJECT","flexatar panel onDetachedFromWindow");
     }
@@ -478,6 +478,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        if (!isWithPreview) return;
         if (surfaceViewLayoutIndex!=-1){
             createFlexatarView();
             int currentOrientation = getResources().getConfiguration().orientation;

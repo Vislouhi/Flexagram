@@ -68,12 +68,18 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
             holder.itemView.setLayoutParams(new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth*ratio)));
             holder.itemView.setOnClickListener((v) -> {
                 if (onFlexatarChosenListener == null) {
-                    if (FlexatarUI.chosenFirst.getName().equals(flexatarFile.getName())) return;
+                    if (FlexatarStorageManager.callFlexatarChooser.getChosenFirst().getName().equals(flexatarFile.getName())) return;
+                    FlexatarStorageManager.callFlexatarChooser.setChosenFlexatar(flexatarFile.getAbsolutePath());
+                    FlexatarStorageManager.callFlexatarChooser.getFirstFlxData();
+                    FlexatarStorageManager.callFlexatarChooser.getSecondFlxData();
+
+                   /* if (FlexatarUI.chosenFirst.getName().equals(flexatarFile.getName())) return;
                     FlexatarUI.chosenSecond = FlexatarUI.chosenFirst;
                     FlexatarUI.chosenFirst = flexatarFile;
                     FlexatarRenderer.altFlxData = FlexatarRenderer.currentFlxData;
                     byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarFile);
-                    FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(flxBytes));
+                    FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(flxBytes));*/
+
                     if (FlexatarUI.chosenEffect.equals("Morph")) {
                         FlexatarRenderer.effectsMixWeight = 0;
                     }

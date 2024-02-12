@@ -28,6 +28,7 @@ import org.telegram.messenger.LocaleController;
 
 import org.telegram.messenger.R;
 
+import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -183,6 +184,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             }
 
             item.setOnClickListener(v-> {
+
                 if (Config.isVerified()) {
                     if (!FlexatarServerAccess.isDownloadingFlexatars) {
                         handler.post(() -> {
@@ -293,7 +295,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     if (Config.isVerified()) {
 
                         Log.d("FLX_INJECT", "Try send to bot");
-                        Config.botAuth(new Config.BotAuthCompletionListener() {
+                        FlexatarServiceAuth.auth();
+                       /* Config.botAuth(new Config.BotAuthCompletionListener() {
                             @Override
                             public void onReady(String token) {
                                 Log.d("FLX_INJECT", "Authorized "+token);
@@ -304,7 +307,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                                 Log.d("FLX_INJECT", "Authorization failed ");
                             }
                         });
-
+*/
 
                     } else {
                         showDialog(AlertDialogs.showVerifyInProgress(context));
@@ -375,6 +378,13 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             }
         });
         itemAdapter.setFlexatarCellOnLongClickListener((item,cell)->{
+            boolean isCallActivity = VoIPService.getSharedInstance() != null;
+
+            if (isCallActivity) {
+                Log.d("FLX_INJECT","forbiden to delete");
+                showDialog(AlertDialogs.showImpossibleToDelete(getContext()));
+                return;
+            }
             if(!getActionBar().isActionModeShowed() ) {
                 showOrUpdateActionMode();
                 getActionBar().showActionMode();

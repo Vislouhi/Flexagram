@@ -700,6 +700,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private Runnable closeInstantCameraAnimation;
     private PopupWindow flexatarPopUp = null;
     private FlexatarControlPanelLayout flexatarControlPanelLayout;
+    private TextCell flexatarCabinetButton;
 
     {
         skeletonOutlinePaint.setStyle(Paint.Style.STROKE);
@@ -2128,7 +2129,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                bkgProvider.setHasVideo(true);
 //
 //                bkgProvider.setTotalSize(200,200);
-                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext());
+                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext(),true);
 //                FlexatarUI.FlexatarPanelLayout flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(getContext(), bkgProvider);
 //                flexatarPanelView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
                 actionBar.setEnabled(false);
@@ -3388,6 +3389,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         } else {
             actionBar.addView(avatarContainer, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, !inPreviewMode ? 56 : (chatMode == MODE_PINNED ? 10 : 0), 0, 40, 0));
         }
+
+        if (currentUser!=null && currentUser.id == Config.authBotId) {
+
+            flexatarCabinetButton = new TextCell(context);
+            flexatarCabinetButton.setTextAndIcon(LocaleController.getString("FlexatarCabinet", R.string.FlexatarCabinet), R.drawable.menu_flexatar, false);
+            flexatarCabinetButton.setColors(Theme.key_actionBarDefaultTitle,Theme.key_actionBarDefaultTitle);
+//            flexatarCabinetButton.setColorfulIcon(Theme.getColor(Theme.key_actionBarDefaultTitle),R.drawable.menu_flexatar);
+//            flexatarCabinetButton.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+            flexatarCabinetButton.setOnClickListener(v -> {
+                presentFragment(new FlexatarCabinetActivity());
+            });
+            actionBar.addSpaceForFlexatarButton(AndroidUtilities.dp(48));
+            actionBar.addView(flexatarCabinetButton,
+                    LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 48, 0, 48, 0));
+        }
+
 
         ActionBarMenu menu = actionBar.createMenu();
 
@@ -5756,15 +5773,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         progressView.setVisibility(View.INVISIBLE);
         contentView.addView(progressView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT));
 
-        if (currentUser!=null && currentUser.id == Config.authBotId) {
-            TextCell flexatarCabinetButton = new TextCell(context);
-            flexatarCabinetButton.setTextAndIcon(LocaleController.getString("FlexatarCabinet", R.string.FlexatarCabinet), R.drawable.menu_flexatar, false);
-            flexatarCabinetButton.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-            flexatarCabinetButton.setOnClickListener(v -> {
-                presentFragment(new FlexatarCabinetActivity());
-            });
-            ((FrameLayout) fragmentView).addView(flexatarCabinetButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
-        }
+
         progressView2 = new View(context) {
             private final RectF rect = new RectF();
             @Override
@@ -7383,6 +7392,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 updateReactionsMentionButton(false);
             }
         }
+
+
+
 
         return fragmentView;
     }
@@ -9120,6 +9132,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     private void hideInfoView() {
+
         if (distanceToPeer >= 0) {
             distanceToPeer = -1;
             SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
@@ -9130,6 +9143,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             infoTopViewAnimator.cancel();
         }
         if (infoTopView != null && infoTopView.getTag() != null) {
+
             infoTopView.setTag(null);
             View topViewFinal = infoTopView;
             ValueAnimator a = ValueAnimator.ofFloat(1f, 0);
@@ -9297,6 +9311,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (fragmentLocationContextView != null && fragmentLocationContextView.getVisibility() == View.VISIBLE) {
                 from += AndroidUtilities.dp(36);
             }
+//            Log.d("FLX_INJECT","setTranslationY " + fragmentContextView.getTopPadding());
             fragmentContextView.setTranslationY(contentPanTranslation + from + fragmentContextView.getTopPadding());
         }
         if (fragmentLocationContextView != null) {
@@ -13884,6 +13899,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (child == fragmentContextView && fragmentContextView.isCallStyle()) {
                 return true;
             }
+
             if (child == undoView && PhotoViewer.getInstance().isVisible()) {
                 return true;
             }
@@ -14040,6 +14056,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 fragmentView.invalidate();
             }
+
             if (chatActivityEnterView != null) {
                 if (chatActivityEnterView.panelAnimationInProgress() && chatActivityEnterView.getEmojiPadding() < bottomPanelTranslationY) {
                     int color = getThemedColor(Theme.key_chat_emojiPanelBackground);

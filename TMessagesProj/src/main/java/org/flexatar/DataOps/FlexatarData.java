@@ -32,8 +32,18 @@ public class FlexatarData {
         byte[] flxBytes = FlexatarStorageManager.dataFromFile(file);
         LengthBasedFlxUnpack unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
         FlexatarData flexatarData = new FlexatarData(unpackedFlexatar);
+        flexatarData.setParentFile(file);
         return flexatarData;
     }
+    private File parentFile;
+    private void setParentFile(File file) {
+        parentFile = file;
+    }
+    public boolean isParentFileExists(){
+        if (parentFile == null) return false;
+        return parentFile.exists();
+    }
+
     private LengtBasedDict mouthData;
     public float mouthRatio;
 //    private  String name;

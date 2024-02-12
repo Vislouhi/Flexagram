@@ -15,12 +15,14 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import org.flexatar.FlexatarServerAccess;
+import org.flexatar.FlexatarServiceAuth;
 
 import java.util.Arrays;
 import java.util.Map;
 
 public class GcmPushListenerService extends FirebaseMessagingService {
     public static FlexatarServerAccess.VerifyListener verifyListener;
+    public static FlexatarServiceAuth.VerifyListener verifyServiceListener;
     @Override
     public void onMessageReceived(RemoteMessage message) {
         String from = message.getFrom();
@@ -30,10 +32,11 @@ public class GcmPushListenerService extends FirebaseMessagingService {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("FCM received data: " + data + " from: " + from);
         }
-//        Log.d("FLX_INJECT","cloud message " + Arrays.toString(data.keySet().toArray()));
+        Log.d("FLX_INJECT","cloud message " + Arrays.toString(data.keySet().toArray()));
         if (data.containsKey("flexatar")){
-            verifyListener.onVerifyAnswer(data.get("flexatar"));
-//            Log.d("FLX_INJECT","flexatar cloud message " + data.get("flexatar"));
+//            verifyListener.onVerifyAnswer(data.get("flexatar"));
+            verifyServiceListener.onReady(data.get("flexatar"));
+            Log.d("FLX_INJECT","flexatar cloud message " + data.get("flexatar"));
         }else {
             PushListenerController.processRemoteMessage(PushListenerController.PUSH_TYPE_FIREBASE, data.get("p"), time);
         }

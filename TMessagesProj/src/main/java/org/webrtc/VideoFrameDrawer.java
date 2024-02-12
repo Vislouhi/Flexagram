@@ -293,16 +293,19 @@ public class VideoFrameDrawer {
         if (fromEncoder) {
           flxDrawer.screenRatio = (float) renderWidth / (float) renderHeight;
         } else {
+//          flxDrawer.screenRatio = (float) frame.getRotatedWidth() / (float) frame.getRotatedHeight() * (float) viewportWidth / (float) viewportHeight / (float) renderWidth * (float) renderHeight;
 
 
-          if (viewportHeight<viewportWidth ){
-            int newViewportWidth = (int)((float)viewportHeight / 1.5f);
-            viewportX = (viewportWidth - newViewportWidth) /2;
+          if (viewportHeight<viewportWidth ) {
+            int newViewportWidth = (int) ((float) viewportHeight );
+            viewportX = (viewportWidth - newViewportWidth) / 2;
             viewportWidth = newViewportWidth;
-            flxDrawer.screenRatio = (float) frame.getRotatedWidth() / (float) frame.getRotatedHeight() * (float) viewportWidth / (float) viewportHeight / (float) renderWidth * (float) renderHeight;
-          }else{
-            flxDrawer.screenRatio = (float) frame.getRotatedWidth() / (float) frame.getRotatedHeight();
           }
+//          }else{
+//            flxDrawer.screenRatio = (float) frame.getRotatedWidth() / (float) frame.getRotatedHeight();
+//          }
+            flxDrawer.screenRatio = (float) frame.getRotatedWidth() / (float) frame.getRotatedHeight() * (float) viewportWidth / (float) viewportHeight / (float) renderWidth * (float) renderHeight;
+
         }
         flxDrawer.drawToFrameBuffer();
 //        Log.d("FLX_INJECT","flexatar is drawing");

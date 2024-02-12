@@ -15,6 +15,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 
@@ -94,7 +95,7 @@ public class Config {
         return token!=null;
     }
     public static void addDefaultFlexatars(){
-        if (FlexatarUI.chosenFirst !=null) return;
+        if (FlexatarStorageManager.callFlexatarChooser.getChosenFirst() != null) return;
         String[] flxFileNames = { "char6t", "char7t"};
         for (int i = 0; i < flxFileNames.length; i++) {
             String fName = flxFileNames[flxFileNames.length - i - 1];
@@ -105,7 +106,7 @@ public class Config {
             FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,flxRaw,fName,"builtin_");
 
         }
-        File[] flexatarFiles = FlexatarStorageManager.getFlexatarFileList(ApplicationLoader.applicationContext);
+        /*File[] flexatarFiles = FlexatarStorageManager.getFlexatarFileList(ApplicationLoader.applicationContext);
 //        if (FlexatarUI.chosenFirst == null){
             FlexatarUI.chosenFirst = flexatarFiles[0];
             FlexatarUI.chosenSecond = flexatarFiles[1];
@@ -114,7 +115,7 @@ public class Config {
         Log.d("FLX_INJECT","FlexatarUI.chosenSecond " + FlexatarUI.chosenSecond);
         FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst)));
         FlexatarRenderer.altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));
-
+*/
     }
     private static void startVerifyRequest(){
         FlexatarServerAccess.lambdaVerify(new FlexatarServerAccess.VerifyListener() {
@@ -171,7 +172,8 @@ public class Config {
             storage = sharedPreferences.getString(STORAGE_FIELD, null);
             stat = sharedPreferences.getString(STAT_FIELD, null);
             Log.d("FLX_INJECT","init flexatar config");
-            OpusToAacConverter.testConverter();
+            Log.d("FLX_INJECT","pushString :" + SharedConfig.pushString);
+//            OpusToAacConverter.testConverter();
             synchronized (verifyMutex) {
                 if (token!=null)
                     verifyInProgress = false;
@@ -255,8 +257,8 @@ public class Config {
 //            Log.d("FLX_INJECT","usr obtained " +user);
             AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
             AndroidUtilities.runOnUIThread(()-> {
-                accountInstance.getNotificationCenter().addObserver(observer, NotificationCenter.didReceiveNewMessages);
-                accountInstance.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(VERIFY_COMMAND,authBotId , null, null, null, false, null, null, null, true, 0, null, false));
+//                accountInstance.getNotificationCenter().addObserver(observer, NotificationCenter.didReceiveNewMessages);
+                accountInstance.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(VERIFY_COMMAND+" "+ SharedConfig.pushString,authBotId , null, null, null, false, null, null, null, true, 0, null, false));
 
             });
         });

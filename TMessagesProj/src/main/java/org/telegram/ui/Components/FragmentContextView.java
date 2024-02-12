@@ -1049,6 +1049,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             }
         }
         currentStyle = style;
+        Log.d("FLX_INJECT","update style: " +currentStyle);
         frameLayout.setWillNotDraw(currentStyle != STYLE_INACTIVE_GROUP_CALL);
         if (style != STYLE_INACTIVE_GROUP_CALL) {
             timeLayout = null;

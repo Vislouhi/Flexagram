@@ -278,7 +278,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
     private boolean zoomStarted;
     private boolean canZoomGesture;
     ValueAnimator zoomBackAnimator;
-    private boolean isFlexatarButtonAvailable = false;
+    private boolean isFlexatarButtonAvailable = true;
     /* === pinch to zoom === */
 
     public static void show(Activity activity, int account) {
@@ -2852,7 +2852,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                         previewDialog = new PrivateVideoPreviewDialogNew(fragmentView.getContext(), locVideoButton[0], locVideoButton[1]) {
                             @Override
                             public void onDismiss(boolean screencast,boolean flexatar, boolean apply) {
-                                isFlexatarButtonAvailable = flexatar;
+                                isFlexatarButtonAvailable = true;
                                 previewDialog = null;
                                 flexatarPanelView.resetEffects();
                                 VoIPService service = VoIPService.getSharedInstance();

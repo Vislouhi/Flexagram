@@ -45,6 +45,7 @@ import android.widget.ImageView;
 
 import androidx.core.graphics.ColorUtils;
 
+import org.flexatar.FlexatarNotificator;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
@@ -1188,12 +1189,15 @@ public class ActionBar extends FrameLayout {
         }
         super.requestLayout();
     }
-
+    private int flexatarButtonHeight = 0;
+    public void addSpaceForFlexatarButton(int val){
+        flexatarButtonHeight = val;
+    }
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
-        int actionBarHeight = getCurrentActionBarHeight();
+        int actionBarHeight = getCurrentActionBarHeight() + flexatarButtonHeight;
         int actionBarHeightSpec = MeasureSpec.makeMeasureSpec(actionBarHeight, MeasureSpec.EXACTLY);
 
         ignoreLayoutRequest = true;
@@ -1628,7 +1632,7 @@ public class ActionBar extends FrameLayout {
 
     public static int getCurrentActionBarHeight() {
         if (AndroidUtilities.isTablet()) {
-            return dp(64);
+            return dp(64 );
         } else if (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y) {
             return dp(48);
         } else {

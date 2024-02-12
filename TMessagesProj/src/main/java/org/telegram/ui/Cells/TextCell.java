@@ -115,6 +115,7 @@ public class TextCell extends FrameLayout {
 
         imageView = new RLottieImageView(context);
         imageView.setScaleType(ImageView.ScaleType.CENTER);
+//        imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultTitle, resourcesProvider), PorterDuff.Mode.MULTIPLY));
         imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(dialog ? Theme.key_dialogIcon : Theme.key_windowBackgroundWhiteGrayIcon, resourcesProvider), PorterDuff.Mode.MULTIPLY));
         addView(imageView);
 
@@ -131,6 +132,10 @@ public class TextCell extends FrameLayout {
         setFocusable(true);
     }
 
+    /*public void setIconColor(int color){
+        imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultTitle, resourcesProvider), PorterDuff.Mode.MULTIPLY));
+
+    }*/
     public boolean isChecked() {
         return checkBox != null && checkBox.isChecked();
     }
