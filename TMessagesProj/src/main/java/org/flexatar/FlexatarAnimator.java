@@ -129,14 +129,14 @@ public class FlexatarAnimator {
             animIdx += delta;
         }
 
-        if (FlexatarRenderer.isEffectsOn && FlexatarRenderer.effectID == 1){
+        /*if (FlexatarRenderer.isEffectsOn && FlexatarRenderer.effectID == 1){
             FlexatarRenderer.effectsMixWeight += 0.0025f;
             if (FlexatarRenderer.effectsMixWeight>1){FlexatarRenderer.effectsMixWeight = 0;}
         }
         if (FlexatarRenderer.isEffectsOn && FlexatarRenderer.isMorphEffect){
             FlexatarRenderer.effectsMixWeight += 0.005f;
             if (FlexatarRenderer.effectsMixWeight>1){FlexatarRenderer.effectsMixWeight = 1;}
-        }
+        }*/
 //        Log.d("FLX_INJECT", "animator working");
     }
 

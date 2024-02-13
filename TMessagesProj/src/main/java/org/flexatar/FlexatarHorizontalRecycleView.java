@@ -80,9 +80,9 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
                     byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarFile);
                     FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(flxBytes));*/
 
-                    if (FlexatarUI.chosenEffect.equals("Morph")) {
+                    /*if (FlexatarUI.chosenEffect.equals("Morph")) {
                         FlexatarRenderer.effectsMixWeight = 0;
-                    }
+                    }*/
                     if (onChooseListener != null)
                         onChooseListener.onChoose(((ImageView) holder.itemView));
                 }else{

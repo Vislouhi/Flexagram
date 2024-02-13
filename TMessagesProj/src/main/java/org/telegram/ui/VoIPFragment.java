@@ -59,7 +59,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 
+import org.flexatar.FlexatarControlPanelLayout;
 import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlexatarStorageManager;
 import org.flexatar.FlexatarUI;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
@@ -160,7 +162,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
     private int selectedRating;
 
     LinearLayout emojiLayout;
-    FlexatarUI.FlexatarPanelLayout flexatarPanelView;
+    FlexatarControlPanelLayout flexatarPanelView;
     FrameLayout hideEmojiLayout;
     TextView hideEmojiTextView;
     RateCallLayout rateCallLayout;
@@ -976,7 +978,14 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
 
 
 
-        flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(context,backgroundProvider);
+        flexatarPanelView = new FlexatarControlPanelLayout(context,false, FlexatarStorageManager.callFlexatarChooser);
+        flexatarPanelView.setOnCancelListener(v->{
+            AndroidUtilities.runOnUIThread(()->{
+                flexatarPanelView.setVisibility(View.GONE);
+                flexatarPanelView.setEnabled(false);});
+
+        });
+//        flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(context,backgroundProvider);
         flexatarPanelView.setVisibility(View.GONE);
 //        FlexatarRenderer.startVoiceProcessing();
 
@@ -1130,7 +1139,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         flexatarIcon.setOnClickListener(view -> {
 
             flexatarPanelView.setVisibility(View.VISIBLE);
-            flexatarPanelView.updateIcons();
+//            flexatarPanelView.updateIcons();
 //            flexatarPanelView.switchToCameraButton.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
             Log.d("FLX_BUTTON","on click");
         });

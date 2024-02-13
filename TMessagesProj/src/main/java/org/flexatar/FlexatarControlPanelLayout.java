@@ -9,7 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.Gravity;
@@ -25,7 +24,6 @@ import androidx.core.graphics.drawable.RoundedBitmapDrawable;
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 
 import org.flexatar.DataOps.FlexatarData;
-import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -35,7 +33,6 @@ import org.telegram.ui.Components.SeekBarView;
 import org.telegram.ui.Components.voip.HideEmojiTextView;
 import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
 
-import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -78,10 +75,15 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     }
 //    private File chosenFirst;
 //    private File chosenSecond;
-    public FlexatarControlPanelLayout(Context context,boolean isWithPreview){
+    public void resetEffects(){
+        currentFlexatarChooser.setEffectIndex(0);
+        currentFlexatarChooser.saveMixWeight(0.5f);
+    }
+
+    public FlexatarControlPanelLayout(Context context,boolean isWithPreview,FlexatarStorageManager.FlexatarChooser chooser){
         super(context);
         this.isWithPreview=isWithPreview;
-       currentFlexatarChooser = FlexatarStorageManager.roundFlexatarChooser;
+       currentFlexatarChooser = chooser;
        mixWeight = currentFlexatarChooser.getMixWeight();
 //        File[] files = FlexatarStorageManager.getFlexatarFileList(context);
 //        chosenFirst = files[0];
@@ -115,16 +117,16 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             currentFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
 //            chosenSecond = chosenFirst;
 //            chosenFirst = file;
-            if (drawer!=null){
-                FlexatarData flexatarData = FlexatarData.factory(file);
-                flexatarData.getPreviewImage();
-                Bitmap iconBitmap = flexatarData.getPreviewImage();
+//            if (drawer!=null){
+//                FlexatarData flexatarData = FlexatarData.factory(file);
+//                flexatarData.getPreviewImage();
+                Bitmap iconBitmap = currentFlexatarChooser.getFirstFlxData().getPreviewImage();
                 RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
                 dr.setCornerRadius(AndroidUtilities.dp(8));
                 icnFlx2.setImageDrawable(icnFlx1.getDrawable());
                 icnFlx1.setImageDrawable(dr);
-                drawer.changeFlexatar(flexatarData);
-            }
+//                drawer.changeFlexatar(flexatarData);
+//            }
         });
         panelLayout.addView(flexatarRecyclerView);
 //============= Image Pair Layout ================
@@ -211,7 +213,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
                 }
                 effectTextViews[finalI].setTextColor(Color.parseColor("#f7d26c"));
                 chosenEffect = effectNames[finalI];
-                setupEffects();
+//                setupEffects();
 
                 if (chosenEffect.equals("Mix")){
                     seekBar.setVisibility(View.VISIBLE);
@@ -232,10 +234,13 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             @Override
             public void onSeekBarDrag(boolean stop, float progress) {
                 mixWeight = 1f-seekBar.getProgress();
-                drawer.setMixWeightVal(mixWeight);
+//                drawer.setMixWeightVal(mixWeight);
                 if (stop){
                     Log.d("FLX_INJECT", "mix weight set to "+mixWeight);
+                    currentFlexatarChooser.saveMixWeight(mixWeight);
+                }else{
                     currentFlexatarChooser.setMixWeight(mixWeight);
+
                 }
 //                FlexatarRenderer.chosenMixWeight = 1-progress;
 //                FlexatarRenderer.effectsMixWeight = FlexatarRenderer.chosenMixWeight;
@@ -331,35 +336,60 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     }
     private int effectIndex = 0;
     private void setupEffects(){
-        if (!isWithPreview) return;
+
         if (seekBar == null)return;
+        /*if (!isWithPreview) {
+            if (chosenEffect.equals("No")){
+                FlexatarRenderer.isEffectsOn = false;
+                FlexatarRenderer.isMorphEffect = false;
+
+            } else if (chosenEffect.equals("Mix")){
+                FlexatarRenderer.isEffectsOn = true;
+                FlexatarRenderer.effectID = 0;
+                FlexatarRenderer.effectsMixWeight = FlexatarRenderer.chosenMixWeight;
+                FlexatarRenderer.isMorphEffect = false;
+            }else if (chosenEffect.equals("Morph")){
+                FlexatarRenderer.isEffectsOn = true;
+                FlexatarRenderer.effectID = 0;
+                FlexatarRenderer.isMorphEffect = true;
+                FlexatarRenderer.effectsMixWeight = 0;
+
+            }else if (chosenEffect.equals("Hybrid")){
+                FlexatarRenderer.isEffectsOn = true;
+                FlexatarRenderer.effectID = 1;
+                FlexatarRenderer.isMorphEffect = false;
+
+            }
+            return;
+        }
+*/
         if (chosenEffect.equals("No")){
-            effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.NO;
-            invalidateMorphTimer();
-            drawer.setisEffectOnVal(false);
+//            effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.NO;
+//            invalidateMorphTimer();
+//            drawer.setisEffectOnVal(false);
 
         } else if (chosenEffect.equals("Mix")){
-            effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.MIX;
+//            effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.MIX;
 
-            invalidateMorphTimer();
-            drawer.setisEffectOnVal(true);
-            drawer.setEffectIdVal(0);
-            drawer.setMixWeightVal(1f-seekBar.getProgress());
+//            invalidateMorphTimer();
+//            drawer.setisEffectOnVal(true);
+//            drawer.setEffectIdVal(0);
+//            drawer.setMixWeightVal(1f-seekBar.getProgress());
         }else if (chosenEffect.equals("Morph")){
-            effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.MORPH;
-            invalidateMorphTimer();
-            createMorphTimer();
-            drawer.setisEffectOnVal(true);
-            drawer.setEffectIdVal(0);
-            drawer.setMixWeightVal(1f-seekBar.getProgress());
+//            effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.MORPH;
+//            invalidateMorphTimer();
+//            createMorphTimer();
+//            drawer.setisEffectOnVal(true);
+//            drawer.setEffectIdVal(0);
+//            drawer.setMixWeightVal(1f-seekBar.getProgress());
 
         }else if (chosenEffect.equals("Hybrid")){
-            effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.HYBRID;
-            invalidateMorphTimer();
-            createHybridTimer();
-            drawer.setisEffectOnVal(true);
-            drawer.setEffectIdVal(1);
-            drawer.setMixWeightVal(1f-seekBar.getProgress());
+//            effectIndex = FlexatarNotificator.ChosenStateForRoundVideo.HYBRID;
+//            invalidateMorphTimer();
+//            createHybridTimer();
+//            drawer.setisEffectOnVal(true);
+//            drawer.setEffectIdVal(1);
+//            drawer.setMixWeightVal(1f-seekBar.getProgress());
 
         }
     }
@@ -419,8 +449,10 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         drawer = new FlxDrawer();
 
         renderer.drawer = drawer;
+        drawer.setFlexatarChooser(currentFlexatarChooser);
         drawer.setFlexatarData(currentFlexatarChooser.getFirstFlxData());
         drawer.setFlexatarDataAlt(currentFlexatarChooser.getSecondFlxData());
+
         surfaceView.setZOrderOnTop(true);
         surfaceView.setBackgroundColor(Color.TRANSPARENT);
         surfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
@@ -476,8 +508,36 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     }
 
     @Override
+    public void setVisibility(int visibility) {
+        super.setVisibility(visibility);
+        if (visibility == VISIBLE){
+            {
+                ImageView icnFlx = icnFlx1;
+                icnFlx.setContentDescription("flexatar button");
+                icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
+                icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
+
+                Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(currentFlexatarChooser.getChosenFirst(),true).previewImage;
+                RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(getContext().getResources(), iconBitmap);
+                dr.setCornerRadius(AndroidUtilities.dp(8));
+                icnFlx.setImageDrawable(dr);
+
+            }
+            {
+                ImageView icnFlx = icnFlx2;
+                Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(currentFlexatarChooser.getChosenSecond(),true).previewImage;
+                RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(getContext().getResources(), iconBitmap);
+                dr.setCornerRadius(AndroidUtilities.dp(8));
+                icnFlx.setImageDrawable(dr);
+
+            }
+        }
+    }
+
+    @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+
         if (!isWithPreview) return;
         if (surfaceViewLayoutIndex!=-1){
             createFlexatarView();

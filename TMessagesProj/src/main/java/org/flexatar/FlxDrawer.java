@@ -43,6 +43,8 @@ public class FlxDrawer {
     private int height;
     private boolean isFrame = false;
     private boolean isEffectsOnVal = false;
+    private FlexatarStorageManager.FlexatarChooser flexatarChooser;
+
     public FlxDrawer(){
         FlexatarNotificator.incDrawerCounter();
 
@@ -78,6 +80,11 @@ public class FlxDrawer {
     public FlexatarData getFlexatarData() {
         return flexatarData;
     }
+
+    public void setFlexatarChooser(FlexatarStorageManager.FlexatarChooser flexatarChooser) {
+        this.flexatarChooser=flexatarChooser;
+    }
+
 
 
     private static class GlBuffers {
@@ -364,28 +371,39 @@ public class FlxDrawer {
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if (isStaticControlBind) {
             if (!FlexatarRenderer.isFlexatarCamera) return;
-            if (flexatarData != FlexatarStorageManager.callFlexatarChooser.getFirstFlxData()) {
-                if (flexatarData == null) {
-                    flexatarDataAlt = FlexatarStorageManager.callFlexatarChooser.getSecondFlxData();
-//                    buffers2 = new FlxDrawerNew.GlBuffers(flexatarDataAlt);
-                    flexatarData = FlexatarStorageManager.callFlexatarChooser.getFirstFlxData();
-                } else {
-                    buffers2.destroy();
-                    flexatarDataAlt = flexatarData;
-                    flexatarData = FlexatarStorageManager.callFlexatarChooser.getFirstFlxData();
-                    buffers2 = buffers1;
-                    buffers1 = null;
-                }
-            }
-            effectID = FlexatarRenderer.effectID;
-            mixWeight = FlexatarRenderer.effectsMixWeight;
-            isEffectsOn = FlexatarRenderer.isEffectsOn;
+
+//            effectID = FlexatarRenderer.effectID;
+//            mixWeight = FlexatarRenderer.effectsMixWeight;
+//            isEffectsOn = FlexatarRenderer.isEffectsOn;
             speechState = FlexatarRenderer.speechState;
         }else{
             effectID = effectIdVal;
             mixWeight = mixWeightVal;
             isEffectsOn = isEffectsOnVal;
         }
+        if (flexatarChooser == null){
+            effectID = effectIdVal;
+            mixWeight = mixWeightVal;
+            isEffectsOn = isEffectsOnVal;
+        }else{
+            if (flexatarData != flexatarChooser.getFirstFlxData()) {
+                if (flexatarData == null) {
+                    flexatarDataAlt = flexatarChooser.getSecondFlxData();
+                    flexatarData = flexatarChooser.getFirstFlxData();
+                } else {
+                    buffers2.destroy();
+                    flexatarDataAlt = flexatarData;
+                    flexatarData = flexatarChooser.getFirstFlxData();
+                    buffers2 = buffers1;
+                    buffers1 = null;
+                }
+            }
+            mixWeight = flexatarChooser.getAnimatedMixWeight();
+            effectID = flexatarChooser.getEffectID();
+            isEffectsOn = flexatarChooser.isEffectOn();
+        }
+
+
         if (changeFlexatar!=null){
             buffers2.destroy();
             flexatarDataAlt = flexatarData;
@@ -403,9 +421,7 @@ public class FlxDrawer {
             initMouthAltProgram();
             initFlexatarBuffers();
         }
-        if (isStaticControlBind){
 
-        }
         FlexatarAnimator animator = isStaticControlBind ? FlexatarRenderer.animator : builtinAnimator;
         if (isRealtimeAnimation) {
 
@@ -432,7 +448,7 @@ public class FlxDrawer {
 
         float mouthMix = mixWeight;
         if (effectID == 1) {
-            mouthMix = calcWeightByKeyUv(FlexatarRenderer.effectsMixWeight);
+            mouthMix = calcWeightByKeyUv(mixWeight);
         }
 
 

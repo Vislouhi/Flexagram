@@ -56,6 +56,11 @@
     <string name="FlexatarInfo">Flexatar Info</string>
     <string name="FlexatarRoundQuestion">Do you want to make round video with flexatar?</string>
     <string name="ImpossibleToDelete">You can\'t delete flexatars while calling</string>
+    <string name="ImagesForFlexatarTitle">Images</string>
+    <string name="FlexatarWithImages">Create Flexatar With Images</string>
+    <string name="SelectImageFromGallery">Select Image</string>
+    <string name="MakeFlexatar">Make Flexatar</string>
+    <string name="NotEnoughPhotos">The must be 5 photos selected</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

@@ -1,5 +1,6 @@
 package org.flexatar;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -29,6 +30,19 @@ import org.telegram.ui.Components.LayoutHelper;
 import java.io.File;
 
 public class AlertDialogs {
+    public static Dialog showNotEnoughPhotosAlert(Context context) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("Info", R.string.Info));
+        builder.setMessage(LocaleController.getString("NotEnoughPhotos", R.string.NotEnoughPhotos));
+
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+
+
+        });
+        return builder.create();
+    }
+
     public static interface OnNameReady{
         void onNameReady(String name);
     }

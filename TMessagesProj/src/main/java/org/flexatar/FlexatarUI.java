@@ -54,7 +54,7 @@ public class FlexatarUI {
         public void setEffectTextViews(TextView[] effectTextViews){
             this.effectTextViews=effectTextViews;
         }
-        public void resetEffects(){
+        /*public void resetEffects(){
             for (int j = 0; j < effectTextViews.length; j++) {
                 effectTextViews[j].setTextColor(Color.WHITE);
             }
@@ -62,7 +62,7 @@ public class FlexatarUI {
             FlexatarRenderer.isEffectsOn = false;
             FlexatarRenderer.effectID = 0;
             FlexatarRenderer.isMorphEffect = false;
-        }
+        }*/
         public void setImg1(ImageView img){
             img1=img;
         }
@@ -120,7 +120,8 @@ public class FlexatarUI {
 //        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
 //        View popupView = inflater.inflate(R.layout.wait_popup_window, null);
-        FlexatarPanelLayout popupView = makeFlexatarEffectsPanel(context, bkgProvider);
+        FlexatarControlPanelLayout popupView = new FlexatarControlPanelLayout(context,false, FlexatarStorageManager.callFlexatarChooser);
+//        FlexatarPanelLayout popupView = makeFlexatarEffectsPanel(context, bkgProvider);
         popupView.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
         PopupWindow popupWindow = new PopupWindow(
                 popupView,
@@ -138,10 +139,14 @@ public class FlexatarUI {
         int xOffset = AndroidUtilities.dp(12);
 
         popupWindow.setWidth(windowWidth);
-        popupView.setOnCloseListener(() -> {
+        popupView.setOnCancelListener(c->{
             popupWindow.dismiss();
             Log.d("FLX_INJECT","popup dismissed");
         });
+//        popupView.setOnCloseListener(() -> {
+//            popupWindow.dismiss();
+//            Log.d("FLX_INJECT","popup dismissed");
+//        });
         popupWindow.showAsDropDown(location, xOffset, AndroidUtilities.dp(48));
 //        popupWindow.showAtLocation(location, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, AndroidUtilities.dp(46));
         return popupWindow;
@@ -203,23 +208,26 @@ public class FlexatarUI {
     }
 */
     public static FlexatarPanelLayout makeFlexatarChoosePanel(Context context, VoIPBackgroundProvider backgroundProvider){
-        FlexatarRenderer.isEffectsOn = false;
-        FlexatarRenderer.effectID = 0;
-        FlexatarRenderer.isMorphEffect = false;
-
+//        FlexatarRenderer.isEffectsOn = false;
+//        FlexatarRenderer.effectID = 0;
+//        FlexatarRenderer.isMorphEffect = false;
+        FlexatarStorageManager.callFlexatarChooser.resetEffects();
         FlexatarPanelLayout linearLayout = new FlexatarPanelLayout(context,backgroundProvider);
         linearLayout.setGravity(Gravity.CENTER);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         int pad = AndroidUtilities.dp(12);
         linearLayout.setPadding(pad, pad, pad, pad);
 
-
-        linearLayout.addView(new FlexatarHorizontalRecycleView(context,null));
+        FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context, null);
+        ((FlexatarHorizontalRecycleView.Adapter)recyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
+            FlexatarStorageManager.callFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
+        });
+        linearLayout.addView(recyclerView);
 //        linearLayout.addView(flexatarScrollView(context,null));
 
         return linearLayout;
     }
-    public static FlexatarPanelLayout makeFlexatarEffectsPanel(Context context, VoIPBackgroundProvider backgroundProvider){
+   /* public static FlexatarPanelLayout makeFlexatarEffectsPanel(Context context, VoIPBackgroundProvider backgroundProvider){
         ImageView icnFlx1= new ImageView(context);
         ImageView icnFlx2 = new ImageView(context);
 
@@ -410,7 +418,7 @@ public class FlexatarUI {
 
 
 
-        /*TextView closePanelText = new HideEmojiTextView(context, backgroundProvider);
+        *//*TextView closePanelText = new HideEmojiTextView(context, backgroundProvider);
         closePanelText.setLayoutParams(layoutParams1);
         closePanelText.setText("Hide Panel");
         closePanelText.setOnClickListener((v) -> {
@@ -419,10 +427,10 @@ public class FlexatarUI {
         });
         bottomButtonsLayout.addView(closePanelText,LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT, 0, 0, 12, 0));
         bottomButtonsLayout.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6));
-*/
+*//*
         linearLayout.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(6), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
         return linearLayout;
     }
-
+*/
 
 }

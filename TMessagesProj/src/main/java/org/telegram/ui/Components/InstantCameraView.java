@@ -1527,13 +1527,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             videoEncoder.frameAvailable(cameraSurface, cameraId, System.nanoTime());
 
             cameraSurface.getTransformMatrix(mSTMatrix);
-            if (flxDrawer == null){
-                flxDrawer = new FlxDrawer();
-                flxDrawer.setFlexatarData(FlexatarRenderer.currentFlxData);
-            }
-            if (true){
-                flxDrawer.draw();
-            }else {
+
                 GLES20.glUseProgram(drawProgram);
                 GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
                 GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexture[0]);
@@ -1553,7 +1547,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 GLES20.glDisableVertexAttribArray(textureHandle);
                 GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
                 GLES20.glUseProgram(0);
-            }
+
             egl10.eglSwapBuffers(eglDisplay, eglSurface);
         }
 
@@ -2136,7 +2130,6 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 FileLog.e(e);
             }
         }
-        private FlxDrawer flxDrawer;
         private void handleVideoFrameAvailable(long timestampNanos, Integer cameraId) {
             try {
                 drainEncoder(false);
@@ -2198,13 +2191,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 return;
             }
 
-            if (flxDrawer == null){
-                flxDrawer = new FlxDrawer();
-                flxDrawer.setFlexatarData(FlexatarRenderer.currentFlxData);
-            }
-            if (true) {
-                flxDrawer.draw();
-            }else{
+
                     GLES20.glUseProgram(drawProgram);
                     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
                     GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer);
@@ -2244,7 +2231,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                     GLES20.glDisableVertexAttribArray(textureHandle);
                     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
                     GLES20.glUseProgram(0);
-                }
+
             EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, currentTimestamp);
             EGL14.eglSwapBuffers(eglDisplay, eglSurface);
 

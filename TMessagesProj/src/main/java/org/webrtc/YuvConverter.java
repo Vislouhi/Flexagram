@@ -15,6 +15,7 @@ import android.opengl.GLES20;
 
 import java.nio.ByteBuffer;
 
+import org.flexatar.FlexatarStorageManager;
 import org.flexatar.FlxDrawer;
 import org.telegram.messenger.FileLog;
 import org.webrtc.VideoFrame.I420Buffer;
@@ -193,6 +194,7 @@ public class YuvConverter {
 
       if (flxDrawer == null &&  isFlexatar){
         flxDrawer = new FlxDrawer();
+        flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser);
         flxDrawer.setFrame();
         flxDrawer.setIsStaticControlBind(true);
 //        flxDrawer = new FlxDrawer();

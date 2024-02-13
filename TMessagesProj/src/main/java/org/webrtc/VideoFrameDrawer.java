@@ -16,6 +16,7 @@ import android.opengl.GLES20;
 
 import androidx.annotation.Nullable;
 
+import org.flexatar.FlexatarStorageManager;
 import org.flexatar.FlxDrawer;
 
 import java.nio.ByteBuffer;
@@ -286,6 +287,7 @@ public class VideoFrameDrawer {
 //      if (frame.getIsFlexatar() && isFlexatar) {
         if (flxDrawer == null) {
           flxDrawer = new FlxDrawer();
+          flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser);
           flxDrawer.setFrame();
           flxDrawer.setIsStaticControlBind(true);
 

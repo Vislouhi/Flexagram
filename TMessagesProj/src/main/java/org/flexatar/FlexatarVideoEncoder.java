@@ -46,26 +46,28 @@ public class FlexatarVideoEncoder {
     public FlexatarVideoEncoder(int mWidth, int mHeight, List<float[]> animationPattern,File videoFile,File aacFile,Runnable completion){
         this.aacFile=aacFile;
         this.completion=completion;
+
+        FlexatarStorageManager.FlexatarChooser chooser = FlexatarStorageManager.roundFlexatarChooser;
         FlxDrawer flxDrawer;
         flxDrawer = new FlxDrawer();
         flxDrawer.setRealtimeAnimation(false);
-        flxDrawer.setFlexatarData(FlexatarData.factory(FlexatarNotificator.chosenStateForRoundVideo.firstFile));
+        flxDrawer.setFlexatarData(FlexatarData.factory(chooser.getChosenFirst()));
 
         flxDrawer.screenRatio = (float) mWidth / (float) mHeight;
-        if (FlexatarNotificator.chosenStateForRoundVideo.effect == MIX){
-            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(FlexatarNotificator.chosenStateForRoundVideo.secondFile));
+        if (chooser.getEffectIndex() == MIX){
+            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
             flxDrawer.setisEffectOnVal(true);
             flxDrawer.setEffectIdVal(0);
             flxDrawer.setMixWeightVal(FlexatarNotificator.chosenStateForRoundVideo.mixWeight);
         }
-        else if (FlexatarNotificator.chosenStateForRoundVideo.effect == MORPH){
-            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(FlexatarNotificator.chosenStateForRoundVideo.secondFile));
+        else if (chooser.getEffectIndex() == MORPH){
+            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
             flxDrawer.setisEffectOnVal(true);
             flxDrawer.setEffectIdVal(0);
             flxDrawer.setMixWeightVal(1f);
         }
-        else if (FlexatarNotificator.chosenStateForRoundVideo.effect == HYBRID){
-            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(FlexatarNotificator.chosenStateForRoundVideo.secondFile));
+        else if (chooser.getEffectIndex() == HYBRID){
+            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
             flxDrawer.setisEffectOnVal(true);
             flxDrawer.setEffectIdVal(1);
             flxDrawer.setMixWeightVal(0f);
@@ -105,12 +107,12 @@ public class FlexatarVideoEncoder {
             for (int i = 0; i < animationPattern.size(); i++) {
                 drainEncoder(false);
 
-                if (FlexatarNotificator.chosenStateForRoundVideo.effect == MORPH){
+                if (chooser.getEffectIndex() == MORPH){
 
                     float weight = 1f - (float) i / (float) animationPattern.size();
                     flxDrawer.setMixWeightVal(weight);
                 }else
-                if (FlexatarNotificator.chosenStateForRoundVideo.effect == HYBRID){
+                if (chooser.getEffectIndex() == HYBRID){
                     float weight = (float) i * 0.005f;
                     flxDrawer.setMixWeightVal(weight);
                 }

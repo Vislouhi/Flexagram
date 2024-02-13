@@ -126,6 +126,7 @@ import org.flexatar.AlertDialogs;
 import org.flexatar.Config;
 import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarControlPanelLayout;
+import org.flexatar.FlexatarStorageManager;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -2129,7 +2130,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                bkgProvider.setHasVideo(true);
 //
 //                bkgProvider.setTotalSize(200,200);
-                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext(),true);
+                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext(),true, FlexatarStorageManager.roundFlexatarChooser);
 //                FlexatarUI.FlexatarPanelLayout flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(getContext(), bkgProvider);
 //                flexatarPanelView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
                 actionBar.setEnabled(false);

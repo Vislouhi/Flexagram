@@ -29,6 +29,8 @@ import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class FlexatarStorageManager {
@@ -42,12 +44,14 @@ public class FlexatarStorageManager {
     public static final String BUILTIN_PREFIX = "builtin_";
     private static final String FLEXATAR_FILES = "flexatar_files";
 
-    public static final FlexatarChooser callFlexatarChooser = new FlexatarChooser("call");
-    public static final FlexatarChooser roundFlexatarChooser = new FlexatarChooser("round");
+    public static final FlexatarChooser callFlexatarChooser = new FlexatarChooser("call",0.005f,0.0025f);
+    public static final FlexatarChooser roundFlexatarChooser = new FlexatarChooser("round",0.02f,0.0025f);
     public static class FlexatarChooser {
         private static final String FIRST = "first";
         private static final String SECOND = "second";
         private final String tag;
+        private final float d2;
+        private final float d3;
 
         private File first;
         private File second;
@@ -59,8 +63,10 @@ public class FlexatarStorageManager {
         private int effectIndex = -1;
         private float mixWeight = -1;
 
-        public FlexatarChooser(String tag){
+        public FlexatarChooser(String tag,float d2,float d3){
             this.tag=tag;
+            this.d2=d2;
+            this.d3=d3;
         }
 
         public FlexatarData getFirstFlxData() {
@@ -80,6 +86,7 @@ public class FlexatarStorageManager {
         }
 
         public void setEffectIndex(int effectIndex){
+            effectId = effectIndex == 3 ? 1:0;
             synchronized (flexatarFileLoadMutex) {
                 this.effectIndex = effectIndex;
                 Context context = ApplicationLoader.applicationContext;
@@ -97,11 +104,14 @@ public class FlexatarStorageManager {
                 String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 this.effectIndex = sharedPreferences.getInt("EffectIndex", 0);
+                effectId = effectIndex == 3 ? 1:0;
                 return this.effectIndex;
             }
         }
-
         public void setMixWeight(float mixWeight){
+            this.mixWeight = mixWeight;
+        }
+        public void saveMixWeight(float mixWeight){
             synchronized (flexatarFileLoadMutex) {
                 this.mixWeight = mixWeight;
                 Context context = ApplicationLoader.applicationContext;
@@ -122,7 +132,77 @@ public class FlexatarStorageManager {
                 return this.mixWeight;
             }
         }
+        private Timer mixWeightTimer = null;
+        private float animatedMixWeight = 1f;
+        private int effectId = 0;
+        public int getEffectID(){
+            return effectId;
+        }
+        public boolean isEffectOn(){
+            return effectIndex != 0;
+        }
+        private final Object timerCreationSync = new Object();
+        private int usageCounter = 10;
+        public float getAnimatedMixWeight(){
 
+            int effectIndex = getEffectIndex();
+            if (effectIndex == 0 || effectIndex == 1) return mixWeight;
+            usageCounter++;
+            synchronized (timerCreationSync) {
+                if (mixWeightTimer == null) {
+                    mixWeightTimer = new Timer();
+                    TimerTask task = new TimerTask() {
+                        private float delta2 = d2;
+                        private float delta3 = d3;
+                        private int counter5 = 0;
+
+
+                        @Override
+                        public void run() {
+
+                            counter5++;
+                            if (counter5 > 10) {
+                                counter5 = 0;
+                                if (usageCounter == 0) {
+                                    mixWeightTimer.cancel();
+                                    mixWeightTimer.purge();
+                                    mixWeightTimer = null;
+                                }
+                                usageCounter = 0;
+                            }
+                            if (getEffectIndex() == 2) {
+                                animatedMixWeight += delta2;
+                                if (animatedMixWeight > 1) {
+                                    animatedMixWeight = 1f;
+                                    delta2 = -delta2;
+                                } else if (animatedMixWeight < 0) {
+                                    animatedMixWeight = 0f;
+                                    delta2 = -delta2;
+                                }
+                            } else if (getEffectIndex() == 3) {
+                                animatedMixWeight += delta3;
+                                if (delta3 < 0) delta3 = -delta3;
+                                animatedMixWeight += delta3;
+                                if (animatedMixWeight > 1) {
+
+                                    animatedMixWeight -= 1f;
+                                }
+                            }
+                            Log.d("FLX_INJECT", "animatedMixWeight timer " + animatedMixWeight);
+                        }
+
+                    };
+
+
+                    mixWeightTimer.scheduleAtFixedRate(task, 0, 40);
+                }
+            }
+
+            return animatedMixWeight;
+        }
+        public void resetEffects(){
+            setEffectIndex(0);
+        }
         public void setChosenFlexatar(String path) {
             synchronized (flexatarFileLoadMutex) {
                 Context context = ApplicationLoader.applicationContext;
@@ -249,6 +329,15 @@ public class FlexatarStorageManager {
     public static File createFlexatarPreviewStorage(Context context){
         File rootDir = context.getFilesDir();
         File flexatarStorageFolder = new File(rootDir,FLEXATAR_PREVIEW_STORAGE_FOLDER);
+        if (!flexatarStorageFolder.exists()){
+            flexatarStorageFolder.mkdir();
+        }
+        return flexatarStorageFolder;
+    }
+
+    public static File createFlexatarSendImageStorage(Context context){
+        File rootDir = context.getFilesDir();
+        File flexatarStorageFolder = new File(rootDir,"send_image_storage");
         if (!flexatarStorageFolder.exists()){
             flexatarStorageFolder.mkdir();
         }

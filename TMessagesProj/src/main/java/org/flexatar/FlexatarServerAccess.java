@@ -58,7 +58,7 @@ public class FlexatarServerAccess {
         try{
         URL url = new URL(rout);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
+            connection.setRequestMethod("GET");
 
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestProperty("Authorization", "Bearer "+token);
@@ -67,6 +67,9 @@ public class FlexatarServerAccess {
 //            long telegramID = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser().id;
 //            output.put("tid",""+telegramID);
             output.put("android_ver",Config.version);
+            output.put("ios_ver","");
+            output.put("ext_ver","");
+            output.put("token",token);
             Data outputData = new Data(output.toString());
             connection.setDoOutput(true);
             OutputStream outputStream = connection.getOutputStream();

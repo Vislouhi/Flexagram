@@ -88,6 +88,7 @@ import com.google.firebase.appindexing.builders.AssistActionBuilder;
 import org.flexatar.AlertDialogs;
 import org.flexatar.Config;
 import org.flexatar.DataOps.AssetAccess;
+import org.flexatar.FlexatarByImagesFragment;
 import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarCameraCaptureFragment;
 import org.flexatar.FlexatarCommon;
@@ -5708,6 +5709,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 666) {
+            if (FlexatarByImagesFragment.imageChosenListener!=null)FlexatarByImagesFragment.imageChosenListener.onChosen(data);
+            Log.d("FLX_INJECT","received image ");
+        }
         if (SharedConfig.passcodeHash.length() != 0 && SharedConfig.lastPauseTime != 0) {
             SharedConfig.lastPauseTime = 0;
             if (BuildVars.LOGS_ENABLED) {

@@ -49,11 +49,11 @@ public class FlexatarRenderer {
     private static boolean isRecording;
 
     public static boolean isFrontFaceCamera;
-    public static float effectsMixWeight = 0.5f;
-    public static float chosenMixWeight = 0.5f;
-    public static boolean isMorphEffect = false;
-    public static int effectID = 0;
-    public static boolean isEffectsOn = false;
+//    public static float effectsMixWeight = 0.5f;
+//    public static float chosenMixWeight = 0.5f;
+//    public static boolean isMorphEffect = false;
+//    public static int effectID = 0;
+//    public static boolean isEffectsOn = false;
 
 
 
@@ -306,7 +306,7 @@ public class FlexatarRenderer {
                 float[] buffer = concatenateFloatArrays(audioToTF);
                 if (buffer.length == 800) {
                     FlexatarRenderer.speechState = SpeechAnimation.processAudio(concatenateFloatArrays(audioToTF));
-//                    Log.d("FLX_INJECT", "anim voice call " + Arrays.toString(FlexatarRenderer.speechState));
+                    Log.d("FLX_INJECT", "anim voice call " + Arrays.toString(FlexatarRenderer.speechState));
                 }else
                     Log.d("processSpeechAnimation", "incorect size");
                 audioToTF.clear();

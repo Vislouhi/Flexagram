@@ -207,6 +207,23 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             itemsAction.add(item);
         }
+        {
+            ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+            item.setImageResource(R.drawable.files_gallery);
+            item.setNameText(LocaleController.getString("FlexatarWithImages", R.string.FlexatarWithImages));
+
+            item.setOnClickListener(v-> {
+
+                if (Config.isVerified()) {
+                        presentFragment(new FlexatarByImagesFragment());
+
+                }else{
+                    showDialog(AlertDialogs.showVerifyInProgress(context));
+                }
+            });
+
+            itemsAction.add(item);
+        }
 //        ===============DEBUG CELLS============
         if (Config.debugMode) {
             {
