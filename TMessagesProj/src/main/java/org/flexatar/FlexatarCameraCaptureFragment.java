@@ -722,19 +722,29 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         ticket.status = "new";
         ticket.setDate();
         String lfid = UUID.randomUUID().toString();
-        TicketStorage.setTicket(lfid,ticket);
 
-        /*TicketStorage.setTicket(UUID.randomUUID().toString(),ticket);
+//        TicketStorage.setTicket(lfid,ticket);
 
-        Map<String, TicketsController.Ticket> tickets = TicketStorage.getTickets();
-        for(Map.Entry<String, TicketsController.Ticket> entry:tickets.entrySet()){
-            Log.d("FLX_INJECT","key "+entry.getKey());
-            Log.d("FLX_INJECT","val "+entry.getValue().toJson("{}").toString());
-        }*/
+
 
         if (flexatarBody == null) {
+            FlexatarServerAccess.StdResponse vd = FlexatarServiceAuth.getVerifyData();
+            if (vd == null){
+                return;
+            }
+            FlexatarServerAccess.requestJson(vd.route, "data", vd.token, "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+                @Override
+                public void onReady(FlexatarServerAccess.StdResponse response) {
+                    Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());
+                }
 
-            FlexatarServerAccess.lambdaRequest("/data", "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
+                @Override
+                public void onError() {
+                    Log.d("FLX_INJECT", "make flx data error " );
+                }
+            });
+
+            /*FlexatarServerAccess.lambdaRequest("/data", "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
                 @Override
                 public void onReady(String response) {
                     try {
@@ -756,7 +766,9 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
                     Log.d("FLX_INJECT", "data fail ");
                 }
-            });
+            });*/
+
+
         }else{
 
             FlexatarServerAccess.lambdaRequest("/delta/"+flexatarBody, "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {

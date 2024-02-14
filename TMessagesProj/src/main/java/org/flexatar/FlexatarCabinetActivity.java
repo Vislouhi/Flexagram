@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 
@@ -42,7 +43,9 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -191,7 +194,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                             item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
                             itemAdapter.notifyItemChanged(2);
                         });
-                        FlexatarServerAccess.downloadCloudFlexatars(() -> {
+                        FlexatarServerAccess.downloadCloudFlexatars1(() -> {
                             FlexatarServerAccess.isDownloadingFlexatars = false;
                             handler.post(() -> {
                                 item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
@@ -309,26 +312,28 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 item.setImageResource(R.drawable.msg_delete);
                 item.setNameText("Try send to bot");
                 item.setOnClickListener(v -> {
-                    if (Config.isVerified()) {
+//                    if (Config.isVerified()) {
 
                         Log.d("FLX_INJECT", "Try send to bot");
-                        FlexatarServiceAuth.auth();
-                       /* Config.botAuth(new Config.BotAuthCompletionListener() {
-                            @Override
-                            public void onReady(String token) {
-                                Log.d("FLX_INJECT", "Authorized "+token);
-                            }
+////                        FlexatarServiceAuth.clearVerificationData();
+//                        if (!FlexatarServiceAuth.loadVerificationData()) {
+                            Log.d("FLX_INJECT", "Request auth");
+                            FlexatarServiceAuth.auth(new FlexatarServiceAuth.OnAuthListener() {
+                                @Override
+                                public void onReady() {
+                                    Log.d("FLX_INJECT","auth ready");
+                                }
 
-                            @Override
-                            public void onFail() {
-                                Log.d("FLX_INJECT", "Authorization failed ");
-                            }
-                        });
-*/
+                                @Override
+                                public void onError() {
+                                    Log.d("FLX_INJECT","auth error");
+                                }
+                            });
 
-                    } else {
-                        showDialog(AlertDialogs.showVerifyInProgress(context));
-                    }
+
+//                    } else {
+//                        showDialog(AlertDialogs.showVerifyInProgress(context));
+//                    }
                 });
 
                 itemsAction.add(item);

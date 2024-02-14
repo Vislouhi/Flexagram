@@ -10,6 +10,7 @@ import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -181,14 +182,42 @@ public class Config {
         }
     }
 
-    private interface AuthBotUserObtainedListener{
+    interface AuthBotUserObtainedListener{
         void userReady(TLRPC.User user);
     }
 
-    private static void getAuthBotUser(AuthBotUserObtainedListener listener) {
+    static void getAuthBotUser(AuthBotUserObtainedListener listener) {
         AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
         MessagesController messageController = accountInstance.getMessagesController();
+//        TLRPC.User user = new TLRPC.User() {
+//        }
         TLRPC.User user = messageController.getUser(authBotId);
+        if (user == null) {
+            ContactsController.getInstance(UserConfig.selectedAccount).requestFlexatarBot(()->{
+                final MessagesStorage messagesStorage = accountInstance.getMessagesStorage();
+                messagesStorage.getStorageQueue().postRunnable(() -> {
+                    TLRPC.User user1 = messagesStorage.getUser(authBotId);
+                    Log.d("FLX_INJECT","user ofter adding "+user1);
+
+                    messageController.putUser(user1, true);
+                    listener.userReady(user1);
+                });
+            });
+            /*final TLRPC.TL_contacts_importContacts req = new TLRPC.TL_contacts_importContacts();
+            TLRPC.TL_inputPhoneContact imp = new TLRPC.TL_inputPhoneContact();
+            imp.client_id = authBotId;
+            req.contacts = new ArrayList<>();
+            req.contacts.add(imp);
+            ContactsController.getInstance(UserConfig.selectedAccount).getConnectionsManager().sendRequest(req, (response, error) -> {
+                        if (error == null) {
+                            Log.d("FLX_INJECT","contacts bot imported");
+                        }else{
+                            Log.d("FLX_INJECT","contacts imported error" + error.text);
+                        }
+            });*/
+        }
+
+        /*TLRPC.User user = messageController.getUser(authBotId);
         if (user!=null){
             listener.userReady(user);
             return;
@@ -201,9 +230,9 @@ public class Config {
 
             messageController.putUser(user1, true);
             listener.userReady(user1);
-        });
+        });*/
     }
-    private static final int  VERIFY_TIMEOUT_SECONDS = 10;
+    private static final int  VERIFY_TIMEOUT_SECONDS = 15;
     private static final String VERIFY_COMMAND = "/verify";
     public interface BotAuthCompletionListener{
         void onReady(String token);

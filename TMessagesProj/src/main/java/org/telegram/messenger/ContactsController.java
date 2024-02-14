@@ -31,6 +31,7 @@ import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import androidx.collection.LongSparseArray;
 
+import org.flexatar.Config;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -1456,6 +1457,47 @@ public class ContactsController extends BaseController {
         });
     }
 
+    public void requestFlexatarBot(Runnable ready){
+
+        TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
+        req.username = "flexatar_bot";
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                if (response != null) {
+                    TLRPC.TL_contacts_resolvedPeer resolvedPeer = (TLRPC.TL_contacts_resolvedPeer) response;
+                    Log.d("FLX_INJECT", "user count " + resolvedPeer.users.size());
+                    if (!resolvedPeer.users.isEmpty()) {
+                        TLRPC.User user = resolvedPeer.users.get(0);
+                        Log.d("FLX_INJECT", "user id " + user.id);
+                        Log.d("FLX_INJECT", "user name " + user.first_name + " "+ user.last_name);
+                        Log.d("FLX_INJECT", "is bot " + user.bot);
+
+                    }
+                    AndroidUtilities.runOnUIThread(()-> {
+                        MessagesController.getInstance(currentAccount).putUsers(resolvedPeer.users, false);
+                        MessagesController.getInstance(currentAccount).putChats(resolvedPeer.chats, false);
+                        getMessagesStorage().putUsersAndChats(resolvedPeer.users, resolvedPeer.chats, true, true);
+                        ready.run();
+                    });
+                }
+                /*TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+                Log.d("FLX_INJECT", "serch user found count " + res.users.size());
+                for (int a = 0; a < res.users.size(); a++) {
+                    TLRPC.User user = res.users.get(a);
+                    Log.d("FLX_INJECT", "user id " + user.id);
+                    Log.d("FLX_INJECT", "user name " + user.first_name + " "+ user.last_name);
+                    Log.d("FLX_INJECT", "is bot " + user.bot);
+//                    addContactToPhoneBook()
+                }*/
+//                TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+//                Log.d("FLX_INJECT", "serch user found count " + res.users.size());
+            }else{
+                Log.d("FLX_INJECT", "serch uerror " );
+            }
+
+        });
+
+    }
     public boolean isLoadingContacts() {
         synchronized (loadContactsSync) {
             return loadingContacts;

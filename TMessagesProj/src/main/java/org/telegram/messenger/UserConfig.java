@@ -261,8 +261,6 @@ public class UserConfig extends BaseController {
             currentUser = user;
             clientUserId = user.id;
             checkPremiumSelf(oldUser, user);
-//            Log.d("FLX_INJECT","setCurrentUser "+clientUserId);
-            Config.init();
         }
     }
 

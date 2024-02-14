@@ -478,7 +478,15 @@ public class FlexatarStorageManager {
             List<String> result = new ArrayList<>();
             for (int i = 0; i < jsonArray.length(); i++) {
                 String fid = jsonArray.getString(jsonArray.length() - i - 1);
-                if (fid.startsWith(prefix)){
+                if (prefix == null){
+                    if (fid.startsWith(PUBLIC_PREFIX)){
+                        result.add(fid.replace(PUBLIC_PREFIX,""));
+                    }
+                    if (fid.startsWith(FLEXATAR_PREFIX)){
+                        result.add(fid.replace(FLEXATAR_PREFIX,""));
+                    }
+
+                }else if (fid.startsWith(prefix)){
 
                     result.add(fid.replace(prefix,""));
                 }

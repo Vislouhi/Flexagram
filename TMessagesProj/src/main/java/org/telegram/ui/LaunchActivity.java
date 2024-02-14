@@ -93,6 +93,7 @@ import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarCameraCaptureFragment;
 import org.flexatar.FlexatarCommon;
 import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlexatarServiceAuth;
 import org.flexatar.FlexatarStorageManager;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -1484,6 +1485,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatSwithcedToForum);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.storiesEnabledUpdate);
+
     }
 
     private void checkLayout() {
@@ -6119,13 +6121,20 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 finish();
             }
         } else if (id == NotificationCenter.didUpdateConnectionState) {
+
             int state = ConnectionsManager.getInstance(account).getConnectionState();
+
             if (currentConnectionState != state) {
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("switch to state " + state);
                 }
                 currentConnectionState = state;
                 updateCurrentConnectionState(account);
+                if (currentConnectionState == 3){
+                    FlexatarServiceAuth.startVerification(account);
+                }else if(currentConnectionState == 1){
+                    FlexatarServiceAuth.resetVerification();
+                }
             }
         } else if (id == NotificationCenter.mainUserInfoChanged) {
             drawerLayoutAdapter.notifyDataSetChanged();
