@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.Data;
 import org.flexatar.DataOps.FlexatarData;
 import org.json.JSONArray;
@@ -757,9 +758,27 @@ public class FlexatarStorageManager {
         return null;
     }
 
+    public static void addDefaultFlexatars(){
+
+        String[] flxFileNames = { "char6t", "char7t"};
+        for (int i = 0; i < flxFileNames.length; i++) {
+            String fName = flxFileNames[flxFileNames.length - i - 1];
+
+            String flexatarLink = "flexatar/" + fName+".p";
+
+            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
+            FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,flxRaw,fName,"builtin_");
+
+        }
+
+    }
     public static File[] getFlexatarFileList(Context context){
         File flexatarStorageFolder = getFlexatarStorage(context);
         String[] fids = getRecords(context);
+        if (fids.length == 0){
+            addDefaultFlexatars();
+            fids = getRecords(context);
+        }
         File[] files = new File[fids.length];
 //        Log.d("FLX_INJECT", "length files "+files.length);
         for (int i = 0; i < fids.length; i++) {

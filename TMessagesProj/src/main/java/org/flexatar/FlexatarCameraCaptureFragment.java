@@ -732,7 +732,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
             if (vd == null){
                 return;
             }
-            FlexatarServerAccess.requestJson(vd.route, "data", vd.token, "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+            /*FlexatarServerAccess.requestJson(vd.route, "data", vd.token, "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
                 public void onReady(FlexatarServerAccess.StdResponse response) {
                     Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());
@@ -742,7 +742,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 public void onError() {
                     Log.d("FLX_INJECT", "make flx data error " );
                 }
-            });
+            });*/
 
             /*FlexatarServerAccess.lambdaRequest("/data", "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
                 @Override

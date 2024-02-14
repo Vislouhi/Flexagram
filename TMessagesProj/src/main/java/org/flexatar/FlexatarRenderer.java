@@ -306,7 +306,7 @@ public class FlexatarRenderer {
                 float[] buffer = concatenateFloatArrays(audioToTF);
                 if (buffer.length == 800) {
                     FlexatarRenderer.speechState = SpeechAnimation.processAudio(concatenateFloatArrays(audioToTF));
-                    Log.d("FLX_INJECT", "anim voice call " + Arrays.toString(FlexatarRenderer.speechState));
+//                    Log.d("FLX_INJECT", "anim voice call " + Arrays.toString(FlexatarRenderer.speechState));
                 }else
                     Log.d("processSpeechAnimation", "incorect size");
                 audioToTF.clear();

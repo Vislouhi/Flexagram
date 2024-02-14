@@ -318,7 +318,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 ////                        FlexatarServiceAuth.clearVerificationData();
 //                        if (!FlexatarServiceAuth.loadVerificationData()) {
                             Log.d("FLX_INJECT", "Request auth");
-                            FlexatarServiceAuth.auth(new FlexatarServiceAuth.OnAuthListener() {
+                            /*FlexatarServiceAuth.auth(new FlexatarServiceAuth.OnAuthListener() {
                                 @Override
                                 public void onReady() {
                                     Log.d("FLX_INJECT","auth ready");
@@ -328,7 +328,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                                 public void onError() {
                                     Log.d("FLX_INJECT","auth error");
                                 }
-                            });
+                            });*/
 
 
 //                    } else {

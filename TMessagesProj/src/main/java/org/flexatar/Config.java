@@ -22,6 +22,7 @@ import org.telegram.tgnet.TLRPC;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -87,7 +88,7 @@ public class Config {
 
 //        reset();
 //        FlexatarStorageManager.clearStorage();
-        addDefaultFlexatars();
+//        addDefaultFlexatars();
         loadConfig();
         if (token!=null) return;
         startVerifyRequest();
@@ -96,7 +97,7 @@ public class Config {
         return token!=null;
     }
     public static void addDefaultFlexatars(){
-        if (FlexatarStorageManager.callFlexatarChooser.getChosenFirst() != null) return;
+
         String[] flxFileNames = { "char6t", "char7t"};
         for (int i = 0; i < flxFileNames.length; i++) {
             String fName = flxFileNames[flxFileNames.length - i - 1];
@@ -107,16 +108,7 @@ public class Config {
             FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,flxRaw,fName,"builtin_");
 
         }
-        /*File[] flexatarFiles = FlexatarStorageManager.getFlexatarFileList(ApplicationLoader.applicationContext);
-//        if (FlexatarUI.chosenFirst == null){
-            FlexatarUI.chosenFirst = flexatarFiles[0];
-            FlexatarUI.chosenSecond = flexatarFiles[1];
-//        }
-        Log.d("FLX_INJECT","FlexatarUI.chosenFirst" + FlexatarUI.chosenFirst);
-        Log.d("FLX_INJECT","FlexatarUI.chosenSecond " + FlexatarUI.chosenSecond);
-        FlexatarRenderer.currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst)));
-        FlexatarRenderer.altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));
-*/
+
     }
     private static void startVerifyRequest(){
         FlexatarServerAccess.lambdaVerify(new FlexatarServerAccess.VerifyListener() {
@@ -193,16 +185,29 @@ public class Config {
 //        }
         TLRPC.User user = messageController.getUser(authBotId);
         if (user == null) {
-            ContactsController.getInstance(UserConfig.selectedAccount).requestFlexatarBot(()->{
-                final MessagesStorage messagesStorage = accountInstance.getMessagesStorage();
-                messagesStorage.getStorageQueue().postRunnable(() -> {
-                    TLRPC.User user1 = messagesStorage.getUser(authBotId);
-                    Log.d("FLX_INJECT","user ofter adding "+user1);
-
-                    messageController.putUser(user1, true);
-                    listener.userReady(user1);
+            final MessagesStorage messagesStorage = accountInstance.getMessagesStorage();
+            ArrayList<Long> contToDel = new ArrayList<>();
+            contToDel.add(authBotId);
+//            ContactsController.getInstance(UserConfig.selectedAccount).deleteContact();
+            messagesStorage.getStorageQueue().postRunnable(() -> {
+                TLRPC.User user1 = messagesStorage.getUser(authBotId);
+                Log.d("FLX_INJECT","user ofter adding "+user1);
+                ArrayList<TLRPC.User> users = new ArrayList<>();
+                users.add(user1);
+                AndroidUtilities.runOnUIThread(()->{
+                    ContactsController.getInstance(UserConfig.selectedAccount).deleteContact(users,false);
                 });
+
+                messagesStorage.deleteContacts(contToDel);
+                messagesStorage.deleteDialog(authBotId,0);
+
+//
+//                    messageController.putUser(user1, true);
+                listener.userReady(null);
             });
+//            ContactsController.getInstance(UserConfig.selectedAccount).requestFlexatarBot(()->{
+//
+//            });
             /*final TLRPC.TL_contacts_importContacts req = new TLRPC.TL_contacts_importContacts();
             TLRPC.TL_inputPhoneContact imp = new TLRPC.TL_inputPhoneContact();
             imp.client_id = authBotId;

@@ -81,16 +81,18 @@ public class FlexatarServerAccess {
             return false;
         }
     }*/
+
     public static class StdResponse extends SrializerJson{
         public String result;
         public String tgid;
+
         public String token;
         public String st;
         public String route;
         public static final String RESULT_RETRY = "RETRY";
         public static final String RESULT_OK = "OK";
         public String ftars;
-        public StdResponse(String json) throws JSONException, IllegalAccessException {
+        public StdResponse(String json) throws JSONException {
             formJson(json);
         }
         public boolean isRetry(){
@@ -282,24 +284,19 @@ public class FlexatarServerAccess {
         void onReady(StdResponse response);
         void onError();
     }
-    public static void requestJson(String route,String path,String token, String method,OnRequestJsonReady completion){
-        requestJson(route,path, token, method, null, null,completion);
+    public static void requestJson( FlexatarServiceAuth.FlexatarVerifyProcess verify,String path, String method,OnRequestJsonReady completion){
+        requestJson(verify,path, method, null, null,completion);
     }
-    public static void requestJson(String route,String path,String token, String method,byte[] sendData,String contentType,OnRequestJsonReady completion){
+    public static void requestJson(FlexatarServiceAuth.FlexatarVerifyProcess verify,String path, String method,byte[] sendData,String contentType,OnRequestJsonReady completion){
 
-        requestJsonInternal(route,path, token, method, sendData, contentType, new OnRequestJsonReady() {
+        requestJsonInternal(verify.getRoute(),path, verify.getToken(), method, sendData, contentType, new OnRequestJsonReady() {
             @Override
             public void onReady(StdResponse response) {
                 if(response.isRetry()){
                     android.util.Log.d("FLX_INJECT","apigw response retry");
-                    FlexatarServiceAuth.saveVerificationData(response);
-                    if (FlexatarServiceAuth.getVerifyData()!=null) {
-                        String token = FlexatarServiceAuth.getVerifyData().token;
-                        String route = FlexatarServiceAuth.getVerifyData().route;
-                        requestJson(route,path, token, method, sendData, contentType, completion);
-                    }else{
-                        completion.onError();
-                    }
+                    verify.save(response);
+                    requestJson(verify,path, method, sendData, contentType, completion);
+
                 } else if (response.isOk()) {
                     android.util.Log.d("FLX_INJECT","apigw response ok");
                     completion.onReady(response);
@@ -322,6 +319,7 @@ public class FlexatarServerAccess {
 //                if (FlexatarServiceAuth.getVerifyData() == null){completion.onError();return;}
                 String urlString = rout+"/"+path;
                 Log.d("FLX_INJECT","urlString "+urlString);
+                Log.d("FLX_INJECT","token "+token);
                 URL url = new URL(urlString);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -363,7 +361,7 @@ public class FlexatarServerAccess {
                 Log.d("FLX_INJECT","connection failed by exception");
                 //            return null;
 //                throw new RuntimeException(e);
-            } catch (JSONException | IllegalAccessException e) {
+            } catch (JSONException e) {
                 completion.onError();
             }
         });
@@ -394,7 +392,7 @@ public class FlexatarServerAccess {
 
             @Override
             public void onUnauthorized() {
-                FlexatarServiceAuth.verify(FlexatarServiceAuth.getVerifyData(), new FlexatarServiceAuth.OnAuthListener() {
+                /*FlexatarServiceAuth.verify(FlexatarServiceAuth.getVerifyData(), new FlexatarServiceAuth.OnAuthListener() {
                     @Override
                     public void onReady() {
                         StdResponse vd = FlexatarServiceAuth.getVerifyData();
@@ -410,7 +408,7 @@ public class FlexatarServerAccess {
                     public void onError() {
                         completion.onError();
                     }
-                });
+                });*/
             }
         });
     }
@@ -560,7 +558,7 @@ public class FlexatarServerAccess {
             onFinish.run();
             return;
         }
-        FlexatarServerAccess.requestJson(vd.route,"list/1.00",vd.token,"GET",
+        FlexatarServerAccess.requestJson(null,"list/1.00","GET",
                 new OnRequestJsonReady() {
                     @Override
                     public void onReady(StdResponse response) {

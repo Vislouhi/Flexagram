@@ -6131,8 +6131,17 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 currentConnectionState = state;
                 updateCurrentConnectionState(account);
                 if (currentConnectionState == 3){
-                    FlexatarServiceAuth.startVerification(account);
-                }else if(currentConnectionState == 1){
+                    FlexatarServiceAuth.startVerification(account,()->{
+                        AndroidUtilities.runOnUIThread(()->{
+                            AlertDialog.Builder builder = new AlertDialog.Builder(LaunchActivity.this);
+                            builder.setTitle(LocaleController.getString("FlexatarInfo", R.string.FlexatarInfo));
+                            builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString("FlaxatarCanNotAuthorize", R.string.FlaxatarCanNotAuthorize)));
+                            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
+                            showAlertDialog(builder);
+                        });
+                    });
+                }
+                else if(currentConnectionState == 1){
                     FlexatarServiceAuth.resetVerification();
                 }
             }

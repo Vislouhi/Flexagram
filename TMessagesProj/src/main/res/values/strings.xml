@@ -61,6 +61,7 @@
     <string name="SelectImageFromGallery">Select Image</string>
     <string name="MakeFlexatar">Make Flexatar</string>
     <string name="NotEnoughPhotos">The must be 5 photos selected</string>
+    <string name="FlaxatarCanNotAuthorize">Application can not authorize in flexatar service. The only thing you can do is to try restart app later.</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>
