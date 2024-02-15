@@ -11,20 +11,15 @@ import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ContactsController;
-import org.telegram.messenger.GcmPushListenerService;
 import org.telegram.messenger.MessagesStorage;
-import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
-import org.telegram.tgnet.ConnectionsManager;
-import org.telegram.tgnet.TLRPC;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -293,6 +288,9 @@ public class FlexatarServiceAuth {
         public String getToken() {
             return verifyData.token;
         }
+       /* public FlexatarServerAccess.StdResponse getVerifyData() {
+            return verifyData;
+        }*/
     }
     public static Map<String,FlexatarVerifyProcess> verifyProcesses = new ConcurrentHashMap<>();
 
@@ -307,6 +305,10 @@ public class FlexatarServiceAuth {
                 return existingValue;
             }
         });
+    }
+    public static FlexatarVerifyProcess getVerification(){
+        long userId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        return verifyProcesses.get(""+userId);
     }
     public static void resetVerification(){
 

@@ -123,5 +123,8 @@ public class ItemModel {
         return isChecked;
     }
 
-
+    public String starTime;
+    public void setStartTime(String date) {
+        starTime = date;
+    }
 }

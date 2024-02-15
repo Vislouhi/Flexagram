@@ -299,9 +299,9 @@ public class FlexatarServerAccess {
 
                 } else if (response.isOk()) {
                     android.util.Log.d("FLX_INJECT","apigw response ok");
-                    completion.onReady(response);
+                    if (completion!=null) completion.onReady(response);
                 }else{
-                    completion.onError();
+                    if (completion!=null) completion.onError();
                 }
             }
 
@@ -328,7 +328,7 @@ public class FlexatarServerAccess {
 
                 connection.setRequestProperty("Authorization","Bearer "+ token);
                 if (sendData!=null) {
-                    connection.setRequestProperty("Accept", contentType);
+                    connection.setRequestProperty("Content-Type", contentType);
 
                     connection.setDoOutput(true);
                     OutputStream outputStream = connection.getOutputStream();
@@ -362,7 +362,7 @@ public class FlexatarServerAccess {
                 //            return null;
 //                throw new RuntimeException(e);
             } catch (JSONException e) {
-                completion.onError();
+                if (completion!=null) completion.onError();
             }
         });
     }
@@ -373,13 +373,13 @@ public class FlexatarServerAccess {
         void onError();
         default void onUnauthorized(){};
     }
-    public static void requestDataRecursive(String rout,String path,int part,String token,ByteArrayOutputStream byteArrayOutputStream,OnDataDownloaded completion ){
-        requestDataInternal(rout, path+"?part="+part, token, byteArrayOutputStream, new OnDataDownloaded() {
+    public static void requestDataRecursive(FlexatarServiceAuth.FlexatarVerifyProcess verify,String path,int part,ByteArrayOutputStream byteArrayOutputStream,OnDataDownloaded completion ){
+        requestDataInternal(verify.getRoute(), path+"?part="+part, verify.getToken(), byteArrayOutputStream, new OnDataDownloaded() {
             @Override
             public void onReady(boolean finished, ByteArrayOutputStream byteArrayOutputStream) {
                 if (!finished){
                     Log.d("FLX_INJECT","requesting additional part");
-                    requestDataRecursive(rout, path, part+1, token, byteArrayOutputStream,completion);
+                    requestDataRecursive(verify, path, part+1, byteArrayOutputStream,completion);
                 }else{
                     completion.onReady(true,byteArrayOutputStream);
                 }
@@ -553,12 +553,12 @@ public class FlexatarServerAccess {
     public static boolean isDownloadingFlexatars = false;
     public static void downloadCloudFlexatars1(Runnable onFinish) {
         isDownloadingFlexatars = true;
-        StdResponse vd = FlexatarServiceAuth.getVerifyData();
+        /*StdResponse vd = FlexatarServiceAuth.getVerifyData();
         if (vd == null){
             onFinish.run();
             return;
-        }
-        FlexatarServerAccess.requestJson(null,"list/1.00","GET",
+        }*/
+        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(),"list/1.00","GET",
                 new OnRequestJsonReady() {
                     @Override
                     public void onReady(StdResponse response) {
@@ -599,15 +599,14 @@ public class FlexatarServerAccess {
     }
     public static void downloadFlexatarListRecursive1(List<String[]> links, int position,Runnable onFinish){
         if (downloadBuiltinObserver!=null) downloadBuiltinObserver.start();
-        StdResponse vd = FlexatarServiceAuth.getVerifyData();
+        /*StdResponse vd = FlexatarServiceAuth.getVerifyData();
         if (vd == null){
             onFinish.run();
             return;
-        }
+        }*/
         FlexatarServerAccess.requestDataRecursive(
-                vd.route,
+                FlexatarServiceAuth.getVerification(),
                 links.get(position)[0], 0,
-                FlexatarServiceAuth.getVerifyData().token,
                 new ByteArrayOutputStream(),
                 new FlexatarServerAccess.OnDataDownloaded() {
                     @Override
@@ -634,7 +633,11 @@ public class FlexatarServerAccess {
 
                     @Override
                     public void onError() {
-                        if (onFinish!=null) onFinish.run();
+                        if (position+1<links.size()){
+                            downloadFlexatarListRecursive1(links,position+1,onFinish);
+                        }else {
+                            if (onFinish!=null) onFinish.run();
+                        }
                         if (downloadBuiltinObserver!=null) downloadBuiltinObserver.onError();
                         Log.d("FLX_INJECT","failed to download flexatar");
                     }

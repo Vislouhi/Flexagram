@@ -335,15 +335,22 @@ public class FlexatarStorageManager {
         }
         return flexatarStorageFolder;
     }
-
+    private final static String FLEXATAR_SEND_IMAGE_STORAGE_FOLDER = "send_image_storage";
     public static File createFlexatarSendImageStorage(Context context){
+
         File rootDir = context.getFilesDir();
-        File flexatarStorageFolder = new File(rootDir,"send_image_storage");
+        String userFolderName = "tg_" + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        File userFolder = new File(rootDir,userFolderName);
+        if (!userFolder.exists()) userFolder.mkdir();
+
+        File flexatarStorageFolder = new File(userFolder,FLEXATAR_SEND_IMAGE_STORAGE_FOLDER);
         if (!flexatarStorageFolder.exists()){
             flexatarStorageFolder.mkdir();
         }
+
         return flexatarStorageFolder;
     }
+
     public static File createTmpVideoStorage(){
         Context context = ApplicationLoader.applicationContext;
         File rootDir = context.getFilesDir();

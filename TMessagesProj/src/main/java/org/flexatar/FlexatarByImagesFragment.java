@@ -58,6 +58,7 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -140,6 +141,8 @@ public class FlexatarByImagesFragment extends BaseFragment {
         public Adapter(Context context,BaseFragment parent){
             mContext = context;
             this.parent = parent;
+            imagesUri = new ArrayList<>(Arrays.asList(FlexatarStorageManager.createFlexatarSendImageStorage(context).listFiles()));
+
         }
         @NonNull
         @Override
@@ -169,7 +172,7 @@ public class FlexatarByImagesFragment extends BaseFragment {
                 RectF bgRect = new RectF();
                 Paint paint = new Paint();
                 paint.setARGB(200, 0, 0, 0);
-                ImageView closePanelIcon = new ImageView(mContext){
+                ImageView removeImageIcon = new ImageView(mContext){
                     @Override
                     protected void onDraw(Canvas canvas) {
                         bgRect.set(0, 0, getWidth(), getHeight());
@@ -177,8 +180,8 @@ public class FlexatarByImagesFragment extends BaseFragment {
                         super.onDraw(canvas);
                     }
                 };
-                closePanelIcon.setImageResource(R.drawable.input_clear);
-                cell.addView(closePanelIcon,LayoutHelper.createFrame(38,38,Gravity.TOP | Gravity.RIGHT,0,12,12,0));
+                removeImageIcon.setImageResource(R.drawable.input_clear);
+                cell.addView(removeImageIcon,LayoutHelper.createFrame(38,38,Gravity.TOP | Gravity.RIGHT,0,12,12,0));
                 FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,FrameLayout.LayoutParams.WRAP_CONTENT);
 
                 cell.setLayoutParams(p);
@@ -422,7 +425,7 @@ public class FlexatarByImagesFragment extends BaseFragment {
                 cData = cData.encodeLengthHeader().add(cData);
                 sendData = sendData.add(cData);
             }
-            File saveFile = new File(FlexatarStorageManager.createFlexatarSendImageStorage(ApplicationLoader.applicationContext),"input_face.bin");
+            File saveFile = new File(FlexatarStorageManager.createTmpVideoStorage(),"input_face.bin");
             FlexatarStorageManager.dataToFile(sendData.value,saveFile);
 
         }

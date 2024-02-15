@@ -2,6 +2,7 @@ package org.flexatar;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -13,9 +14,13 @@ import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.TextCell;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
 
@@ -136,12 +141,25 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
                 cell.addDismissListener(item.getDismissListener());
                 cell.setOnClickListener(item.getOnClickListener());
                 item.setFlexatarProgressCell(cell);
+//                Log.d("FLX_INJECT","Start time "+secondsFull);
+                if (item.starTime != null && item.getErrorCode() == null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    LocalDateTime startDate = LocalDateTime.parse(item.starTime, formatter);
+                    LocalDateTime currentDateTime = LocalDateTime.now();
+                    Duration duration = Duration.between(startDate, currentDateTime);
+                    long secondsFull = duration.getSeconds();
+                    Log.d("FLX_INJECT","Timeout ticket "+secondsFull);
+                    if (secondsFull > 60 * 10)
+                        item.setError("{\"code\":3}");
+                }
+
                 if (item.getErrorCode() != null){
                     cell.setError(item.getErrorCode());
                 }else{
                     cell.setError(null);
                 }
                 if (item.getProgressTime() != null){
+
                     cell.setTime(item.getProgressTime());
                 }
 

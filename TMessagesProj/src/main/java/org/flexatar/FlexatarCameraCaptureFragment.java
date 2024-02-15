@@ -723,7 +723,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         ticket.setDate();
         String lfid = UUID.randomUUID().toString();
 
-//        TicketStorage.setTicket(lfid,ticket);
+        TicketStorage.setTicket(lfid,ticket);
 
 
 
@@ -732,17 +732,24 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
             if (vd == null){
                 return;
             }
-            /*FlexatarServerAccess.requestJson(vd.route, "data", vd.token, "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
                 public void onReady(FlexatarServerAccess.StdResponse response) {
                     Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());
+//                    String ftarId = FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).id;
+//                    Log.d("FLX_INJECT", "ftar id: " + ftarId);
+                    ticket.status = "in_process";
+                    ticket.formJson(FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).toJson());
+//                    ticket.ftarRecord = FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0);
+                    TicketStorage.setTicket(lfid,ticket);
+                    TicketsController.flexatarTaskStart(lfid,ticket);
                 }
 
                 @Override
                 public void onError() {
                     Log.d("FLX_INJECT", "make flx data error " );
                 }
-            });*/
+            });
 
             /*FlexatarServerAccess.lambdaRequest("/data", "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
                 @Override

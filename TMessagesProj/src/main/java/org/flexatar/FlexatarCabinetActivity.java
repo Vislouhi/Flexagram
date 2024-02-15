@@ -164,12 +164,29 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             item.setImageResource(R.drawable.msg_addphoto);
             item.setNameText(LocaleController.getString("NewFlexatarByPhoto", R.string.NewFlexatarByPhoto));
             item.setOnClickListener(v-> {
-                if (Config.isVerified()) {
+                if (FlexatarServiceAuth.getVerification().isVerified()) {
                     if (ValueStorage.checkIfInstructionsComplete(context)) {
                         presentFragment(new FlexatarCameraCaptureFragment());
                     } else {
                         showDialog(AlertDialogs.askToCompleteInstructions(context));
                     }
+                }else{
+                    showDialog(AlertDialogs.showVerifyInProgress(context));
+                }
+            });
+
+            itemsAction.add(item);
+        }
+        {
+            ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+            item.setImageResource(R.drawable.files_gallery);
+            item.setNameText(LocaleController.getString("FlexatarWithImages", R.string.FlexatarWithImages));
+
+            item.setOnClickListener(v-> {
+
+                if (FlexatarServiceAuth.getVerification().isVerified()) {
+                    presentFragment(new FlexatarByImagesFragment());
+
                 }else{
                     showDialog(AlertDialogs.showVerifyInProgress(context));
                 }
@@ -188,7 +205,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             item.setOnClickListener(v-> {
 
-                if (Config.isVerified()) {
+                if (FlexatarServiceAuth.getVerification().isVerified()) {
                     if (!FlexatarServerAccess.isDownloadingFlexatars) {
                         handler.post(() -> {
                             item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
@@ -210,23 +227,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             itemsAction.add(item);
         }
-        {
-            ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
-            item.setImageResource(R.drawable.files_gallery);
-            item.setNameText(LocaleController.getString("FlexatarWithImages", R.string.FlexatarWithImages));
 
-            item.setOnClickListener(v-> {
-
-                if (Config.isVerified()) {
-                        presentFragment(new FlexatarByImagesFragment());
-
-                }else{
-                    showDialog(AlertDialogs.showVerifyInProgress(context));
-                }
-            });
-
-            itemsAction.add(item);
-        }
 //        ===============DEBUG CELLS============
         if (Config.debugMode) {
             {
@@ -293,7 +294,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 item.setImageResource(R.drawable.msg_delete);
                 item.setNameText("Delete local files");
                 item.setOnClickListener(v -> {
-                    if (Config.isVerified()) {
+                    if (FlexatarServiceAuth.getVerification().isVerified()) {
                         File[] localFlexatars = FlexatarStorageManager.getFlexatarFileList(context, FlexatarStorageManager.FLEXATAR_PREFIX);
                         for (File file : localFlexatars) {
                             FlexatarStorageManager.deleteFromStorage(context, file, false);
@@ -472,10 +473,12 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     public void addProgressCell(String fid,TicketsController.Ticket ticket){
         if (progressCells.containsKey(fid)){
             progressCells.get(fid).setTime(ticket.timePassed());
+            progressCells.get(fid).setStartTime(ticket.date);
         }else{
             ItemModel progressItem = new ItemModel(ItemModel.PROGRESS_CELL);
             progressItem.setTicket(null);
             progressItem.setTime(ticket.timePassed());
+            progressItem.setStartTime(ticket.date);
             progressItem.setNameText(ticket.name);
             progressItem.setOnClickListener(v->{
 //                FlexatarProgressCell flexatarProgressCell = (FlexatarProgressCell) v;
@@ -520,6 +523,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     builder.setMessage(LocaleController.getString("YouDidntFollowInstruction", R.string.YouDidntFollowInstruction));
                 }else if (code == 2){
                     builder.setMessage(LocaleController.getString("PhotosDoNotContainFace", R.string.PhotosDoNotContainFace));
+                }else if (code == 3){
+                    builder.setMessage(LocaleController.getString("Timeout", R.string.Timeout));
                 }else{
                     builder.setMessage(LocaleController.getString("UnknownProblem", R.string.UnknownProblem));
                 }
