@@ -17,7 +17,7 @@ public class BlinkGenerator {
                     blinkPauseCounter = random.nextInt(100) + 50;
                 } else {
 //                        blinkWeight = 1f;
-                    blinkWeight = FlexatarCommon.blinkPattren[blinkCounter] * 2;
+                    blinkWeight = FlexatarCommon.blinkPattren[blinkCounter];
                     blinkCounter += 1;
                 }
 

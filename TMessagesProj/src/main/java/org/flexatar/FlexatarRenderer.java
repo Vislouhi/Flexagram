@@ -1,52 +1,33 @@
 package org.flexatar;
 
-import android.Manifest;
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
 
-import androidx.core.app.ActivityCompat;
 
 import com.google.android.exoplayer2.util.Log;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
-import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.FlexatarData;
-import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.UserConfig;
 import org.telegram.ui.LaunchActivity;
-import org.webrtc.EglBase;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class FlexatarRenderer {
-    private static final int SAMPLE_RATE = 16000;
+//    private static final int SAMPLE_RATE = 16000;
 
-    public static FlexatarData data;
+//    public static FlexatarData data;
     public static FlexatarAnimator animator;
-    public static Bitmap icon;
-    public static List<Bitmap> icons;
-    public static List<String> flexatarLinks;
-    public static FlexatarData currentFlxData;
-    public static FlexatarData altFlxData;
+//    public static Bitmap icon;
+//    public static List<Bitmap> icons;
+//    public static List<String> flexatarLinks;
+//    public static FlexatarData currentFlxData;
+//    public static FlexatarData altFlxData;
     public static float[] speechState = {0,0,0,0,0};
     public static boolean isFlexatarCamera = true;
-    private static AudioRecord audioRecord;
-    private static ExecutorService executor;
-    private static boolean isRecording;
+//    private static AudioRecord audioRecord;
+//    private static ExecutorService executor;
+//    private static boolean isRecording;
 
     public static boolean isFrontFaceCamera;
 //    public static float effectsMixWeight = 0.5f;
@@ -60,7 +41,7 @@ public class FlexatarRenderer {
     public static void makeIcons() {
 
    //        TicketStorage.clearTickets();
-        icons = new ArrayList<>();
+//        icons = new ArrayList<>();
 
 
 //        flexatarLinks = new ArrayList<>();
@@ -121,7 +102,7 @@ public class FlexatarRenderer {
             FlexatarStorageManager.addToStorage(AssetAccess.context,flxRaw,fName);
 
         }*/
-        String[] flxFileNames = { "char6t", "char7t"};
+        /*String[] flxFileNames = { "char6t", "char7t"};
         for (int i = 0; i < flxFileNames.length; i++) {
             String fName = flxFileNames[flxFileNames.length - i - 1];
 
@@ -130,103 +111,29 @@ public class FlexatarRenderer {
             byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
             FlexatarStorageManager.addToStorage(AssetAccess.context,flxRaw,fName,"builtin_");
 
-        }
+        }*/
     }
 
-    public static FlexatarData loadFlexatarByLink(String link) {
+   /* public static FlexatarData loadFlexatarByLink(String link) {
         byte[] flxRaw = AssetAccess.dataFromFile(link);
         LengthBasedFlxUnpack packages = new LengthBasedFlxUnpack(flxRaw);
 
         return new FlexatarData(packages);
-    }
+    }*/
 
     public static void init() {
         FirebaseApp.initializeApp(ApplicationLoader.applicationContext);
-//        FirebaseCrashlytics.getInstance().setUserId("user123456789");
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false);
-
-//        Log.d("FLX_INJECT","pushString :" + SharedConfig.pushString);
-//        long telegramID = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser().id;
-//        Log.d("FLX_INJECT","telegramID :" + telegramID);
-
-       /* FlexatarServerAccess.getFlexatarList(new FlexatarServerAccess.CompletionListener() {
-            @Override
-            public void onReadyJsonSting(String string) {
-                String[] flexatarList = ServerDataProc.getFlexatarLinkList(string);
-                Log.d("FLX_INJECT","string "+Arrays.toString(flexatarList));
-
-                String[] idList = ServerDataProc.getFlexatarIdList(string);
-                Log.d("FLX_INJECT","idList "+Arrays.toString(idList));
-                for (int i = 0; i < flexatarList.length; i++) {
-                    if (flexatarList[i].isEmpty()) {
-                        FlexatarServerAccess.getFile("private/1.00/none/default/"+idList[i],"DELETE", new FlexatarServerAccess.CompletionListener() {
-                            @Override
-                            public void onReadyData(byte[] data) {
-                                Log.d("FLX_INJECT","record deleted  "+ data.length);
-                            }
-                            @Override
-                            public void onFail(){
-                                Log.d("FLX_INJECT","failed deletion  " );
-                            }
-
-                        });
-                    }
-                }
-
-                for (int i = 0; i < flexatarList.length; i++) {
-                    if (!flexatarList[i].isEmpty()) {
-                        int finalI = i;
-                        FlexatarServerAccess.operation(flexatarList[i],"GET", new FlexatarServerAccess.CompletionListener() {
-                            @Override
-                            public void onReadyData(byte[] data) {
-                                Log.d("FLX_INJECT","file  "+flexatarList[finalI] + "with length "+data.length);
-                                if (data.length<100){
-                                    FlexatarServerAccess.operation("private/1.00/none/default/"+idList[finalI],"DELETE",null);
-
-                                }
-                            }
-                            @Override
-                            public void onFail(){
-                                Log.d("FLX_INJECT","failed file  "+flexatarList[finalI] );
-                            }
-
-                        });
-                    }else{
-                        FlexatarServerAccess.operation("private/1.00/none/default/"+idList[i],"DELETE",null);
-
-                    }
-                }
-            }
-
-            @Override
-            public void onFail() {
-
-            }
-        });*/
-
-
+        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!Config.debugMode);
         animator = new FlexatarAnimator();
         FlexatarCommon.prepare();
-//        makeIcons();
-        /*File[] flexatarFiles = FlexatarStorageManager.getFlexatarFileList(AssetAccess.context);
-        if (FlexatarUI.chosenFirst == null){
-            FlexatarUI.chosenFirst = flexatarFiles[0];
-            FlexatarUI.chosenSecond = flexatarFiles[1];
-        }
-        Log.d("FLX_INJECT","FlexatarUI.chosenFirst" + FlexatarUI.chosenFirst);
-        Log.d("FLX_INJECT","FlexatarUI.chosenFirst.length " + FlexatarUI.chosenFirst.length());
-        currentFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenFirst)));
-        altFlxData = new FlexatarData(new LengthBasedFlxUnpack(FlexatarStorageManager.dataFromFile(FlexatarUI.chosenSecond)));
-*/
-//        currentFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenFirst));
-//        altFlxData = loadFlexatarByLink(flexatarLinks.get(FlexatarUI.chosenSecond));
+
     }
 
 //    public static boolean isFlexatarRendering = false;
-    public static boolean isVoiceProcessingNeed = false;
+    /*public static boolean isVoiceProcessingNeed = false;
     private static Timer checkTmer;
-    private static final Object mutexObject = new Object();
-    public static void startVoiceProcessingIfNotRunning(){
+    private static final Object mutexObject = new Object();*/
+    /*public static void startVoiceProcessingIfNotRunning(){
 
         synchronized (mutexObject) {
             isVoiceProcessingNeed = true;
@@ -251,9 +158,10 @@ public class FlexatarRenderer {
             startVoiceProcessing();
         }
 
-    }
-    private static boolean isVoiceProcessingOn = false;
-    public static void stopAnimateSpeech(){
+    }*/
+
+//    private static boolean isVoiceProcessingOn = false;
+    /*public static void stopAnimateSpeech(){
         synchronized (mutexObject) {
             if (audioRecord != null) {
                 try {
@@ -271,7 +179,7 @@ public class FlexatarRenderer {
             isRecording = false;
 //            isFlexatarRendering = false;
         }
-    }
+    }*/
     private static List<float[]> audioToTF = new ArrayList<>();
 
     private static float[] concatenateFloatArrays(List<float[]> arrays) {
@@ -317,7 +225,7 @@ public class FlexatarRenderer {
 
     }
 
-    public static void startVoiceProcessing() {
+    /*public static void startVoiceProcessing() {
 //        VoIPService.getSharedInstance().setMicMute();
         if(true) return;
         synchronized (mutexObject) {
@@ -365,9 +273,9 @@ public class FlexatarRenderer {
             });
         }
 
-    }
-    public FlexatarRenderer(EglBase.Context glContext, Context context) {
+    }*/
+    /*public FlexatarRenderer(EglBase.Context glContext, Context context) {
 
 
-    }
+    }*/
 }

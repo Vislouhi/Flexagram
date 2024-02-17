@@ -728,10 +728,10 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
 
         if (flexatarBody == null) {
-            FlexatarServerAccess.StdResponse vd = FlexatarServiceAuth.getVerifyData();
+           /* FlexatarServerAccess.StdResponse vd = FlexatarServiceAuth.getVerifyData();
             if (vd == null){
                 return;
-            }
+            }*/
             FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
                 public void onReady(FlexatarServerAccess.StdResponse response) {
@@ -777,8 +777,25 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
 
         }else{
+            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "delta/"+flexatarBody, "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+                @Override
+                public void onReady(FlexatarServerAccess.StdResponse response) {
+                    Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());
+//                    String ftarId = FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).id;
+//                    Log.d("FLX_INJECT", "ftar id: " + ftarId);
+                    ticket.status = "in_process";
+                    ticket.formJson(FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).toJson());
+//                    ticket.ftarRecord = FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0);
+                    TicketStorage.setTicket(lfid,ticket);
+                    TicketsController.flexatarTaskStart(lfid,ticket);
+                }
 
-            FlexatarServerAccess.lambdaRequest("/delta/"+flexatarBody, "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
+                @Override
+                public void onError() {
+                    Log.d("FLX_INJECT", "delta fail make flx data error " );
+                }
+            });
+            /*FlexatarServerAccess.lambdaRequest("/delta/"+flexatarBody, "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
                 @Override
                 public void onReady(String response) {
                     try {
@@ -800,7 +817,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
                     Log.d("FLX_INJECT", "delta fail ");
                 }
-            });
+            });*/
 
 //            Log.d("FLX_INJECT")
         }

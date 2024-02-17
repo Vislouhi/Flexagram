@@ -82,9 +82,20 @@ public class FlexatarPreviewFragment extends BaseFragment{
                             }
 //                            Log.d("FLX_INJECT","write meta "+FlexatarStorageManager.metaDataToJson(oldMetData));
                             byte[] metaSend = FlexatarStorageManager.rewriteFlexatarHeader(flexatarPreview.getFlexatarCell().getFlexatarFile(), oldMetData);
-                            String putRout = ServerDataProc.genDeleteRout(ServerDataProc.fileNameToRout(flexatarPreview.getFlexatarCell().getFlexatarFile().getName()));
+                            String putRout = ServerDataProc.fileNameToMetaRout(flexatarPreview.getFlexatarCell().getFlexatarFile().getName());
+                            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), putRout, "PUT", metaSend, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+                                @Override
+                                public void onReady(FlexatarServerAccess.StdResponse response) {
+                                    Log.d("FLX_INJECT","Meta data uploaded success");
+                                }
+
+                                @Override
+                                public void onError() {
+                                    Log.d("FLX_INJECT","Meta data not uploaded error");
+                                }
+                            });
 //                            String putRout = flexatarPreview.getFlexatarCell().getFlexatarFile().getName().replace(FlexatarStorageManager.FLEXATAR_PREFIX,"").replace(".flx","");
-                            FlexatarServerAccess.lambdaRequest("/"+putRout, "PUT", metaSend, null, new FlexatarServerAccess.CompletionListener() {
+                            /*FlexatarServerAccess.lambdaRequest("/"+putRout, "PUT", metaSend, null, new FlexatarServerAccess.CompletionListener() {
                                 @Override
                                 public void onReady(String string) {
                                     Log.d("FLX_INJECT","meta ready string");
@@ -99,7 +110,7 @@ public class FlexatarPreviewFragment extends BaseFragment{
                                 public void onFail() {
                                     Log.d("FLX_INJECT","meta fail");
                                 }
-                            });
+                            });*/
 //                            String metaStr = FlexatarStorageManager.metaDataToJson( FlexatarStorageManager.getFlexatarMetaData(flexatarPreview.getFlexatarCell().getFlexatarFile(),false)).toString();
 //                            Log.d("FLX_INJECT","read meta "+metaStr);
                         }

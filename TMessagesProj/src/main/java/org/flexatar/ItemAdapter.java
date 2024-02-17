@@ -149,7 +149,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
                     Duration duration = Duration.between(startDate, currentDateTime);
                     long secondsFull = duration.getSeconds();
                     Log.d("FLX_INJECT","Timeout ticket "+secondsFull);
-                    if (secondsFull > 60 * 10)
+                    if (secondsFull > 60 * 30)
                         item.setError("{\"code\":3}");
                 }
 
@@ -285,9 +285,18 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
         });
     }
     public void addFlexatarItem(ItemModel item){
-        handler.post(()->{
+        addFlexatarItem(item,1);
+        /*handler.post(()->{
             itemsFlexatar.add(1,item);
             int start = itemsAction.size() + (itemsProgress.size() > 1 ? itemsProgress.size() : 0) + 1;
+            notifyItemInserted(start);
+
+        });*/
+    }
+    public void addFlexatarItem(ItemModel item,int position){
+        handler.post(()->{
+            itemsFlexatar.add(position,item);
+            int start = itemsAction.size() + (itemsProgress.size() > 1 ? itemsProgress.size() : 0) + position;
             notifyItemInserted(start);
 
         });

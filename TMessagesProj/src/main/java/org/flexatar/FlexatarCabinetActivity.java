@@ -177,7 +177,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             itemsAction.add(item);
         }
-        {
+        /*{
             ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
             item.setImageResource(R.drawable.files_gallery);
             item.setNameText(LocaleController.getString("FlexatarWithImages", R.string.FlexatarWithImages));
@@ -193,7 +193,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             });
 
             itemsAction.add(item);
-        }
+        }*/
         {
             ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
             item.setImageResource(R.drawable.msg_download);
@@ -206,13 +206,19 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             item.setOnClickListener(v-> {
 
                 if (FlexatarServiceAuth.getVerification().isVerified()) {
+
                     if (!FlexatarServerAccess.isDownloadingFlexatars) {
+                        FlexatarServerAccess.isDownloadingFlexatars = true;
+                        ItemModel itemLoader = new ItemModel(ItemModel.FLEXATAR_CELL);
+                        itemAdapter.addFlexatarItem(itemLoader);
+
                         handler.post(() -> {
                             item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
                             itemAdapter.notifyItemChanged(2);
                         });
                         FlexatarServerAccess.downloadCloudFlexatars1(() -> {
                             FlexatarServerAccess.isDownloadingFlexatars = false;
+                            itemAdapter.removeFlexatarCell(1);
                             handler.post(() -> {
                                 item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
                                 itemAdapter.notifyItemChanged(2);
@@ -235,8 +241,19 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 item.setImageResource(R.drawable.msg_list);
                 item.setNameText("Check private storage");
                 item.setOnClickListener(v -> {
-                    if (Config.isVerified()) {
-                        FlexatarServerAccess.lambdaRequest("/list/1.00", "GET", null, null, new FlexatarServerAccess.CompletionListener() {
+                    if (FlexatarServiceAuth.getVerification().isVerified()) {
+                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "list/1.00", "GET", new FlexatarServerAccess.OnRequestJsonReady() {
+                                    @Override
+                                    public void onReady(FlexatarServerAccess.StdResponse response) {
+                                        Log.d("FLX_INJECT", response.ftars);
+                                    }
+
+                                    @Override
+                                    public void onError() {
+
+                                    }
+                                });
+                        /*FlexatarServerAccess.lambdaRequest("/list/1.00", "GET", null, null, new FlexatarServerAccess.CompletionListener() {
                             @Override
                             public void onReady(String response) {
                                 String[] links = ServerDataProc.getFlexatarLinkList(response, "private");
@@ -247,11 +264,9 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                                 }
                                 Log.d("FLX_INJECT", "private flexatar on server: " + Arrays.toString(links));
 
-                            /*if (linksToDownload.size()>0){
-                                FlexatarServerAccess.downloadFlexatarListRecursive(FlexatarStorageManager.PUBLIC_PREFIX,linksToDownload,idsToDownload,0);
-                            }*/
+
                             }
-                        });
+                        });*/
 
                     } else {
                         showDialog(AlertDialogs.showVerifyInProgress(context));
@@ -260,7 +275,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
                 itemsAction.add(item);
             }
-            {
+
+            /*{
                 ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
                 item.setImageResource(R.drawable.msg_clear);
                 item.setNameText("Clear cloud storage");
@@ -276,9 +292,9 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                                 for (String link : links)
                                     FlexatarServerAccess.lambdaRequest("/" + ServerDataProc.genDeleteRout(link), "DELETE", null, null, null);
 
-                            /*if (linksToDownload.size()>0){
+                            *//*if (linksToDownload.size()>0){
                                 FlexatarServerAccess.downloadFlexatarListRecursive(FlexatarStorageManager.PUBLIC_PREFIX,linksToDownload,idsToDownload,0);
-                            }*/
+                            }*//*
                             }
                         });
 
@@ -288,7 +304,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 });
 
                 itemsAction.add(item);
-            }
+            }*/
             {
                 ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
                 item.setImageResource(R.drawable.msg_delete);
@@ -339,7 +355,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
                 itemsAction.add(item);
             }
-            {
+            /*{
                 ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
                 item.setImageResource(R.drawable.msg_delete);
                 item.setNameText("Try to make video");
@@ -355,10 +371,9 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 });
 
                 itemsAction.add(item);
-            }
+            }*/
         }
-//        796917078
-//        2101656846
+
 
 //======================END DEBUG CELLS===
         {
@@ -396,7 +411,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     });
                 }
             }else{
-                presentFragment(new FlexatarPreviewFragment(cell,this));
+                if (cell.getFlexatarFile()!=null)
+                    presentFragment(new FlexatarPreviewFragment(cell,this));
 
             }
         });
@@ -431,21 +447,23 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         FlexatarServerAccess.downloadBuiltinObserver = new FlexatarServerAccess.DownloadBuiltinObserver() {
             @Override
             public void start() {
-                ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
-                itemAdapter.addFlexatarItem(item);
+//                ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
+//                itemAdapter.addFlexatarItem(item);
             }
 
             @Override
             public void onError() {
-                itemAdapter.removeFlexatarCell(1);
+
+//                itemAdapter.removeFlexatarCell(1);
             }
 
             @Override
             public void downloaded(File file) {
-                itemAdapter.removeFlexatarCell(1);
+//                itemAdapter.removeFlexatarCell(1);
                 ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
                 item.setFlexatarFile(file);
-                itemAdapter.addFlexatarItem(item);
+                itemAdapter.addFlexatarItem(item,FlexatarServerAccess.isDownloadingFlexatars ? 2 : 1);
+
 
             }
         };

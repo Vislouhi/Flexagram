@@ -61,6 +61,17 @@ public class ServerDataProc {
         rout = "private/1.00/tg/"+telegramID+"/"+flxId+"/"+flxId +".p";
         return rout;
     }
+    public static String fileNameToMetaRout(String rout){
+        if (!rout.startsWith(FlexatarStorageManager.FLEXATAR_PREFIX)) return null;
+        Log.d("FLX_INJECT","fileNameToRout "+rout);
+        String flxId = rout.replace(FlexatarStorageManager.FLEXATAR_PREFIX, "");
+        flxId = flxId.replace(".flx","");
+        Log.d("FLX_INJECT","fileNameToRout "+flxId);
+
+        long telegramID = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser().id;
+        rout = "private/1.00/tg/"+telegramID+"/"+flxId+"/"+flxId +".m";
+        return rout;
+    }
 
     public static class FlexatarListResponse{
 

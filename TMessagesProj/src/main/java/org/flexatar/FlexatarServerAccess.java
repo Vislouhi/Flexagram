@@ -3,6 +3,7 @@ package org.flexatar;
 import com.google.android.exoplayer2.util.Log;
 
 import org.flexatar.DataOps.Data;
+import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,12 +35,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class FlexatarServerAccess {
-    private static String auth = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjIwMjA1OTY2MjIsIm5iZiI6MTcwNTIzNjYyMiwiVGFnIjoibm9uZSIsIlVzZXIiOiJkZWZhdWx0IiwiQXBwIjoidGctYW5yb2lkIiwiVmVyIjoiMS4wIn0._PxtlSUHWk0TDmz7Q84V-c4oxfDuSYXiWCDkwqwJXE4";
-    private static String url_lambda = "https://mhpblvwwrb.execute-api.us-east-1.amazonaws.com/test1/";
-    private static ScheduledExecutorService timeoutExecutor = null;
-    private static ScheduledFuture<?> timeoutFuture = null;
 
-    public interface CompletionListener{
+
+    /*public interface CompletionListener{
         default void onReady(String string){
 
         }
@@ -52,34 +50,11 @@ public class FlexatarServerAccess {
         default void onFail(){
 
         }
-    }
-    public static final String url_verify = "https://wjfk5fg7t7an6ypbmig7ydvvdm0nmubp.lambda-url.us-east-1.on.aws/";
-    public interface VerifyListener{
+    }*/
+    /*public interface VerifyListener{
         default void onVerifyAnswer(String verifyJson){};
         default void onVerifyAnswer(String token,String verifyUrl,String storageUrl,String statUrl){};
         default void onError(){};
-    }
-
-    /*public static class VerifyResponse extends SrializerJson{
-        public String result;
-        public String token;
-        public String route;
-        public static final String RESULT_RETRY = "RETRY";
-        public static final String RESULT_OK = "OK";
-        public VerifyResponse(){
-
-        }
-        public VerifyResponse(String json) throws JSONException, IllegalAccessException {
-            formJson(json);
-        }
-        public boolean isRetry(){
-            if (result!=null) return result.equals(RESULT_RETRY);
-            return false;
-        }
-        public boolean isOk(){
-            if (result!=null) return result.equals(RESULT_OK);
-            return false;
-        }
     }*/
 
     public static class StdResponse extends SrializerJson{
@@ -95,6 +70,11 @@ public class FlexatarServerAccess {
         public StdResponse(String json) throws JSONException {
             formJson(json);
         }
+
+        public StdResponse() {
+
+        }
+
         public boolean isRetry(){
             if (result!=null) return result.equals(RESULT_RETRY);
             return false;
@@ -132,157 +112,17 @@ public class FlexatarServerAccess {
                 return null;
             }
         }
-        public ListElement(){
 
-        }
         public ListElement(String json) throws JSONException {
             formJson(json);
         }
-    }
-
-    public interface OnVerifyResultListener{
-        void onResult(StdResponse response);
-        void onError();
-    }
-    /*public static void verify(String rout,String token,OnVerifyResultListener listener){
-        Log.d("FLX_INJECT","Requesting : "+rout );
-        try{
-        URL url = new URL(rout);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Authorization", "Bearer "+token);
-            JSONObject output = new JSONObject();
-//            output.put("token",SharedConfig.pushString);
-//            long telegramID = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser().id;
-//            output.put("tid",""+telegramID);
-            output.put("android_ver",Config.version);
-            output.put("ios_ver","");
-            output.put("ext_ver","");
-            output.put("token",token);
-            Data outputData = new Data(output.toString());
-            connection.setDoOutput(true);
-            OutputStream outputStream = connection.getOutputStream();
-            outputStream.write(outputData.value);
-            outputStream.close();
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                Log.d("FLX_INJECT","verify request sent" );
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                reader.close();
-                String jsonResponse = response.toString();
-                Log.d("FLX_INJECT","Received response " + jsonResponse );
-                listener.onResult(new StdResponse(jsonResponse));
-
-            }else{
-                listener.onError();
-                Log.d("FLX_INJECT","connection fail with code: " + responseCode);
-            }
-        } catch (IOException | JSONException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-//            listener.onError();
-        }
-    }*/
-    public static void lambdaVerify(VerifyListener listener){
-        if (timeoutExecutor!=null && !timeoutExecutor.isShutdown()){
-            timeoutExecutor.shutdown();
-
-        }
-        if (timeoutFuture!=null && !timeoutFuture.isCancelled()){
-            timeoutFuture.cancel(false);
-        }
-        timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
-        timeoutFuture = timeoutExecutor.schedule(()->{
-            listener.onError();
-            timeoutExecutor = null;
-            timeoutFuture = null;
-        }, 10, TimeUnit.SECONDS);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            try {
-                GcmPushListenerService.verifyListener = new VerifyListener() {
-                    @Override
-                    public void onVerifyAnswer(String verifyJson) {
-                        JSONObject verify;
-                        try {
-                            verify = new JSONObject(verifyJson);
-
-                        } catch (JSONException e) {
-                            listener.onError();
-                            return;
-                        }
-                        String token = null;
-                        String verifyUrl = null;
-                        String storageUrl = null;
-                        String statUrl = null;
-                        try {
-                            token = verify.getString("token");
-                        } catch (JSONException ignored) {}
-                        try {
-                            verifyUrl = verify.getString("verify");
-                        } catch (JSONException ignored) {}
-                        try {
-                            storageUrl = verify.getString("storage");
-                        } catch (JSONException ignored) {}
-                        try {
-                            statUrl = verify.getString("stat");
-                        } catch (JSONException ignored) {}
-                        timeoutExecutor.shutdown();
-                        timeoutExecutor = null;
-                        timeoutFuture.cancel(false);
-                        timeoutFuture=null;
-                        listener.onVerifyAnswer(token,verifyUrl,storageUrl,statUrl);
-                        Log.d("FLX_INJECT","verify result : " + verifyJson);
-//                        Log.d("FLX_INJECT","verify result token: " + token);
-                    }
-                };
-                URL url = new URL(url_verify);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("POST");
-
-                connection.setRequestProperty("Content-Type", "application/json");
-                JSONObject output = new JSONObject();
-                output.put("token",SharedConfig.pushString);
-                long telegramID = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser().id;
-                output.put("tid",""+telegramID);
-                output.put("ver",Config.version);
-                Data outputData = new Data(output.toString());
-
-                connection.setDoOutput(true);
-                OutputStream outputStream = connection.getOutputStream();
-                outputStream.write(outputData.value);
-                outputStream.close();
-                int responseCode = connection.getResponseCode();
-                if (responseCode == HttpURLConnection.HTTP_OK){
-                    Log.d("FLX_INJECT","verify request sent" );
-                }
-
-            } catch (IOException e) {
-                Log.d("FLX_INJECT","connection failed by exception");
-                timeoutExecutor.shutdown();
-                timeoutExecutor = null;
-                timeoutFuture.cancel(false);
-                timeoutFuture=null;
-                listener.onError();
-                //            return null;
-//                throw new RuntimeException(e);
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
     }
 
 
     public interface OnRequestJsonReady{
         void onReady(StdResponse response);
         void onError();
+
     }
     public static void requestJson( FlexatarServiceAuth.FlexatarVerifyProcess verify,String path, String method,OnRequestJsonReady completion){
         requestJson(verify,path, method, null, null,completion);
@@ -349,8 +189,12 @@ public class FlexatarServerAccess {
                     reader.close();
                     String jsonResponse = response.toString();
                     Log.d("FLX_INJECT","received string: "+jsonResponse);
-                    if (completion != null)
-                        completion.onReady(new StdResponse(jsonResponse));
+                    if (completion != null) {
+                        if (jsonResponse.length()>0)
+                            completion.onReady(new StdResponse(jsonResponse));
+                        else
+                            completion.onReady(new StdResponse());
+                    }
 //                        Log.d("FLX_INJECT", "Received JSON: " + jsonResponse);
                 }else{
                     Log.d("FLX_INJECT","connection failed err code "+responseCode);
@@ -372,6 +216,7 @@ public class FlexatarServerAccess {
         void onReady(boolean finished,ByteArrayOutputStream byteArrayOutputStream);
         void onError();
         default void onUnauthorized(){};
+        default void onNotFoundError(){};
     }
     public static void requestDataRecursive(FlexatarServiceAuth.FlexatarVerifyProcess verify,String path,int part,ByteArrayOutputStream byteArrayOutputStream,OnDataDownloaded completion ){
         requestDataInternal(verify.getRoute(), path+"?part="+part, verify.getToken(), byteArrayOutputStream, new OnDataDownloaded() {
@@ -391,24 +236,23 @@ public class FlexatarServerAccess {
             }
 
             @Override
+            public void onNotFoundError() {
+                completion.onNotFoundError();
+            }
+
+            @Override
             public void onUnauthorized() {
-                /*FlexatarServiceAuth.verify(FlexatarServiceAuth.getVerifyData(), new FlexatarServiceAuth.OnAuthListener() {
+                FlexatarServiceAuth.getVerification().verify(new FlexatarServiceAuth.OnAuthListener() {
                     @Override
                     public void onReady() {
-                        StdResponse vd = FlexatarServiceAuth.getVerifyData();
-                        if (vd!=null){
-                            requestDataRecursive(vd.route, path, part, vd.token, byteArrayOutputStream,completion);
-                        }else{
-                            completion.onError();
-                        }
-
+                            requestDataRecursive(FlexatarServiceAuth.getVerification(), path, part, new ByteArrayOutputStream(), completion);
                     }
 
                     @Override
                     public void onError() {
                         completion.onError();
                     }
-                });*/
+                });
             }
         });
     }
@@ -429,8 +273,6 @@ public class FlexatarServerAccess {
 
                 int responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_PARTIAL) {
-//                    Log.d("FLX_INJECT", "getContentType: " + connection.getContentType().toLowerCase());
-
                         InputStream inputStream = new BufferedInputStream(connection.getInputStream());
 //                    Log.d("FLX_INJECT","inputStream :"+inputStream.available() );
                         byte[] buffer = new byte[1024];
@@ -447,6 +289,8 @@ public class FlexatarServerAccess {
 
                 }else if(responseCode == HttpURLConnection.HTTP_UNAUTHORIZED){
                     completion.onUnauthorized();
+                }else if (responseCode == HttpURLConnection.HTTP_NOT_FOUND){
+                    if (completion!=null) completion.onNotFoundError();
                 }else{
                     Log.d("FLX_INJECT","Server responce error :"+responseCode );
 
@@ -456,100 +300,10 @@ public class FlexatarServerAccess {
             } catch (IOException e) {
                 if (completion!=null) completion.onError();
                 Log.d("FLX_INJECT","connection failed by exception");
-                //            return null;
-//                throw new RuntimeException(e);
             }
         });
     }
-    public static void lambdaRequest(String path, String method,byte[] sendData,ByteArrayOutputStream byteArrayOutputStream,CompletionListener completion){
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            try {
-                String urlString = path;
-                Log.d("FLX_INJECT","urlString "+urlString);
-                URL url = new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-                connection.setRequestMethod(method);
-
-                connection.setRequestProperty("Content-Type", "application/octet-stream");
-                if (byteArrayOutputStream!=null){
-                    connection.setRequestProperty("Accept", "application/octet-stream");
-                }
-                connection.setRequestProperty("Authorization","Bearer "+ FlexatarServiceAuth.verifyData.token);
-                if (sendData!=null) {
-                    connection.setDoOutput(true);
-                    OutputStream outputStream = connection.getOutputStream();
-                    outputStream.write(sendData);
-                    outputStream.close();
-                }
-
-                int responseCode = connection.getResponseCode();
-                if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_PARTIAL) {
-//                    Log.d("FLX_INJECT", "getContentType: " + connection.getContentType().toLowerCase());
-                    if (connection.getContentType().toLowerCase().contains("application/json") ||
-                            connection.getContentType().toLowerCase().contains("text/plain")
-                    ) {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                        StringBuilder response = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            response.append(line);
-                        }
-                        reader.close();
-                        String jsonResponse = response.toString();
-                        if (completion!=null)
-                            completion.onReady(jsonResponse);
-//                        Log.d("FLX_INJECT", "Received JSON: " + jsonResponse);
-                    }else if (connection.getContentType().toLowerCase().contains("application/octet-stream")) {
-                        InputStream inputStream = new BufferedInputStream(connection.getInputStream());
-//                    Log.d("FLX_INJECT","inputStream :"+inputStream.available() );
-                        byte[] buffer = new byte[1024];
-                        int bytesRead;
-                        while ((bytesRead = inputStream.read(buffer)) != -1) {
-                            byteArrayOutputStream.write(buffer, 0, bytesRead);
-                        }
-                        if (completion!=null)
-                            completion.onReady(responseCode == HttpURLConnection.HTTP_OK);
-
-                        inputStream.close();
-                        connection.disconnect();
-                    }
-                }else{
-                    Log.d("FLX_INJECT","Server responce error :"+responseCode );
-
-                    if (completion!=null)
-                        completion.onFail();
-                }
-            } catch (IOException e) {
-                if (completion!=null) completion.onFail();
-                Log.d("FLX_INJECT","connection failed by exception");
-                //            return null;
-//                throw new RuntimeException(e);
-            }
-        });
-    }
-    public static void downloadFlexatarRecursive(String flexatarLink,int part,ByteArrayOutputStream outputStream,FlexatarServerAccess.CompletionListener listener){
-
-
-        FlexatarServerAccess.lambdaRequest(flexatarLink+"?part="+part, "GET", null, outputStream, new FlexatarServerAccess.CompletionListener() {
-            @Override
-            public void onReady(boolean isComplete) {
-                if (isComplete){
-                    listener.onReady(true);
-                }else{
-                    downloadFlexatarRecursive(flexatarLink,part+1,outputStream,listener);
-
-                }
-            }
-
-            @Override
-            public void onFail() {
-                listener.onFail();
-            }
-        });
-
-    }
     public static boolean isDownloadingFlexatars = false;
     public static void downloadCloudFlexatars1(Runnable onFinish) {
         isDownloadingFlexatars = true;
@@ -575,8 +329,12 @@ public class FlexatarServerAccess {
                                 List<ListElement> elements = ftars.get(key);
                                 if (elements == null) continue;
                                 for (ListElement element : elements){
-                                    if (!savedFids.contains(element.id)){
-                                        linksToDownload.add(new String[]{element.ftar,element.id,prefix});
+                                    if (!savedFids.contains(element.id) && element.ftar!=null){
+                                        linksToDownload.add(new String[]{element.ftar,element.id,prefix,element.err,element.meta});
+                                    }else if(element.err != null){
+                                        Log.d("FLX_INJECT","flexatar entry contains error, deleting it");
+                                        String deleteRout = ServerDataProc.genDeleteRout(element.err);
+                                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), deleteRout, "DELETE",null);
                                     }
 //                                    Log.d("FLX_INJECT","ftar id " + element.id);
                                 }
@@ -604,47 +362,92 @@ public class FlexatarServerAccess {
             onFinish.run();
             return;
         }*/
-        FlexatarServerAccess.requestDataRecursive(
-                FlexatarServiceAuth.getVerification(),
-                links.get(position)[0], 0,
-                new ByteArrayOutputStream(),
+        FlexatarServerAccess.requestDataRecursive(FlexatarServiceAuth.getVerification(), links.get(position)[0], 0, new ByteArrayOutputStream(),
                 new FlexatarServerAccess.OnDataDownloaded() {
                     @Override
                     public void onReady(boolean finished, ByteArrayOutputStream byteArrayOutputStream) {
                         Log.d("FLX_INJECT","downloaded "+links.get(position)[1]);
-                        File downloadedFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,byteArrayOutputStream.toByteArray(),links.get(position)[1],links.get(position)[2]);
+                        byte[] downloadedData = byteArrayOutputStream.toByteArray();
+                        if (!new LengthBasedFlxUnpack(downloadedData).validate()){
 
-                        if (downloadBuiltinObserver != null){
-                            downloadBuiltinObserver.downloaded(downloadedFile);
+                            try {
+                                byteArrayOutputStream.close();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            loadNext();
+                            return;
                         }
+
+                        if (links.get(position)[4]==null){
+
+
+                            File downloadedFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,downloadedData,links.get(position)[1],links.get(position)[2]);
+                            if (downloadBuiltinObserver != null){
+                                downloadBuiltinObserver.downloaded(downloadedFile);
+                            }
+                            try {
+                                byteArrayOutputStream.close();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }else{
+                            FlexatarServerAccess.requestDataRecursive(FlexatarServiceAuth.getVerification(), links.get(position)[4], 0, new ByteArrayOutputStream(), new OnDataDownloaded() {
+                                @Override
+                                public void onReady(boolean finished, ByteArrayOutputStream metaByteArray) {
+                                    FlexatarStorageManager.FlexatarMetaData metaData = new FlexatarStorageManager.FlexatarMetaData();
+                                    metaData.data = new Data(metaByteArray.toByteArray());
+                                    File downloadedFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,byteArrayOutputStream.toByteArray(),links.get(position)[1],links.get(position)[2]);
+                                    FlexatarStorageManager.rewriteFlexatarHeader(downloadedFile,metaData);
+                                    if (downloadBuiltinObserver != null){
+                                        downloadBuiltinObserver.downloaded(downloadedFile);
+                                    }
+                                    try {
+                                        byteArrayOutputStream.close();
+                                        metaByteArray.close();
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+
+                                @Override
+                                public void onError() {
+
+                                }
+                            });
+                        }
+
+
+                        loadNext();
+
+                    }
+
+                    private void loadNext(){
                         if (position+1<links.size()){
                             downloadFlexatarListRecursive1(links,position+1,onFinish);
                         }else {
-//                    isDownloadingFlexatars = false;
                             if (onFinish!=null) onFinish.run();
-
-                        }
-                        try {
-                            byteArrayOutputStream.close();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
                         }
                     }
 
                     @Override
+                    public void onNotFoundError() {
+                        Log.d("FLX_INJECT","flexatar file not found, deleting entry");
+
+//                        String deleteRout = ServerDataProc.genDeleteRout(links.get(position)[3]);
+//                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), deleteRout, "DELETE",null);
+                        loadNext();
+                        if (downloadBuiltinObserver!=null) downloadBuiltinObserver.onError();
+                    }
+
+                    @Override
                     public void onError() {
-                        if (position+1<links.size()){
-                            downloadFlexatarListRecursive1(links,position+1,onFinish);
-                        }else {
-                            if (onFinish!=null) onFinish.run();
-                        }
+                        loadNext();
                         if (downloadBuiltinObserver!=null) downloadBuiltinObserver.onError();
                         Log.d("FLX_INJECT","failed to download flexatar");
                     }
                 }
         );
-
-
     }
     /*public static void downloadCloudFlexatars(Runnable onFinish){
         isDownloadingFlexatars = true;

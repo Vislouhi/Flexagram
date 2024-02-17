@@ -16,6 +16,8 @@ import android.widget.ScrollView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.Data;
@@ -31,8 +33,11 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextDetailCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SeekBarView;
+import org.telegram.ui.Components.ViewPagerFixed;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -62,6 +67,8 @@ public class FlexatarPreview extends FrameLayout {
     private Timer previewAnimTimer;
     private int currentPosition;
     private boolean isMakeMouthSelected = false;
+    private ViewPagerFixed.TabsView tabsView;
+    private RecyclerView recyclerView;
 
     public FlexatarCell getFlexatarCell(){
         return flexatarCell;
@@ -155,10 +162,10 @@ public class FlexatarPreview extends FrameLayout {
         int screenWidth = displayMetrics.widthPixels;
         int screenHeight = displayMetrics.heightPixels;
         int cardWidth = (int) (screenWidth * 0.5f);
-        int cardHeight = (int) (cardWidth * 1.5f);
+        int cardHeight = (int) (cardWidth * 1.3f);
         if (!isPortrait){
             cardHeight = (int) (screenHeight * 0.7f);
-            cardWidth = (int) (cardHeight / 1.5f);
+            cardWidth = (int) (cardHeight / 1.3f);
         }
 
         cardVieParameters = new LinearLayout.LayoutParams(cardWidth,cardHeight);
@@ -167,29 +174,94 @@ public class FlexatarPreview extends FrameLayout {
         cardVieParameters.leftMargin = isPortrait ? 0:AndroidUtilities.dp(24) ;
         cardview.setLayoutParams(cardVieParameters);
         if (controlsScrollView == null) return;
-        LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, isPortrait ? 12 : 0, 0, 0);
+        LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
         controlsScrollView.setLayoutParams(layoutParams);
+        tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,24,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
+        recyclerView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT,isPortrait ? 0 : 24,0,0,0));
+
 
     }
     private void makeLayout(int orientation){
         boolean isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT;
         makeCardviewParameters(orientation);
-        LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, isPortrait ? 12 : 0, 0, 0);
+        LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
 
         layout = new LinearLayout(getContext());
         layout.setOrientation(isPortrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
         addView(layout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
         layout.addView(cardview);
         if (flexatarCell.isBuiltin() || flexatarCell.isPublic()) return;
+        LinearLayout editContentLayout = new LinearLayout(getContext());
+        editContentLayout.setOrientation(LinearLayout.VERTICAL);
+        tabsView = new ViewPagerFixed.TabsView(getContext(), true, 3, resourcesProvider) {
+            @Override
+            public void selectTab(int currentPosition, int nextPosition, float progress) {
+                super.selectTab(currentPosition, nextPosition, progress);
+
+            }
+        };
+        tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        tabsView.tabMarginDp = 16;
+        tabsView.addTab(0, "Settings");
+        tabsView.addTab(1, "Attachment");
+        tabsView.setPadding(0,6,0,6);
+        tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
+            @Override
+            public void onPageSelected(int page, boolean forward) {
+                int currentOrientation = getResources().getConfiguration().orientation;
+                boolean isPortrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
+                LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
+
+                if (page == 0){
+                    editContentLayout.removeView(recyclerView);
+                    editContentLayout.addView(controlsScrollView,layoutParams);
+
+                } else if (page == 1) {
+                    editContentLayout.removeView(controlsScrollView);
+                    editContentLayout.addView(recyclerView,layoutParams);
+
+
+                }
+            }
+
+            @Override
+            public void onPageScrolled(float progress) {
+
+            }
+
+            @Override
+            public void onSamePageSelected() {
+
+            }
+
+            @Override
+            public boolean canPerformActions() {
+                return true;
+            }
+
+            @Override
+            public void invalidateBlur() {
+
+            }
+        });
+        tabsView.finishAddingTabs();
+//        layout.addView(tabsView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,24));
+
 
         controlsScrollView = new ScrollView(getContext());
+
+
         LinearLayout controlsLayout = new LinearLayout(getContext());
         controlsLayout.setOrientation(LinearLayout.VERTICAL);
         controlsLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         controlsScrollView.addView(controlsLayout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
-        layout.addView(controlsScrollView,layoutParams);
+
+        editContentLayout.addView(tabsView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,24,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
+        editContentLayout.addView(controlsScrollView,layoutParams);
+        layout.addView(editContentLayout,layoutParams);
 
         resourcesProvider = parentFragment.getResourceProvider();
+
 
         TextDetailCell changeNameCell = new TextDetailCell(getContext(),resourcesProvider, true);
         changeNameCell.setContentDescriptionValueFirst(true);
@@ -197,13 +269,16 @@ public class FlexatarPreview extends FrameLayout {
         changeNameCell.valueTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText2));
         controlsLayout.addView(changeNameCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
         changeNameCell.setOnClickListener(v->{
-            parentFragment.showDialog(
+            Log.d("FLX_INJECT","change flexatar name pressed");
+
+//            parentFragment.showDialog(
                 AlertDialogs.askFlexatarNameDialog(getContext(),flexatarData.getMetaData().name,name -> {
                     if (name.isEmpty()) name = "No Name";
                     newName = name;
                     changeNameCell.setTextAndValue(name, LocaleController.getString("FlexatarName", R.string.ViewInstructions), true);
-                })
-            );
+                }).show();
+//                        ,true,null
+//            );
         });
 
         TextCell makeMouthByPhotoCell = new TextCell(getContext());
@@ -327,6 +402,12 @@ public class FlexatarPreview extends FrameLayout {
             view.setVisibility(View.INVISIBLE);
             view.setEnabled(false);
         }
+
+        recyclerView = new RecyclerView(getContext());
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setAdapter(new Adapter(getContext(),null ));
+        recyclerView.setLayoutParams(new LinearLayout.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        recyclerView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
     }
 
     public FlexatarStorageManager.FlexatarMetaData getNewMetaData(){
@@ -430,5 +511,47 @@ public class FlexatarPreview extends FrameLayout {
 
     public boolean isMakeMouthSelected() {
         return isMakeMouthSelected;
+    }
+
+    public static class Adapter  extends RecyclerView.Adapter<FlexatarPreview.Adapter.ViewHolder>{
+        private final Context mContext;
+        private final BaseFragment parent;
+        private final List<File> flexatars = new ArrayList<>();
+
+        public Adapter(Context context, BaseFragment parent){
+            this.mContext = context;
+            this.parent = parent;
+        }
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            if (viewType == 0){
+                TextCell cell = new TextCell(mContext);
+
+                return new Adapter.ViewHolder(cell);
+            }else{
+                return null;
+            }
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            if (holder.itemView instanceof TextCell) {
+                TextCell cell = (TextCell) holder.itemView;
+                cell.setTextAndIcon(LocaleController.getString("Add",R.string.Add), R.drawable.menu_flexatar, true);
+
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return 1 + flexatars.size();
+        }
+
+        public static class ViewHolder extends RecyclerView.ViewHolder {
+            public ViewHolder(@NonNull View itemView) {
+                super(itemView);
+            }
+        }
     }
 }

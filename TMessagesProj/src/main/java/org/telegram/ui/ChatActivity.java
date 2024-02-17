@@ -31829,7 +31829,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     handled = true;
                 }
                 if (!handled) {
-                    Log.d("FLX_INJECT", "flexatar file name "+message.getDocumentName());
+//                    Log.d("FLX_INJECT", "flexatar file name "+message.getDocumentName());
                     if (message.getDocumentName().endsWith(".flx") && message.getDocumentName().startsWith("flexatar_")) {
                         Log.d("FLX_INJECT", "Catch flexatar file here");
                         File f = null;

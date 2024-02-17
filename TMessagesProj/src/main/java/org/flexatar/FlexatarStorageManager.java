@@ -189,7 +189,7 @@ public class FlexatarStorageManager {
                                     animatedMixWeight -= 1f;
                                 }
                             }
-                            Log.d("FLX_INJECT", "animatedMixWeight timer " + animatedMixWeight);
+//                            Log.d("FLX_INJECT", "animatedMixWeight timer " + animatedMixWeight);
                         }
 
                     };
@@ -520,8 +520,18 @@ public class FlexatarStorageManager {
                 String ftarRout = ServerDataProc.fileNameToRout(flexatarFile.getName());
                 if (ftarRout != null) {
                     String deleteRout = ServerDataProc.genDeleteRout(ftarRout);
+                    FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), deleteRout, "DELETE", new FlexatarServerAccess.OnRequestJsonReady() {
+                        @Override
+                        public void onReady(FlexatarServerAccess.StdResponse response) {
+                            Log.d("FLX_INJECT", "flexatar remote deletion success");
+                        }
 
-                    FlexatarServerAccess.lambdaRequest("/" + deleteRout, "DELETE", null, null, null);
+                        @Override
+                        public void onError() {
+                            Log.d("FLX_INJECT", "flexatar remote deletion error");
+                        }
+                    });
+//                    FlexatarServerAccess.lambdaRequest("/" + deleteRout, "DELETE", null, null, null);
                 }
             }
             flexatarFile.delete();
@@ -578,8 +588,10 @@ public class FlexatarStorageManager {
         public String name;
         public Float amplitude;
         public float[] mouthCalibration;
+        public Data data;
 
         public Data toHeaderAsData(){
+            if (data!=null) return data;
             Data infoHeader = new Data("{\"type\":\"Info\"}");
             infoHeader = infoHeader.encodeLengthHeader().add(infoHeader);
             Data headerData = new Data(metaDataToJson(this).toString());

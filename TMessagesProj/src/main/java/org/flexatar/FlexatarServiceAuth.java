@@ -34,7 +34,7 @@ public class FlexatarServiceAuth {
     public static FlexatarServerAccess.StdResponse verifyData;
 
 
-    public static void clearVerificationData(){
+    /*public static void clearVerificationData(){
         verifyData = null;
         long userId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
         Context context = ApplicationLoader.applicationContext;
@@ -43,8 +43,8 @@ public class FlexatarServiceAuth {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.apply();
-    }
-    public static void saveVerificationData(FlexatarServerAccess.StdResponse response){
+    }*/
+    /*public static void saveVerificationData(FlexatarServerAccess.StdResponse response){
 
 
         verifyData = response;
@@ -57,8 +57,8 @@ public class FlexatarServiceAuth {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(VERIFY_KEY, response.toJson().toString());
         editor.apply();
-    }
-    public static FlexatarServerAccess.StdResponse getVerifyData(){
+    }*/
+    /*public static FlexatarServerAccess.StdResponse getVerifyData(){
         long userId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
         if (userId == currentUserId && verifyData!=null) return verifyData;
         if (loadVerificationData()){
@@ -66,13 +66,13 @@ public class FlexatarServiceAuth {
         }else{
             return null;
         }
-    }
-    public static void updateVerifyData(){
+    }*/
+    /*public static void updateVerifyData(){
         long userId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
         if (userId == currentUserId && verifyData!=null) return;
         loadVerificationData();
-    }
-    public static boolean loadVerificationData(){
+    }*/
+    /*public static boolean loadVerificationData(){
         Context context = ApplicationLoader.applicationContext;
         String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
@@ -91,53 +91,18 @@ public class FlexatarServiceAuth {
 //            return false;
 
         }
-    }
+    }*/
 
-    public interface VerifyListener{
+   /* public interface VerifyListener{
         void onReady(FlexatarServerAccess.StdResponse verifyData);
 
-    }
+    }*/
 
     public interface OnAuthListener{
         void onReady();
         void onError();
     }
 
-
-    /*public static void auth(OnAuthListener listener){
-
-            AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
-            currentUserId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
-            GcmPushListenerService.verifyServiceListener = json -> {
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                executor.execute(() -> {
-                    try {
-                        FlexatarServerAccess.StdResponse verifyResponse = new FlexatarServerAccess.StdResponse(json);
-                        verify(verifyResponse, listener);
-                    } catch (JSONException  e) {
-                        listener.onError();
-                    }
-                });
-            };
-
-            AndroidUtilities.runOnUIThread(() -> {
-                Config.getAuthBotUser(new Config.AuthBotUserObtainedListener() {
-                    @Override
-                    public void userReady(TLRPC.User user) {
-                        Log.d("FLX_INJECT","bot user ready "+user);
-                        AndroidUtilities.runOnUIThread(() -> {
-                            accountInstance.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(VERIFY_COMMAND + " " + SharedConfig.pushString, Config.authBotId, null, null, null, false, null, null, null, true, 0, null, false));
-                        });
-                    }
-                });
-
-            });
-//        }
-
-    }*/
-
-    public static AtomicBoolean hasRunAuth = new AtomicBoolean(false);
-    List<Integer> atomicList = new CopyOnWriteArrayList<>();
     public static class FlexatarVerifyProcess{
         private final long userId;
         private final int account;
@@ -146,7 +111,6 @@ public class FlexatarServiceAuth {
         private int counter = 0;
 
         private FlexatarServerAccess.StdResponse verifyData;
-        public VerifyListener verifyListener;
 
         public FlexatarVerifyProcess(int account,Runnable timeoutCallback){
             this.account=account;
@@ -197,6 +161,7 @@ public class FlexatarServiceAuth {
         }
         public void stop(){
             counter = 0;
+            if (executorService == null) return;
             if (!executorService.isShutdown())
                 executorService.shutdown();
         }
@@ -238,6 +203,9 @@ public class FlexatarServiceAuth {
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.clear();
             editor.apply();
+        }
+        public void verify(OnAuthListener listener) {
+            verify(verifyData,listener);
         }
         public void verify(FlexatarServerAccess.StdResponse verifyResponse,OnAuthListener listener){
             verifyData = verifyResponse;
@@ -288,9 +256,6 @@ public class FlexatarServiceAuth {
         public String getToken() {
             return verifyData.token;
         }
-       /* public FlexatarServerAccess.StdResponse getVerifyData() {
-            return verifyData;
-        }*/
     }
     public static Map<String,FlexatarVerifyProcess> verifyProcesses = new ConcurrentHashMap<>();
 
@@ -315,18 +280,6 @@ public class FlexatarServiceAuth {
         for (Map.Entry<String,FlexatarVerifyProcess> ent : verifyProcesses.entrySet()){
             ent.getValue().stop();
         }
-//        verifyProcesses.clear();
     }
-    /*public static NotificationCenter.NotificationCenterDelegate authConnectionObserver = new NotificationCenter.NotificationCenterDelegate() {
-        @Override
-        public void didReceivedNotification(int id, int account, Object... args) {
-            if (id == NotificationCenter.didUpdateConnectionState){
-                int state = ConnectionsManager.getInstance(account).getConnectionState();
-                if (state == 3){
-                    long userId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
-                    verifyProcesses.putIfAbsent(""+userId, new FlexatarVerifyProcess(userId));
-                }
-            }
-        }
-    };*/
+
 }

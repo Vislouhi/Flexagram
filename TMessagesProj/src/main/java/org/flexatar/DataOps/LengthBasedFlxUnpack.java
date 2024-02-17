@@ -15,12 +15,18 @@ public class LengthBasedFlxUnpack {
     public List<String> hPacks = new ArrayList<>();
     public List<byte[]> hPacksByte = new ArrayList<>();
     public List<byte[]> bPacks = new ArrayList<>();
+    private final static int MAX_AVAILABLE_LENGTH = 10000000;
     public LengthBasedFlxUnpack(byte[] data){
         int offset = 0;
         int cntr = 0;
+
+
+
         while (offset<data.length) {
             byte[] lengthHeaderBytes = Arrays.copyOfRange(data, offset, offset + 8);
             long lengthHeader = Data.decodeLengthHeader(lengthHeaderBytes);
+
+            if (lengthHeader>MAX_AVAILABLE_LENGTH) break;
             offset += 8;
             byte[] body = Arrays.copyOfRange(data, offset, offset + (int) lengthHeader);
             offset += (int) lengthHeader;
@@ -31,7 +37,7 @@ public class LengthBasedFlxUnpack {
                 String str = new String(body, StandardCharsets.UTF_8);
 
                 try {
-                    Log.d("====DEB====", " header " + str);
+//                    Log.d("====DEB====", " header " + str);
                     JSONObject jsonObject = new JSONObject(str);
 
                     hPacks.add(jsonObject.getString("type"));
@@ -45,6 +51,18 @@ public class LengthBasedFlxUnpack {
         }
 
 
+    }
+    public boolean validate(){
+        String[] keysMustBe = {
+                "Info","PreviewImage","mandalaBlendshapes","mandalaTextureBlurBkg",
+                "mandalaCheckpoints","mandalaFaces","mandalaBorder"
+        };
+        boolean isValid = true;
+        for (String key:keysMustBe){
+            isValid = isValid && hPacks.contains(key);
+        }
+        Log.d("FLX_INJECT","flexatar file validation: "+isValid);
+        return isValid;
     }
 
 }

@@ -9299,7 +9299,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             documentAttachType = DOCUMENT_ATTACH_TYPE_DOCUMENT;
 
             String name = FileLoader.getDocumentFileName(documentAttach);
-            Log.d("FLX_INJECT","file name " +name);
+//            Log.d("FLX_INJECT","file name " +name);
 
 
             if (name.startsWith("flexatar_") && (name.endsWith(".flx"))) {

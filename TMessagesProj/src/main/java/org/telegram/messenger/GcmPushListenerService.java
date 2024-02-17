@@ -22,8 +22,6 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class GcmPushListenerService extends FirebaseMessagingService {
-    public static FlexatarServerAccess.VerifyListener verifyListener;
-    public static FlexatarServiceAuth.VerifyListener verifyServiceListener;
     @Override
     public void onMessageReceived(RemoteMessage message) {
         String from = message.getFrom();

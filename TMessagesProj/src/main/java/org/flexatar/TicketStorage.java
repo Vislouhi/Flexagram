@@ -8,6 +8,7 @@ import com.google.android.exoplayer2.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.UserConfig;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -17,19 +18,25 @@ public class TicketStorage {
     static final String PREF_STORAGE_NAME = "TicketStorage";
 
     public static synchronized void clearTickets(){
-        SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
+        long userID = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+
+        SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME+userID, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.apply();
     }
     public static synchronized void removeTicket(String lfid){
-        SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
+        long userID = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+
+        SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME+userID, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.remove(lfid);
         editor.apply();
     }
     public static synchronized Map<String, TicketsController.Ticket> getTickets(){
-        SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
+        long userID = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+
+        SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME+userID, Context.MODE_PRIVATE);
         Map<String, ?> allEntries = sharedPreferences.getAll();
         Map<String, TicketsController.Ticket> tickets = new HashMap<>();
 
@@ -45,7 +52,8 @@ public class TicketStorage {
         return tickets;
     }
     public static synchronized void setTicket(String lfid,TicketsController.Ticket ticket){
-        SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME, Context.MODE_PRIVATE);
+        long userID = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME+userID, Context.MODE_PRIVATE);
         String ticketString = sharedPreferences.getString(lfid, "{}");
         JSONObject jsonTicket = ticket.toJson(ticketString);
 

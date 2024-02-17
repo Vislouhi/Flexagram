@@ -173,9 +173,10 @@ public class FlexatarData {
         return metaData;
     }
     public ByteBuffer[] headBB = new ByteBuffer[5];
+    public ByteBuffer eyelidBlendshape;
     public Bitmap[] headBitmaps = new Bitmap[5];
     public List<List<float[]>> mouthPoints;
-    private static int[] idxOfInterest = {88,97,50,43,54,46};
+    private static final int[] idxOfInterest = {88,97,50,43,54,46};
 
     private void prepareGlBuffers(){
 //         ===========HEAD PART==============
@@ -198,6 +199,7 @@ public class FlexatarData {
             }
             headBlendshapeBB.position(0);
         }
+        eyelidBlendshape = Data.dataToBuffer(flxData.get("exp0").get("eyelidBlendshape").get(0));
 
         for (int i = 0; i < 5; i++) {
             byte[] imgData = flxData.get("exp0").get("mandalaTextureBlurBkg").get(i);

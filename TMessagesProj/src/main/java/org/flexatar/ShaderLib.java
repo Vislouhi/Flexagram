@@ -42,6 +42,8 @@ public class ShaderLib {
                     "attribute vec4 speechBuff0;" +
                     "attribute vec4 speechBuff1;" +
                     "attribute vec4 speechBuff2;" +
+                    "attribute vec2 eyebrowBshp;" +
+                    "attribute vec2 blinkBshp;" +
                     "attribute vec2 uvCoordinates;" +
 
                     "uniform vec4 parSet0;" +
@@ -89,6 +91,8 @@ public class ShaderLib {
                     " speechWeights[2] = parSet2.w;" +
                     " speechWeights[3] = parSet3.x;" +
                     " speechWeights[4] = parSet3.y;" +
+                    " float eyebrowWeight = parSet3.z;" +
+                    " float blinkWeight = parSet3.w;" +
 
                     "vec4 result = vec4(0);" +
                     "for (int i = 0; i < 5; i++) {" +
@@ -98,6 +102,8 @@ public class ShaderLib {
                     "for (int i = 0; i < 5; i++) {" +
                     "    result.xy += speechWeights[i]*speechBshp[i];" +
                     "}" +
+                    " result.xy += eyebrowBshp*eyebrowWeight;" +
+                    " result.xy += blinkBshp*blinkWeight;" +
                     "result = extraRotMatrix*result;" +
                     "result = vmMatrix*result;" +
                     "result.x = atan(result.x/result.z)*5.0;" +

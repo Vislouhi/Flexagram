@@ -149,6 +149,7 @@ public class FlexatarCell extends RelativeLayout {
     }
 
     public void setLoading(){
+        flexatarFile = null;
         downloadDrawable = new RLottieDrawable(R.raw.download_progress, "download_progress", AndroidUtilities.dp(36), AndroidUtilities.dp(36), false, null);
 //        downloadDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.MULTIPLY));
 

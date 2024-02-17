@@ -88,6 +88,7 @@ public class FlxDrawer {
 
 
     private static class GlBuffers {
+        private final VBO eyelidVbo;
         private VBO[] mouthBuffers = new VBO[5];
         public VBO[] headBuffers = new VBO[5];
         public TextureArray headTexture;
@@ -103,6 +104,8 @@ public class FlxDrawer {
                 headBuffers[i] = bshpVbo;
 
             }
+            eyelidVbo = new VBO(flxData.eyelidBlendshape, GLES20.GL_ARRAY_BUFFER);
+
             headTexture = new TextureArray();
             for (int i = 0; i < 5; i++) {
                 headTexture.addTexture(flxData.headBitmaps[i]);
@@ -129,6 +132,7 @@ public class FlxDrawer {
                 headBuffers[i].destroy();
                 mouthBuffers[i].destroy();
             }
+            eyelidVbo.destroy();
             headTexture.release();
             mouthUvVbo.destroy();
             mouthIdxVbo.destroy();
@@ -186,6 +190,8 @@ public class FlxDrawer {
             headProgram.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
         }
         headProgram.attribute("uvCoordinates", commonBuffers.uvVBO, 2);
+        headProgram.attribute("eyebrowBshp", commonBuffers.eyebrowVBO, 2);
+
 
         headProgram.addUniform1f("opFactor");
         headProgram.addUniformMatrix4fv("vmMatrix");
@@ -211,6 +217,7 @@ public class FlxDrawer {
             headProgramDual.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
         }
         headProgramDual.attribute("coordinates", commonBuffers.uvVBO, 2);
+        headProgramDual.attribute("eyebrowBshp", commonBuffers.eyebrowVBO, 2);
         headProgramDual.addUniformMatrix4fv("vmMatrix");
         headProgramDual.addUniformMatrix4fv("zRotMatrix");
         headProgramDual.addUniformMatrix4fv("extraRotMatrix");
@@ -249,13 +256,14 @@ public class FlxDrawer {
             for (int i = 0; i < 5; i++) {
                 headProgram.attribute("bshp" + i, buffers1.headBuffers[i], 4);
             }
-
+            headProgram.attribute("blinkBshp", buffers1.eyelidVbo, 2);
             headProgram.textureArray(HEAD_TEXTURE_SAMPLER, buffers1.headTexture, 0);
         }
         if (headProgramDual != null && buffers2 != null) {
             for (int i = 0; i < 5; i++) {
                 headProgramDual.attribute("bshp" + i, buffers1.headBuffers[i], 4);
             }
+            headProgramDual.attribute("blinkBshp", buffers1.eyelidVbo, 2);
             for (int i = 0; i < 5; i++) {
                 headProgramDual.attribute("bshp" + i + "o", buffers2.headBuffers[i], 4);
             }
@@ -491,7 +499,7 @@ public class FlxDrawer {
             headProgramDual.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
             headProgramDual.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
             headProgramDual.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
-            headProgramDual.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], 0, 0);
+            headProgramDual.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], animator.animUnit.eyebrow, animator.animUnit.blink);
             headProgramDual.uniform1i("effectId", effectID);
             headProgramDual.uniform1f("mixWeight", mixWeight);
             headProgramDual.uniform1f("opFactor", opFactor);
@@ -504,10 +512,12 @@ public class FlxDrawer {
         } else {
             headProgram.use();
             headProgram.bind();
+
             headProgram.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
             headProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
             headProgram.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
-            headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], 0, 0);
+//            headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], 1, 1);
+            headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], animator.animUnit.eyebrow, animator.animUnit.blink);
             headProgram.uniformMatrix4fv("zRotMatrix", zRotMatrix);
             headProgram.uniformMatrix4fv("extraRotMatrix", extraRotMat);
             headProgram.uniform1f("opFactor", opFactor);

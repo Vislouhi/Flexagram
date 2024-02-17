@@ -260,7 +260,8 @@ public class FlexatarInstructionFragment extends BaseFragment{
     public void onFragmentDestroy() {
 
         super.onFragmentDestroy();
-        finishPage();
+        TicketsController.stop();
+
     }
 
 

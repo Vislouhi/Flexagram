@@ -35,11 +35,11 @@ public class Config {
     public static final boolean debugMode = true;
 
     public static final String version = "pre-historic";
-    private static final String PREF_STORAGE_NAME = "flexatar_config_pref";
-    private static final String TOKEN_FIELD = "token";
-    private static final String VERIFY_FIELD = "verify";
-    private static final String STORAGE_FIELD = "storage";
-    private static final String STAT_FIELD = "stat";
+//    private static final String PREF_STORAGE_NAME = "flexatar_config_pref";
+//    private static final String TOKEN_FIELD = "token";
+//    private static final String VERIFY_FIELD = "verify";
+//    private static final String STORAGE_FIELD = "storage";
+//    private static final String STAT_FIELD = "stat";
 
     public static CountDownLatch stopRecordingAudioSemaphore = null;
     public static Runnable sendAudioCallback = null;
@@ -69,18 +69,20 @@ public class Config {
     public static String verify = null;
     public static String storage = null;
     public static String stat = null;
-    private static final Object mutex = new Object();
-    public static void reset(){
+
+
+//    private static final Object mutex = new Object();
+   /* public static void reset(){
         String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
 
         SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.apply();
-    }
-    private static boolean verifyInProgress = false;
-    private static final Object verifyMutex = new Object();
-    public static void init(){
+    }*/
+//    private static boolean verifyInProgress = false;
+//    private static final Object verifyMutex = new Object();
+    /*public static void init(){
         synchronized (verifyMutex) {
             if (verifyInProgress) return;
             verifyInProgress = true;
@@ -92,11 +94,12 @@ public class Config {
         loadConfig();
         if (token!=null) return;
         startVerifyRequest();
-    }
-    public static boolean isVerified(){
+    }*/
+    /*public static boolean isVerified(){
         return token!=null;
-    }
-    public static void addDefaultFlexatars(){
+    }*/
+
+    /*public static void addDefaultFlexatars(){
 
         String[] flxFileNames = { "char6t", "char7t"};
         for (int i = 0; i < flxFileNames.length; i++) {
@@ -109,8 +112,8 @@ public class Config {
 
         }
 
-    }
-    private static void startVerifyRequest(){
+    }*/
+    /*private static void startVerifyRequest(){
         FlexatarServerAccess.lambdaVerify(new FlexatarServerAccess.VerifyListener() {
             @Override
             public void onVerifyAnswer(String token1, String verifyUrl, String storageUrl, String statUrl) {
@@ -143,10 +146,10 @@ public class Config {
                 startVerifyRequest();
             }
         });
-    }
+    }*/
 
-    private static long oldUserId = -1;
-    private static void loadConfig(){
+//    private static long oldUserId = -1;
+    /*private static void loadConfig(){
         synchronized (mutex) {
             long currentUserId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
             if (currentUserId == oldUserId && token!=null) {
@@ -172,9 +175,9 @@ public class Config {
                     verifyInProgress = false;
             }
         }
-    }
+    }*/
 
-    interface AuthBotUserObtainedListener{
+    /*interface AuthBotUserObtainedListener{
         void userReady(TLRPC.User user);
     }
 
@@ -208,7 +211,7 @@ public class Config {
 //            ContactsController.getInstance(UserConfig.selectedAccount).requestFlexatarBot(()->{
 //
 //            });
-            /*final TLRPC.TL_contacts_importContacts req = new TLRPC.TL_contacts_importContacts();
+            *//*final TLRPC.TL_contacts_importContacts req = new TLRPC.TL_contacts_importContacts();
             TLRPC.TL_inputPhoneContact imp = new TLRPC.TL_inputPhoneContact();
             imp.client_id = authBotId;
             req.contacts = new ArrayList<>();
@@ -219,10 +222,10 @@ public class Config {
                         }else{
                             Log.d("FLX_INJECT","contacts imported error" + error.text);
                         }
-            });*/
+            });*//*
         }
 
-        /*TLRPC.User user = messageController.getUser(authBotId);
+        *//*TLRPC.User user = messageController.getUser(authBotId);
         if (user!=null){
             listener.userReady(user);
             return;
@@ -235,15 +238,17 @@ public class Config {
 
             messageController.putUser(user1, true);
             listener.userReady(user1);
-        });*/
-    }
-    private static final int  VERIFY_TIMEOUT_SECONDS = 15;
+        });*//*
+    }*/
+
+    /*private static final int  VERIFY_TIMEOUT_SECONDS = 15;
     private static final String VERIFY_COMMAND = "/verify";
     public interface BotAuthCompletionListener{
         void onReady(String token);
         void onFail();
-    }
-    public static void botAuth(BotAuthCompletionListener completionListener){
+    }*/
+
+    /*public static void botAuth(BotAuthCompletionListener completionListener){
         ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
         AtomicReference timeoutFutureRef = new AtomicReference<ScheduledFuture<?>>();
 
@@ -298,5 +303,5 @@ public class Config {
         });
 
 
-    }
+    }*/
 }

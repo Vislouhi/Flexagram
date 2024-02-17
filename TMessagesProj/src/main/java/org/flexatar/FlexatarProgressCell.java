@@ -60,9 +60,9 @@ public class FlexatarProgressCell extends LinearLayout {
     public String getErrorCode(){
         return errorCode;
     }
-    public void removeFlexatarOnServer(){
+    /*public void removeFlexatarOnServer(){
         FlexatarServerAccess.lambdaRequest(ServerDataProc.genDeleteRout(flexatarLink), "DELETE", null, null, null);
-    }
+    }*/
     public void setTicket(String name){
         if (startTime!=null) return;
         headerText.setText("Making flexatar : "+ name);
@@ -246,7 +246,7 @@ public class FlexatarProgressCell extends LinearLayout {
 //        LocalDate.parse(currentDate)
 //        Duration.between()
     }
-    public void downloadRecursive(int part,ByteArrayOutputStream outputStream,FlexatarServerAccess.CompletionListener listener){
+    /*public void downloadRecursive(int part,ByteArrayOutputStream outputStream,FlexatarServerAccess.CompletionListener listener){
         FlexatarServerAccess.lambdaRequest(flexatarLink+"?part="+part, "GET", null, outputStream, new FlexatarServerAccess.CompletionListener() {
             @Override
             public void onReady(boolean isComplete) {
@@ -264,7 +264,7 @@ public class FlexatarProgressCell extends LinearLayout {
             }
         });
 
-    }
+    }*/
     public void addDismissListener(DismissListener dismissListener){
         this.dismissListener=dismissListener;
     }

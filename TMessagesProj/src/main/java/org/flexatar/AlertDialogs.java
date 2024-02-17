@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
@@ -66,8 +67,12 @@ public class AlertDialogs {
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
             listener.onNameReady(editText.getText().toString());
         });
+        AlertDialog alertDialog = builder.create();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+        }
 
-        return builder.create();
+        return alertDialog;
 
     }
     public static AlertDialog askToCompleteInstructions(Context context){
