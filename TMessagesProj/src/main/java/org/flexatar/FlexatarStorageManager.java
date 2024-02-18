@@ -30,12 +30,16 @@ import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 
 public class FlexatarStorageManager {
     private static final String PREF_STORAGE_NAME = "flexatar_storage_pref";
+    private static final String PREF_STORAGE_NAME_GROUP = "flexatar_storage_group_pref";
     private static final String PREF_STORAGE_NAME_CHOSEN = "flexatar_storage_pref";
     public static final String FLEXATAR_STORAGE_FOLDER = "flexatar_storage";
     public static final String FLEXATAR_PREVIEW_STORAGE_FOLDER = "flexatar_preview_storage";
@@ -44,6 +48,7 @@ public class FlexatarStorageManager {
     public static final String FLEXATAR_PREFIX = "flexatar_";
     public static final String BUILTIN_PREFIX = "builtin_";
     private static final String FLEXATAR_FILES = "flexatar_files";
+    private static final String HIDDEN_FILES = "hidden_files";
 
     public static final FlexatarChooser callFlexatarChooser = new FlexatarChooser("call",0.005f,0.0025f);
     public static final FlexatarChooser roundFlexatarChooser = new FlexatarChooser("round",0.02f,0.0025f);
@@ -436,6 +441,143 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
+    public static synchronized void addStorageHiddenRecord(Context context,String fId){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(HIDDEN_FILES, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            Log.d("FLX_INJECT","addStorageRecord fid "+ fId);
+            jsonArray.put(fId);
+            flexatarFilesString = jsonArray.toString();
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(HIDDEN_FILES, flexatarFilesString);
+            editor.apply();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static synchronized List<String> getGroups(Context context){
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        Map<String, ?> allEntries = sharedPreferences.getAll();
+        Set<String> keys = allEntries.keySet();
+
+        return new ArrayList<String>(){{addAll(keys);}}.stream().sequential().map(x->x.replace("groupId_","")).collect(Collectors.toList());
+    }
+    public static synchronized void addGroupRecord(Context context,String groupId,String fId){
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String groupKey = "groupId_"+groupId;
+        String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            Log.d("FLX_INJECT","addStorageRecord fid "+ fId);
+            jsonArray.put(fId);
+            flexatarFilesString = jsonArray.toString();
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(groupKey, flexatarFilesString);
+            editor.apply();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static synchronized void moveGroupRecord(Context context,String groupId,String fId,int direction){
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String groupKey = "groupId_"+groupId;
+        String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                if(jsonArray.getString(i).equals(fId)){
+                    String tmp = jsonArray.getString(i);
+                    jsonArray.put(i,jsonArray.getString(i+direction));
+                    jsonArray.put(i+direction,tmp);
+
+                    break;
+                }
+            }
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(groupKey, jsonArray.toString());
+            editor.apply();
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static synchronized int getGroupSize(Context context,String groupId){
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String groupKey = "groupId_"+groupId;
+
+        String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            return jsonArray.length();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    public static synchronized String[] getGroupRecords(Context context,String groupId){
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String groupKey = "groupId_"+groupId;
+
+        String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            String[] result = new String[jsonArray.length()];
+            for (int i = 0; i < jsonArray.length(); i++) {
+                result[i] = jsonArray.getString(i);
+
+            }
+            return result;
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    public static synchronized void removeGroupRecord(Context context,String groupId,String fid){
+        String groupKey = "groupId_"+groupId;
+
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                if(jsonArray.getString(i).equals(fid)){
+                    jsonArray.remove(i);
+                    break;
+                }
+            }
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            if (jsonArray.length() == 0){
+                editor.remove(groupKey);
+            }else{
+                editor.putString(groupKey, jsonArray.toString());
+            }
+            editor.apply();
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static List<File> getFlexatarGroupFileList(Context context,String groupId){
+        File flexatarStorageFolder = getFlexatarStorage(context);
+        String[] fids = getGroupRecords(context,groupId);
+
+        List<File> files = new ArrayList<>();
+        for (int i = 0; i < fids.length; i++) {
+            files.add(new File(flexatarStorageFolder,ServerDataProc.routToFileName(fids[i],"")));
+        }
+        return files;
+    }
     private static synchronized void removeRecord(Context context,String fid){
         String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
@@ -456,6 +598,33 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
+    public static synchronized void removeHiddenRecord(Context context,String fid){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(HIDDEN_FILES, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                if(jsonArray.getString(i).equals(fid)){
+                    jsonArray.remove(i);
+                    break;
+                }
+            }
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(HIDDEN_FILES, jsonArray.toString());
+            editor.apply();
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static synchronized void clearHiddenRecord(Context context){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(HIDDEN_FILES, "[]");
+        editor.apply();
+    }
     public static synchronized String[] getRecords(Context context){
         String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
 
@@ -466,6 +635,46 @@ public class FlexatarStorageManager {
             String[] result = new String[jsonArray.length()];
             for (int i = 0; i < jsonArray.length(); i++) {
                 result[i] = jsonArray.getString(jsonArray.length() - i - 1);
+
+            }
+            return result;
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    public static synchronized List<String> getHiddenRecords(Context context){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(HIDDEN_FILES, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            List<String> result = new ArrayList<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                result.add(jsonArray.getString(jsonArray.length() - i - 1));
+
+            }
+            return result;
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    public static synchronized List<String> getRecordsExcept(Context context,List<String> except){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            List<String> result = new ArrayList<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                String entry = jsonArray.getString(jsonArray.length() - i - 1);
+                if (!except.contains(entry))
+                    result.add(entry);
 
             }
             return result;
@@ -810,6 +1019,27 @@ public class FlexatarStorageManager {
 
         return files;
     }
+
+    public static List<File> getFlexatarFileListExcept(Context context,List<String> except){
+        File flexatarStorageFolder = getFlexatarStorage(context);
+        String[] fids = getRecordsExcept(context, except).toArray(new String[0]);
+        if (fids.length == 0){
+            addDefaultFlexatars();
+            fids = getRecords(context);
+        }
+        List<File> files = new ArrayList<>();
+//        Log.d("FLX_INJECT", "length files "+files.length);
+        for (int i = 0; i < fids.length; i++) {
+            files.add(new File(flexatarStorageFolder,ServerDataProc.routToFileName(fids[i],"")));
+
+//            Log.d("FLX_INJECT", files[i].getAbsolutePath());
+//            Log.d("FLX_INJECT", "lastModified "+files[i].lastModified());
+        }
+
+
+        return files;
+    }
+
     public static File[] getFlexatarFileList(Context context,String prefix){
         File flexatarStorageFolder = getFlexatarStorage(context);
         String[] fids = getRecords(context);

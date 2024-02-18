@@ -20,7 +20,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
 
@@ -81,6 +80,16 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
             int start = itemsAction.size() + (itemsProgress.size() > 1 ? itemsProgress.size() : 0) + position;
             notifyItemRemoved(start);
         });
+    }
+    public void setUpFlexatarList(){
+        itemsFlexatar.subList(1,itemsFlexatar.size()).clear();
+        List<File> flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context, FlexatarStorageManager.getHiddenRecords(context));
+        for (int i = 0; i < flexatarsInLocalStorage.size(); i++) {
+            ItemModel item = FlexatarCabinetActivity.flexatarItemFactory(flexatarsInLocalStorage.get(i));
+
+            itemsFlexatar.add(item);
+        }
+        notifyDataSetChanged();
     }
 
     public interface ClickListener{

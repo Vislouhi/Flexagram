@@ -37,7 +37,7 @@ import org.telegram.ui.Components.ViewPagerFixed;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -69,13 +69,20 @@ public class FlexatarPreview extends FrameLayout {
     private boolean isMakeMouthSelected = false;
     private ViewPagerFixed.TabsView tabsView;
     private RecyclerView recyclerView;
+    private FoldUpFlexatarChooseView foldUpFlexatarChooseView;
+    private boolean foldUpOpened = false;
+    private String groupId;
+    private List<File> groupFiles = new ArrayList<>();
 
     public FlexatarCell getFlexatarCell(){
         return flexatarCell;
     }
     public FlexatarPreview(@NonNull Context context, FlexatarCell flexatarCell, BaseFragment parentFragment) {
         super(context);
+//        FlexatarStorageManager.clearHiddenRecord(context);
         this.flexatarCell=flexatarCell;
+        groupId = flexatarCell.getFlexatarFile().getName().replace(".flx","");
+
         this.parentFragment = parentFragment;
         int currentOrientation = getResources().getConfiguration().orientation;
 
@@ -123,8 +130,70 @@ public class FlexatarPreview extends FrameLayout {
 
         });
         makeLayout(currentOrientation);
+        setupGroupTimer();
 //        addView(cardview);
 
+    }
+    public void setupGroupTimer(){
+        groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(getContext(), groupId);
+        if (groupFiles.size() == 0) return;
+        groupFiles.add(flexatarCell.getFlexatarFile());
+
+        Timer groupTimer = new Timer();
+        TimerTask task = new TimerTask() {
+            private final int changeDelta = 25*4;
+            private final int morphDelta = 25;
+            private int counter = 0;
+            private int morphCounter = 0;
+            private int flexatarCounter = 0;
+            private boolean morphStage = false;
+            @Override
+            public void run() {
+                counter+=1;
+                if (counter>changeDelta){
+                    counter = 0;
+                    if (drawer!=null){
+
+
+                        if (flexatarCounter>=groupFiles.size()){
+                            flexatarCounter=0;
+                        }
+                        drawer.changeFlexatar(FlexatarData.factory(groupFiles.get(flexatarCounter)));
+                        flexatarCounter+=1;
+
+                        morphStage = true;
+                        drawer.setMixWeightVal(0);
+                        drawer.setisEffectOnVal(true);
+                        drawer.setEffectIdVal(0);
+
+
+                    }
+
+                }
+                if (morphStage){
+                    morphCounter+=1;
+                    if (drawer!=null) {
+                        double w = (1d + Math.cos(Math.PI + Math.PI * (double) morphCounter / morphDelta)) / 2;
+                        drawer.setMixWeightVal((float)w);
+                    }
+                    if (morphCounter>morphDelta){
+                        morphCounter = 0;
+                        morphStage =false;
+                        if (drawer!=null) {
+                            drawer.setMixWeightVal(1);
+                            drawer.setisEffectOnVal(false);
+                            drawer.setEffectIdVal(0);
+                        }
+
+                    }
+                }
+            }
+
+
+        };
+
+
+        groupTimer.scheduleAtFixedRate(task, 0, 40);
     }
     public void reinitFlexatar(){
         if (cardview.getChildCount() == 0 ){
@@ -176,7 +245,7 @@ public class FlexatarPreview extends FrameLayout {
         if (controlsScrollView == null) return;
         LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
         controlsScrollView.setLayoutParams(layoutParams);
-        tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,24,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
+        tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
         recyclerView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT,isPortrait ? 0 : 24,0,0,0));
 
 
@@ -256,7 +325,7 @@ public class FlexatarPreview extends FrameLayout {
         controlsLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         controlsScrollView.addView(controlsLayout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
 
-        editContentLayout.addView(tabsView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,24,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
+        editContentLayout.addView(tabsView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
         editContentLayout.addView(controlsScrollView,layoutParams);
         layout.addView(editContentLayout,layoutParams);
 
@@ -405,7 +474,31 @@ public class FlexatarPreview extends FrameLayout {
 
         recyclerView = new RecyclerView(getContext());
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(new Adapter(getContext(),null ));
+
+        Adapter adapter = new Adapter(getContext(), groupId,this);
+
+        adapter.setOnAddListener(()->{
+            if (!foldUpOpened) {
+                foldUpOpened = true;
+//                if (foldUpFlexatarChooseView == null) {
+                    foldUpFlexatarChooseView = new FoldUpFlexatarChooseView(getContext(),flexatarCell.getFlexatarFile().getName().replace(".flx",""));
+//                    foldUpFlexatarChooseView.setFlexatarId(flexatarCell.getFlexatarFile().getName().replace(".flx",""));
+                    foldUpFlexatarChooseView.addOnRemoveViewListener(()->{foldUpOpened=false;});
+                    foldUpFlexatarChooseView.addOnFlexatarChosenListener(file->{
+                        FlexatarCabinetActivity.needRedrawFlexatarList = true;
+                        if (groupFiles.size() == 0 ){
+                            setupGroupTimer();
+                        }
+                        groupFiles.add(groupFiles.size()-1,file);
+                        Log.d("FLX_INJECT","add flexatar file to group" + file.getName());
+                        adapter.addFlexatar(file);
+                    });
+
+//                }
+                addView(foldUpFlexatarChooseView);
+            }
+        });
+        recyclerView.setAdapter(adapter);
         recyclerView.setLayoutParams(new LinearLayout.LayoutParams(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         recyclerView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
     }
@@ -515,12 +608,20 @@ public class FlexatarPreview extends FrameLayout {
 
     public static class Adapter  extends RecyclerView.Adapter<FlexatarPreview.Adapter.ViewHolder>{
         private final Context mContext;
-        private final BaseFragment parent;
-        private final List<File> flexatars = new ArrayList<>();
+        private final FlexatarPreview parent;
+        private final List<File> flexatars;
+        private final String groupId;
+        private Runnable onAddListener;
 
-        public Adapter(Context context, BaseFragment parent){
+
+        public Adapter(Context context,String groupId, FlexatarPreview parent){
             this.mContext = context;
             this.parent = parent;
+            this.groupId = groupId;
+            flexatars = FlexatarStorageManager.getFlexatarGroupFileList(mContext, groupId);
+        }
+        public void setOnAddListener(Runnable onAddListener){
+            this.onAddListener=onAddListener;
         }
         @NonNull
         @Override
@@ -530,7 +631,8 @@ public class FlexatarPreview extends FrameLayout {
 
                 return new Adapter.ViewHolder(cell);
             }else{
-                return null;
+                FlexatarCell cell = new FlexatarCell(mContext);
+                return new Adapter.ViewHolder(cell);
             }
         }
 
@@ -539,13 +641,80 @@ public class FlexatarPreview extends FrameLayout {
             if (holder.itemView instanceof TextCell) {
                 TextCell cell = (TextCell) holder.itemView;
                 cell.setTextAndIcon(LocaleController.getString("Add",R.string.Add), R.drawable.menu_flexatar, true);
+                cell.setOnClickListener(v->{
+                    if (onAddListener == null) return;
+                    onAddListener.run();
+                });
+            }else if (holder.itemView instanceof FlexatarCell){
+                FlexatarCell cell = (FlexatarCell) holder.itemView;
+                cell.loadFromFile(flexatars.get(position-1), FlexatarCell.FlxCellType.FLX_MOVE);
+                cell.setOnMoveControlPressedListener(new FlexatarCell.OnMoveControlPressedListener() {
+                    @Override
+                    public void onUp() {
+                        int flxIdx = flexatars.indexOf(cell.getFlexatarFile());
 
+                        Log.d("FLX_INJECT","flexatar up "+ flxIdx);
+                        if (flxIdx > 0) {
+                            String flxID = cell.getFlexatarFile().getName().replace(".flx","");
+                            FlexatarStorageManager.moveGroupRecord(mContext,groupId,flxID,-1);
+                            Collections.swap(flexatars, flxIdx, flxIdx - 1);
+                            Collections.swap(parent.groupFiles, flxIdx, flxIdx - 1);
+                            AndroidUtilities.runOnUIThread(()->{
+                                notifyItemMoved(flxIdx+1,flxIdx - 1 + 1);
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onDown() {
+                        int flxIdx = flexatars.indexOf(cell.getFlexatarFile());
+                        Log.d("FLX_INJECT","flexatar down "+ flxIdx);
+                        if (flxIdx < flexatars.size()-1) {
+                            String flxID = cell.getFlexatarFile().getName().replace(".flx","");
+                            FlexatarStorageManager.moveGroupRecord(mContext,groupId,flxID,1);
+                            Collections.swap(flexatars, flxIdx, flxIdx + 1);
+                            Collections.swap(parent.groupFiles, flxIdx, flxIdx + 1);
+                            AndroidUtilities.runOnUIThread(()->{
+                                notifyItemMoved(flxIdx+1,flxIdx + 1 + 1);
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void oClose() {
+                        FlexatarCabinetActivity.needRedrawFlexatarList = true;
+                        parent.groupFiles.remove(cell.getFlexatarFile());
+                        String flxID = cell.getFlexatarFile().getName().replace(".flx","");
+                        FlexatarStorageManager.removeGroupRecord(mContext, groupId,flxID);
+                        FlexatarStorageManager.removeHiddenRecord(mContext,flxID);
+                        int flxIdx = flexatars.indexOf(cell.getFlexatarFile());
+                        removeFlexatar(flxIdx);
+                    }
+                });
             }
         }
 
         @Override
         public int getItemCount() {
             return 1 + flexatars.size();
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            return position==0 ? 0 : 1;
+        }
+
+        public void addFlexatar(File file) {
+            flexatars.add(file);
+            AndroidUtilities.runOnUIThread(()->{
+                notifyItemInserted(flexatars.size());
+            });
+        }
+        public void removeFlexatar(int position){
+            flexatars.remove(position);
+            AndroidUtilities.runOnUIThread(()->{
+                notifyItemRemoved(position+1);
+            });
         }
 
         public static class ViewHolder extends RecyclerView.ViewHolder {

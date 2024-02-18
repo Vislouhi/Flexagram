@@ -3,6 +3,8 @@ package org.flexatar;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RoundRectShape;
@@ -33,7 +35,8 @@ import java.io.File;
 
 public class FlexatarCell extends RelativeLayout {
     private final ImageView icnFlx;
-    private final TextView dateTextView;
+    private TextView dateTextView;
+    private final LinearLayout textContentLayout;
     private float ratio;
     private float imageWidth;
     private File flexatarFile;
@@ -44,6 +47,10 @@ public class FlexatarCell extends RelativeLayout {
     private boolean isPublic;
     private RLottieDrawable downloadDrawable;
     private Theme.ResourcesProvider resourceProvider;
+    private DividerCell dividerCell;
+    private LinearLayout moveCellView;
+    private OnMoveControlPressedListener onMoveControlPressedListener;
+    private TextView groupCountTextView;
 
     public File getFlexatarFile(){
         return flexatarFile;
@@ -95,7 +102,7 @@ public class FlexatarCell extends RelativeLayout {
 
 
 
-        LinearLayout textContentLayout = new LinearLayout(context);
+        textContentLayout = new LinearLayout(context);
         textContentLayout.setOrientation(LinearLayout.VERTICAL);
         LayoutParams textContenLayoutParams = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
         textContenLayoutParams.addRule(RelativeLayout.END_OF, icnFlx.getId());
@@ -109,21 +116,16 @@ public class FlexatarCell extends RelativeLayout {
         nameTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
         textContentLayout.addView(nameTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT,LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL,0,16,0,0));
 
-        dateTextView = new TextView(context);
-        dateTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-
-        dateTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
-        dateTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmono.ttf"));
-        textContentLayout.addView(dateTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT,LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL,0,6,0,0));
-
-        DividerCell dividerCell = new DividerCell(context);
-        dividerCell.setPadding(AndroidUtilities.dp(28), AndroidUtilities.dp(8), AndroidUtilities.dp(28), AndroidUtilities.dp(8));
-        textContentLayout.addView(dividerCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 5,Gravity.BOTTOM,0,0,0,4));
 
 
     }
     private boolean isBuiltin = false;
     public void loadFromFile(File flexatarFile){
+        loadFromFile(flexatarFile,FlxCellType.FLX_DATE);
+    }
+
+    public enum FlxCellType {FLX_DATE,FLX_MOVE};
+    public void loadFromFile(File flexatarFile,FlxCellType cellType){
         this.flexatarFile = flexatarFile;
         isBuiltin =  flexatarFile.getName().startsWith(FlexatarStorageManager.BUILTIN_PREFIX);
         isPublic = flexatarFile.getName().startsWith(FlexatarStorageManager.PUBLIC_PREFIX) ;
@@ -145,9 +147,84 @@ public class FlexatarCell extends RelativeLayout {
         icnFlx.setBackground(null);
         icnFlx.setLayoutParams(layoutParams);
         nameTextView.setText(flexatarMetaData.name);
-        dateTextView.setText(flexatarMetaData.date);
+        if (cellType == FlxCellType.FLX_DATE) {
+            if (dateTextView!=null) textContentLayout.removeView(dateTextView);
+            if (dividerCell!=null) textContentLayout.removeView(dividerCell);
+            if (moveCellView!=null) textContentLayout.removeView(moveCellView);
+            if (groupCountTextView!=null) textContentLayout.removeView(groupCountTextView);
+
+            dateTextView = new TextView(getContext());
+            dateTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+
+            dateTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+            dateTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmono.ttf"));
+            textContentLayout.addView(dateTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 6, 0, 0));
+            String groupId = flexatarFile.getName().replace(".flx","");
+            int groupSize = FlexatarStorageManager.getGroupSize(getContext(),groupId);
+            if (groupSize>0) {
+                groupCountTextView = new TextView(getContext());
+                groupCountTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+
+                groupCountTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+                groupCountTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmono.ttf"));
+
+                groupCountTextView.setText(LocaleController.getString("GroupSize", R.string.GroupSize) +groupSize);
+                textContentLayout.addView(groupCountTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 6, 0, 0));
+            }
+
+
+            dividerCell = new DividerCell(getContext());
+            dividerCell.setPadding(AndroidUtilities.dp(28), AndroidUtilities.dp(8), AndroidUtilities.dp(28), AndroidUtilities.dp(8));
+            textContentLayout.addView(dividerCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 5, Gravity.BOTTOM, 0, 0, 0, 4));
+
+            dateTextView.setText(flexatarMetaData.date);
+        } else if (cellType == FlxCellType.FLX_MOVE) {
+            if (dateTextView!=null) textContentLayout.removeView(dateTextView);
+            if (dividerCell!=null) textContentLayout.removeView(dividerCell);
+            if (moveCellView!=null) textContentLayout.removeView(moveCellView);
+            if (groupCountTextView!=null) textContentLayout.removeView(groupCountTextView);
+
+            moveCellView = new LinearLayout(getContext());
+            moveCellView.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(AndroidUtilities.dp(34), AndroidUtilities.dp(34), 1);
+            ImageView moveUpwardsIcon = new ImageView(getContext());
+            moveUpwardsIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefault, resourceProvider), PorterDuff.Mode.MULTIPLY));
+
+            moveUpwardsIcon.setImageResource(R.drawable.msg_go_up);
+            moveUpwardsIcon.setOnClickListener(v->{
+                if (onMoveControlPressedListener!=null) onMoveControlPressedListener.onUp();
+            });
+            moveCellView.addView(moveUpwardsIcon,params);
+
+            ImageView moveDownwardsIcon = new ImageView(getContext());
+            moveDownwardsIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefault, resourceProvider), PorterDuff.Mode.MULTIPLY));
+
+            moveDownwardsIcon.setImageResource(R.drawable.msg_go_down);
+            moveDownwardsIcon.setOnClickListener(v->{
+                if (onMoveControlPressedListener!=null) onMoveControlPressedListener.onDown();
+            });
+            moveCellView.addView(moveDownwardsIcon,params);
+            ImageView removeIcon = new ImageView(getContext());
+            removeIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefault, resourceProvider), PorterDuff.Mode.MULTIPLY));
+
+            removeIcon.setImageResource(R.drawable.msg_round_cancel_m);
+            removeIcon.setOnClickListener(v->{
+                if (onMoveControlPressedListener!=null) onMoveControlPressedListener.oClose();
+            });
+            moveCellView.addView(removeIcon,params);
+            textContentLayout.addView(moveCellView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,12,0,0));
+
+        }
+    }
+    public void setOnMoveControlPressedListener(OnMoveControlPressedListener l ){
+        onMoveControlPressedListener =l;
     }
 
+    public interface OnMoveControlPressedListener{
+        void onUp();
+        void onDown();
+        void oClose();
+    }
     public void setLoading(){
         flexatarFile = null;
         downloadDrawable = new RLottieDrawable(R.raw.download_progress, "download_progress", AndroidUtilities.dp(36), AndroidUtilities.dp(36), false, null);

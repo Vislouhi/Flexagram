@@ -413,7 +413,7 @@ public class FlxDrawer {
 
 
         if (changeFlexatar!=null){
-            buffers2.destroy();
+            if (buffers2!=null) buffers2.destroy();
             flexatarDataAlt = flexatarData;
             flexatarData = changeFlexatar;
             buffers2 = buffers1;

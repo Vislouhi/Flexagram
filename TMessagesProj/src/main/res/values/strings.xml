@@ -63,6 +63,8 @@
     <string name="NotEnoughPhotos">The must be 5 photos selected</string>
     <string name="Timeout">Timeout</string>
     <string name="FlaxatarCanNotAuthorize">Application can not authorize in flexatar service. The only thing you can do is to try restart app later.</string>
+    <string name="MyFlexatars">My Flexatars</string>
+    <string name="GroupSize">Group size: </string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

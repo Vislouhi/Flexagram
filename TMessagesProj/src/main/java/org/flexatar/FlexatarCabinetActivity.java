@@ -54,7 +54,7 @@ import java.util.Map;
 
 public class FlexatarCabinetActivity extends BaseFragment  {
 
-
+    public static boolean needRedrawFlexatarList = false;
     private NumberTextView selectedDialogsCountTextView;
     private ArrayList<View> actionModeViews = new ArrayList<>();
 
@@ -386,17 +386,14 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         flexatarInProgressDelimiter.setNameText(LocaleController.getString("FlexatarsInProgress", R.string.FlexatarsInProgress));
         itemsProgress.add(flexatarInProgressDelimiter);
 
-        File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
-        for (int i = 0; i < flexatarsInLocalStorage.length; i++) {
-            ItemModel item = flexatarItemFactory(flexatarsInLocalStorage[i]);
 
-            itemsFlexatar.add(item);
-        }
 
 
         RecyclerView recyclerView = new RecyclerView(context);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         itemAdapter = new ItemAdapter(context, itemsAction,itemsProgress,itemsFlexatar);
+
+        itemAdapter.setUpFlexatarList();
 
         itemAdapter.setFlexatarCellOnClickListener((item,cell)->{
 //            ItemModel item = (ItemModel) v;
@@ -522,7 +519,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     }
 
 
-    private ItemModel flexatarItemFactory(File flexatarFile){
+    public static ItemModel flexatarItemFactory(File flexatarFile){
         ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
         item.setFlexatarFile(flexatarFile);
         return item;
@@ -651,6 +648,11 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     @Override
     public void onResume() {
         super.onResume();
+        if (needRedrawFlexatarList) {
+            itemAdapter.setUpFlexatarList();
+            FlexatarCabinetActivity.needRedrawFlexatarList = false;
+        }
+//        Log.d("FLX_INJECT","resume ");
         TicketsController.attachObserver( new TicketsController.TicketObserver() {
             @Override
             public void onReady(String lfid, File file) {
