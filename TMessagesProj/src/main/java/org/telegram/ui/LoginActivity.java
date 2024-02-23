@@ -95,6 +95,7 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.zxing.common.detector.MathUtils;
 
+import org.flexatar.FlexatarServiceAuth;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -1636,7 +1637,17 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             MessagesController.getInstance(currentAccount).putDialogsEndReachedAfterRegistration();
         }
         MediaDataController.getInstance(currentAccount).loadStickersByEmojiOrName(AndroidUtilities.STICKERS_PLACEHOLDER_PACK_NAME, false, true);
-
+        if (SharedConfig.pushString!=null && AccountInstance.getInstance(UserConfig.selectedAccount).getUserConfig().isClientActivated()) {
+            FlexatarServiceAuth.startVerification(UserConfig.selectedAccount, () -> {
+                /*AndroidUtilities.runOnUIThread(() -> {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                    builder.setTitle(LocaleController.getString("FlexatarInfo", R.string.FlexatarInfo));
+                    builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString("FlaxatarCanNotAuthorize", R.string.FlaxatarCanNotAuthorize)));
+                    builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
+                    showAlertDialog(builder);
+                });*/
+            });
+        }
         needFinishActivity(afterSignup, res.setup_password_required, res.otherwise_relogin_days);
     }
 

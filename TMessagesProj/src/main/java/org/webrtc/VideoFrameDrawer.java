@@ -294,6 +294,7 @@ public class VideoFrameDrawer {
         }
         if (fromEncoder) {
           flxDrawer.screenRatio = (float) renderWidth / (float) renderHeight;
+          flxDrawer.setPromo();
         } else {
 //          flxDrawer.screenRatio = (float) frame.getRotatedWidth() / (float) frame.getRotatedHeight() * (float) viewportWidth / (float) viewportHeight / (float) renderWidth * (float) renderHeight;
 

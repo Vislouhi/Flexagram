@@ -1,10 +1,13 @@
 package org.flexatar;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
@@ -29,6 +32,7 @@ import org.telegram.messenger.LocaleController;
 
 import org.telegram.messenger.R;
 
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -39,6 +43,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 
+import org.telegram.ui.BasePermissionsActivity;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
 
@@ -54,6 +59,7 @@ import java.util.Map;
 
 public class FlexatarCabinetActivity extends BaseFragment  {
 
+    public static Runnable makeFlexatarFailAction;
     public static boolean needRedrawFlexatarList = false;
     private NumberTextView selectedDialogsCountTextView;
     private ArrayList<View> actionModeViews = new ArrayList<>();
@@ -99,6 +105,13 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     @Override
     public View createView(Context context) {
 
+        makeFlexatarFailAction = ()-> {
+//            Log.d("FLX_INJECT","Show dialog impossible to perform");
+            AndroidUtilities.runOnUIThread(() -> {
+                AlertDialogs.sayImpossibleToPerform(getContext()).show();
+//                showDialog(AlertDialogs.sayImpossibleToPerform(getContext()),true,null);
+            });
+        };
 
         fragmentView = new FrameLayout(context);
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
@@ -150,7 +163,10 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
                 FlexatarInstructionFragment flexatarInstructionFragment = new FlexatarInstructionFragment();
                 flexatarInstructionFragment.setOnTryInterfacePressed((v1) -> {
-
+                    if (Build.VERSION.SDK_INT >= 23 && getParentActivity().checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                        getParentActivity().requestPermissions(new String[]{Manifest.permission.CAMERA},  BasePermissionsActivity.REQUEST_CODE_OPEN_CAMERA);
+                        return;
+                    }
                     presentFragment(new FlexatarCameraCaptureFragment(true));
                     flexatarInstructionFragment.finishPage();
                 });
@@ -164,7 +180,11 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             item.setImageResource(R.drawable.msg_addphoto);
             item.setNameText(LocaleController.getString("NewFlexatarByPhoto", R.string.NewFlexatarByPhoto));
             item.setOnClickListener(v-> {
-                if (FlexatarServiceAuth.getVerification().isVerified()) {
+                if (Build.VERSION.SDK_INT >= 23 && getParentActivity().checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    getParentActivity().requestPermissions(new String[]{Manifest.permission.CAMERA},  BasePermissionsActivity.REQUEST_CODE_OPEN_CAMERA);
+                    return;
+                }
+                if (FlexatarServiceAuth.getVerification()!=null && FlexatarServiceAuth.getVerification().isVerified()) {
                     if (ValueStorage.checkIfInstructionsComplete(context)) {
                         presentFragment(new FlexatarCameraCaptureFragment());
                     } else {
@@ -172,6 +192,9 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     }
                 }else{
                     showDialog(AlertDialogs.showVerifyInProgress(context));
+                    FlexatarServiceAuth.startVerification(UserConfig.selectedAccount, () -> {
+
+                    });
                 }
             });
 
@@ -205,7 +228,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             item.setOnClickListener(v-> {
 
-                if (FlexatarServiceAuth.getVerification().isVerified()) {
+                if (FlexatarServiceAuth.getVerification()!=null && FlexatarServiceAuth.getVerification().isVerified()) {
 
                     if (!FlexatarServerAccess.isDownloadingFlexatars) {
                         FlexatarServerAccess.isDownloadingFlexatars = true;
@@ -223,11 +246,24 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                                 item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
                                 itemAdapter.notifyItemChanged(2);
                             });
+                        },()->{
+                            FlexatarServerAccess.isDownloadingFlexatars = false;
+                            itemAdapter.removeFlexatarCell(1);
+                            handler.post(() -> {
+                                item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
+                                itemAdapter.notifyItemChanged(2);
+                            });
+                            AndroidUtilities.runOnUIThread(() -> {
+                                AlertDialogs.sayImpossibleToPerform(getContext()).show();
+                            });
                         });
                     }
 
                 }else{
                     showDialog(AlertDialogs.showVerifyInProgress(context));
+                    FlexatarServiceAuth.startVerification(UserConfig.selectedAccount, () -> {
+
+                    });
                 }
             });
 
@@ -400,12 +436,18 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             if(getActionBar().isActionModeShowed() ) {
                 Log.d("FLX_INJECT","flx cell pressed");
                 if (!cell.isBuiltin()) {
-                    item.setChecked(!item.isChecked());
+                    String groupId = item.getFlexatarFile().getName().replace(".flx", "");
+                    int groupSize = FlexatarStorageManager.getGroupSize(getContext(), groupId);
+                    if (groupSize == 0) {
+                        item.setChecked(!item.isChecked());
 
-                    checkedCount += cell.isChecked() ? -1 : 1;
-                    handler.post(() -> {
-                        setCheckedFlexatarsCount();
-                    });
+                        checkedCount += cell.isChecked() ? -1 : 1;
+                        handler.post(() -> {
+                            setCheckedFlexatarsCount();
+                        });
+                    }else{
+                        showDialog(AlertDialogs.sayImposableToDelete(getContext()));
+                    }
                 }
             }else{
                 if (cell.getFlexatarFile()!=null)
@@ -424,9 +466,18 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             if(!getActionBar().isActionModeShowed() ) {
                 showOrUpdateActionMode();
                 getActionBar().showActionMode();
-                item.setChecked(!item.isChecked());
-                checkedCount = 1;
-                if (cell.isBuiltin()) checkedCount = 0;
+
+                String groupId = item.getFlexatarFile().getName().replace(".flx", "");
+                int groupSize = FlexatarStorageManager.getGroupSize(getContext(), groupId);
+                if (groupSize == 0) {
+                    item.setChecked(!item.isChecked());
+                    checkedCount = 1;
+                    if (cell.isBuiltin()) checkedCount = 0;
+
+                }else{
+                    showDialog(AlertDialogs.sayImposableToDelete(getContext()));
+                    checkedCount = 0;
+                }
                 itemAdapter.addCheckBoxes();
                 setCheckedFlexatarsCount();
             }
@@ -648,6 +699,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     @Override
     public void onResume() {
         super.onResume();
+
         if (needRedrawFlexatarList) {
             itemAdapter.setUpFlexatarList();
             FlexatarCabinetActivity.needRedrawFlexatarList = false;

@@ -273,6 +273,11 @@ public class FlexatarServiceAuth {
     }
     public static FlexatarVerifyProcess getVerification(){
         long userId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        if (!verifyProcesses.containsKey(userId)){
+            FlexatarServiceAuth.startVerification(UserConfig.selectedAccount, () -> {
+
+            });
+        }
         return verifyProcesses.get(""+userId);
     }
     public static void resetVerification(){

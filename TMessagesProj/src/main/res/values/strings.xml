@@ -39,6 +39,7 @@
     <string name="CalibrateTeeth">Calibrate teeth</string>
     <string name="CalibrateTeethInfo">Turn it on to calibrate teeth size and positions</string>
     <string name="CompleteInstruction">Please, read instructions and complete test interface first.</string>
+    <string name="ImpossibleToPerform">Impossible to perform action. No internet connection.</string>
     <string name="FlexatarPreview">Preview </string>
     <string name="ImportFlexatar">Import </string>
     <string name="VerifyAlertCap">Verification </string>
@@ -65,6 +66,9 @@
     <string name="FlaxatarCanNotAuthorize">Application can not authorize in flexatar service. The only thing you can do is to try restart app later.</string>
     <string name="MyFlexatars">My Flexatars</string>
     <string name="GroupSize">Group size: </string>
+    <string name="ImpossibleToDeleteGroup">You can\'t delete flexatar with attachments.</string>
+    <string name="AttachmentFlexatar">Attachments</string>
+    <string name="SettingsFlexatar">Settings</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

@@ -3,6 +3,7 @@ package org.flexatar;
 import static org.flexatar.FlexatarNotificator.ChosenStateForRoundVideo.MIX;
 import static org.flexatar.FlexatarNotificator.ChosenStateForRoundVideo.MORPH;
 import static org.flexatar.FlexatarNotificator.ChosenStateForRoundVideo.HYBRID;
+import static org.flexatar.FlexatarNotificator.ChosenStateForRoundVideo.NO;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -20,6 +21,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import org.flexatar.DataOps.FlexatarData;
+import org.telegram.messenger.ApplicationLoader;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +36,7 @@ public class FlexatarVideoEncoder {
     private final String outputPath;
     private final File aacFile;
     private final Runnable completion;
+    private FlxDrawer.GroupMorphState mState;
     private MediaMuxer mMuxer;
     private FlexatarVideoEncoder.CodecInputSurface mInputSurface;
     private MediaCodec mEncoder;
@@ -50,29 +53,112 @@ public class FlexatarVideoEncoder {
         FlexatarStorageManager.FlexatarChooser chooser = FlexatarStorageManager.roundFlexatarChooser;
         FlxDrawer flxDrawer;
         flxDrawer = new FlxDrawer();
+        flxDrawer.setPromo();
         flxDrawer.setRealtimeAnimation(false);
-        flxDrawer.setFlexatarData(FlexatarData.factory(chooser.getChosenFirst()));
+        flxDrawer.setTgRoundVideo();
+        FlexatarData firstFlx = FlexatarData.factory(chooser.getChosenFirst());
+        FlexatarData secondFlx = chooser.getEffectIndex() == NO ? null : FlexatarData.factory(chooser.getChosenSecond());
+        /*flxDrawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+            mixWeight = 1f;
+            effectID = 0;
+            isEffectsOn = false;
+            flexatarData = firstFlx;
+        }});*/
+
+//        flxDrawer.setFlexatarData(FlexatarData.factory(chooser.getChosenFirst()));
 
         flxDrawer.screenRatio = (float) mWidth / (float) mHeight;
-        if (chooser.getEffectIndex() == MIX){
-            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
-            flxDrawer.setisEffectOnVal(true);
-            flxDrawer.setEffectIdVal(0);
-            flxDrawer.setMixWeightVal(FlexatarNotificator.chosenStateForRoundVideo.mixWeight);
+       /* if (chooser.getEffectIndex() == MIX){
+//            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
+//            flxDrawer.setisEffectOnVal(true);
+//            flxDrawer.setEffectIdVal(0);
+//            flxDrawer.setMixWeightVal(FlexatarNotificator.chosenStateForRoundVideo.mixWeight);
+            flxDrawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                mixWeight = chooser.getMixWeight();
+                effectID = 0;
+                isEffectsOn = true;
+                flexatarData = firstFlx;
+                flexatarDataAlt = secondFlx;
+
+            }});
         }
         else if (chooser.getEffectIndex() == MORPH){
-            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
-            flxDrawer.setisEffectOnVal(true);
-            flxDrawer.setEffectIdVal(0);
-            flxDrawer.setMixWeightVal(1f);
+//            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
+//            flxDrawer.setisEffectOnVal(true);
+//            flxDrawer.setEffectIdVal(0);
+//            flxDrawer.setMixWeightVal(1f);
+            flxDrawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                mixWeight = 1f;
+                effectID = 0;
+                isEffectsOn = true;
+                flexatarData = firstFlx;
+                flexatarDataAlt = secondFlx;
+
+            }});
         }
         else if (chooser.getEffectIndex() == HYBRID){
-            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
-            flxDrawer.setisEffectOnVal(true);
-            flxDrawer.setEffectIdVal(1);
-            flxDrawer.setMixWeightVal(0f);
-        }
+//            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
+//            flxDrawer.setisEffectOnVal(true);
+//            flxDrawer.setEffectIdVal(1);
+//            flxDrawer.setMixWeightVal(0f);
+            flxDrawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                mixWeight = 0f;
+                effectID = 0;
+                isEffectsOn = true;
+                flexatarData = firstFlx;
+                flexatarDataAlt = secondFlx;
 
+            }});
+        }*/
+        String groupId = chooser.getChosenFirst().getName().replace(".flx", "");
+        List<File> groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(ApplicationLoader.applicationContext, groupId);
+        if (groupFiles.size() != 0) {
+            groupFiles.add(chooser.getChosenFirst());
+        }
+        mState = new FlxDrawer.GroupMorphState();
+        TimerAutoDestroy.OnTimerListener<FlxDrawer.GroupMorphState> onTimerListener =
+                x ->{
+                    if (x.flexatarData == null){
+                        x.flexatarData = firstFlx;
+                    }
+
+                    if (!x.morphStage)
+                        x.counter+=1;
+                    if (x.counter>x.changeDelta){
+                        x.counter = 0;
+
+                        if (x.flexatarCounter>=groupFiles.size()){
+                            x.flexatarCounter=0;
+                        }
+                        FlexatarData.asyncFactory(groupFiles.get(x.flexatarCounter),fData->{
+                            x.morphStage = true;
+                            x.mixWeight = 0;
+                            x.effectID = 0;
+                            x.isEffectsOn = true;
+                            x.flexatarDataAlt = x.flexatarData;
+                            x.flexatarData = fData;
+
+                            x.flexatarCounter+=1;
+                        });
+                    }
+                    if (x.morphStage){
+                        x.morphCounter+=1;
+                        double w = (1d + Math.cos(Math.PI + Math.PI * (double) x.morphCounter / x.morphDelta)) / 2;
+                        x.mixWeight = (float)w;
+                        x.effectID = 0;
+                        x.isEffectsOn = true;
+                        if (x.morphCounter>x.morphDelta){
+                            x.morphCounter = 0;
+                            x.morphStage =false;
+                            x.mixWeight = 1;
+                            x.effectID = 0;
+                            x.isEffectsOn = false;
+
+                        }
+                    }
+
+                    return x;
+                };
 
         try {
             mBufferInfo = new MediaCodec.BufferInfo();
@@ -107,7 +193,46 @@ public class FlexatarVideoEncoder {
             for (int i = 0; i < animationPattern.size(); i++) {
                 drainEncoder(false);
 
-                if (chooser.getEffectIndex() == MORPH){
+                int finalI = i;
+                flxDrawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+
+                    flexatarData = firstFlx;
+                    flexatarDataAlt = secondFlx;
+
+                    if (chooser.getEffectIndex() == NO){
+                        mixWeight=1f;
+                        effectID = 0;
+                        isEffectsOn = false;
+                        if (groupFiles.size()>0){
+                            mState = onTimerListener.onTic(mState);
+                            mixWeight = mState.mixWeight;
+                            effectID = mState.effectID;
+                            isEffectsOn = mState.isEffectsOn;
+                            flexatarData = mState.flexatarData;
+                            flexatarDataAlt = mState.flexatarDataAlt;
+                        }
+                    } else if (chooser.getEffectIndex() == MIX) {
+                        mixWeight = chooser.getMixWeight();
+                        effectID = 0;
+                        isEffectsOn = true;
+
+                    }else if (chooser.getEffectIndex() == MORPH) {
+
+                        mixWeight = 1f - (float) finalI / (float) animationPattern.size();
+                        effectID = 0;
+                        isEffectsOn = true;
+
+                    }else if (chooser.getEffectIndex() == HYBRID) {
+                        mixWeight = (float) finalI * 0.005f;
+                        effectID = 1;
+                        isEffectsOn = true;
+                    }
+
+
+                }});
+
+
+                /*if (chooser.getEffectIndex() == MORPH){
 
                     float weight = 1f - (float) i / (float) animationPattern.size();
                     flxDrawer.setMixWeightVal(weight);
@@ -115,7 +240,8 @@ public class FlexatarVideoEncoder {
                 if (chooser.getEffectIndex() == HYBRID){
                     float weight = (float) i * 0.005f;
                     flxDrawer.setMixWeightVal(weight);
-                }
+                }*/
+
                 if (i == animationPattern.size()/2)
                     flxDrawer.builtinAnimator.reverse();
 

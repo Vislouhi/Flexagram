@@ -5947,6 +5947,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     @Override
     protected void onResume() {
         super.onResume();
+
+
         isResumed = true;
         if (onResumeStaticCallback != null) {
             onResumeStaticCallback.run();
@@ -6023,6 +6025,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
         invalidateTabletMode();
         SpoilerEffect2.pause(false);
+
     }
 
     private void invalidateTabletMode() {
@@ -6131,19 +6134,21 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 currentConnectionState = state;
                 updateCurrentConnectionState(account);
                 if (currentConnectionState == 3){
-                    FlexatarServiceAuth.startVerification(account,()->{
-                        AndroidUtilities.runOnUIThread(()->{
-                            AlertDialog.Builder builder = new AlertDialog.Builder(LaunchActivity.this);
-                            builder.setTitle(LocaleController.getString("FlexatarInfo", R.string.FlexatarInfo));
-                            builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString("FlaxatarCanNotAuthorize", R.string.FlaxatarCanNotAuthorize)));
-                            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
-                            showAlertDialog(builder);
+                    /*if (UserConfig.getActivatedAccountsCount()>0) {
+                        FlexatarServiceAuth.startVerification(account, () -> {
+                            AndroidUtilities.runOnUIThread(() -> {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(LaunchActivity.this);
+                                builder.setTitle(LocaleController.getString("FlexatarInfo", R.string.FlexatarInfo));
+                                builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString("FlaxatarCanNotAuthorize", R.string.FlaxatarCanNotAuthorize)));
+                                builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
+                                showAlertDialog(builder);
+                            });
                         });
-                    });
+                    }*/
                 }
-                else if(currentConnectionState == 1){
+                /*else if(currentConnectionState == 1){
                     FlexatarServiceAuth.resetVerification();
-                }
+                }*/
             }
         } else if (id == NotificationCenter.mainUserInfoChanged) {
             drawerLayoutAdapter.notifyDataSetChanged();

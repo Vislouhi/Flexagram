@@ -7,7 +7,7 @@ public class ShaderLib {
                     "void main(void) {\n" +
 
                         "UV = uv;" +
-                        "gl_Position = vec4(uv*vec2(2.0,2.0)-vec2(1.0,1.0),0.0,1.0);" +
+                        "gl_Position = vec4(uv *vec2(2.0,2.0)-vec2(1.0,1.0),0.0,1.0);" +
                     "}\n";
     public static final String FRAME_FRAGMENT =
                     "varying highp vec2 UV;" +
@@ -32,6 +32,27 @@ public class ShaderLib {
 //                            "if (alpha>0.5) discard;"+
 //                    " gl_FragColor = vec4(color.xyz,1.0-alpha);" +
                     " gl_FragColor = color*(1.0-alpha);" +
+                    "}";
+    public static final String PROMO_VERTEX =
+            "attribute vec2 uv;\n" +
+                    "varying highp vec2 UV;" +
+                    "uniform vec4 sizePosition;" +
+                    "void main(void) {\n" +
+
+                    "UV = uv;" +
+                    "gl_Position = vec4(vec2(1.0,-1.0)*((uv*sizePosition.xy+sizePosition.zw) *vec2(2.0,2.0)-vec2(1.0,1.0)),0.0,1.0);" +
+                    "}\n";
+    public static final String PROMO_FRAGMENT =
+            "varying highp vec2 UV;" +
+                    "uniform sampler2D uSampler[1];" +
+
+
+                    "void main(void) {" +
+                    "highp vec4 color = texture2D(uSampler[0], UV);"+
+//                    "highp float alpha_inv = 1.0-alpha;"+
+//                            "if (alpha>0.5) discard;"+
+//                    " gl_FragColor = vec4(color.xyz,1.0-alpha);" +
+                    " gl_FragColor = color;" +
                     "}";
     public static final String HEAD_SINGLE_VERTEX =
             "attribute vec4 bshp0;\n" +

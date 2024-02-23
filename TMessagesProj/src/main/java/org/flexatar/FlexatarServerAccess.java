@@ -147,7 +147,7 @@ public class FlexatarServerAccess {
 
             @Override
             public void onError() {
-
+                if (completion!=null) completion.onError();
             }
         });
     }
@@ -305,7 +305,7 @@ public class FlexatarServerAccess {
     }
 
     public static boolean isDownloadingFlexatars = false;
-    public static void downloadCloudFlexatars1(Runnable onFinish) {
+    public static void downloadCloudFlexatars1(Runnable onFinish,Runnable onError) {
         isDownloadingFlexatars = true;
         /*StdResponse vd = FlexatarServiceAuth.getVerifyData();
         if (vd == null){
@@ -349,7 +349,7 @@ public class FlexatarServerAccess {
 
                     @Override
                     public void onError() {
-                        onFinish.run();
+                        onError.run();
                     }
                 }
         );

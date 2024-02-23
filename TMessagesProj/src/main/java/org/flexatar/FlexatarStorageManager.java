@@ -27,8 +27,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +60,7 @@ public class FlexatarStorageManager {
         private final String tag;
         private final float d2;
         private final float d3;
+        private final TimerAutoDestroy<FlxDrawer.GroupMorphState> groupTimer;
 
         private File first;
         private File second;
@@ -68,17 +71,66 @@ public class FlexatarStorageManager {
         private final Object flexatarFileLoadMutex = new Object();
         private int effectIndex = -1;
         private float mixWeight = -1;
-
+        private List<File> groupFiles = new ArrayList<>();
         public FlexatarChooser(String tag,float d2,float d3){
             this.tag=tag;
             this.d2=d2;
             this.d3=d3;
+            groupTimer = new TimerAutoDestroy<FlxDrawer.GroupMorphState>();
+            groupTimer.setValue(
+                    new FlxDrawer.GroupMorphState()
+            );
+            groupTimer.onTimerListener = x ->{
+                if (x.flexatarData == null){
+                    x.flexatarData = getFirstFlxData();
+                }
+
+                if (!x.morphStage)
+                    x.counter+=1;
+                if (x.counter>x.changeDelta){
+                    x.counter = 0;
+
+                    if (x.flexatarCounter>=groupFiles.size()){
+                        x.flexatarCounter=0;
+                    }
+                    FlexatarData.asyncFactory(groupFiles.get(x.flexatarCounter),fData->{
+                        x.morphStage = true;
+                        x.mixWeight = 0;
+                        x.effectID = 0;
+                        x.isEffectsOn = true;
+                        x.flexatarDataAlt = x.flexatarData;
+                        x.flexatarData = fData;
+
+                        x.flexatarCounter+=1;
+                    });
+                }
+                if (x.morphStage){
+                    x.morphCounter+=1;
+                    double w = (1d + Math.cos(Math.PI + Math.PI * (double) x.morphCounter / x.morphDelta)) / 2;
+                    x.mixWeight = (float)w;
+                    x.effectID = 0;
+                    x.isEffectsOn = true;
+                    if (x.morphCounter>x.morphDelta){
+                        x.morphCounter = 0;
+                        x.morphStage =false;
+                        x.mixWeight = 1;
+                        x.effectID = 0;
+                        x.isEffectsOn = false;
+
+                    }
+                }
+
+                return x;
+            };
         }
 
+        boolean newFlexatarLoaded = false;
         public FlexatarData getFirstFlxData() {
             synchronized (flexatarDataLoadMutex) {
                 if (firstFlxData != null) return firstFlxData;
-                firstFlxData = FlexatarData.factory(getChosenFirst());
+
+                firstFlxData = FlexatarData.syncFactory(getChosenFirst());
+                newFlexatarLoaded = true;
                 return firstFlxData;
             }
         }
@@ -86,7 +138,7 @@ public class FlexatarStorageManager {
         public FlexatarData getSecondFlxData() {
             synchronized (flexatarDataLoadMutex) {
                 if (secondFlxData != null) return secondFlxData;
-                secondFlxData = FlexatarData.factory(getChosenSecond());
+                secondFlxData = FlexatarData.syncFactory(getChosenSecond());
                 return secondFlxData;
             }
         }
@@ -225,9 +277,17 @@ public class FlexatarStorageManager {
                     second = new File(oldFirstPath);
                 secondFlxData = firstFlxData;
                 firstFlxData = null;
+                setFlexatarGroup();
+                Log.d("FLX_INJECT","change flexatar group size "+groupFiles.size());
             }
         }
-
+        public void setFlexatarGroup(){
+            String groupId = getChosenFirst().getName().replace(".flx", "");
+            groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(ApplicationLoader.applicationContext, groupId);
+            if (groupFiles.size() != 0) {
+                groupFiles.add(getChosenFirst());
+            }
+        }
         public File getChosenFirst() {
             synchronized (flexatarFileLoadMutex) {
                 if (first != null && first.exists()) return first;
@@ -318,6 +378,45 @@ public class FlexatarStorageManager {
                 return second;
             }
         }
+
+//        private List<WeakReference<FlxDrawer>> subscribers = new LinkedList<>();
+        public void subscribe(FlxDrawer drawer){
+           /* WeakReference<FlxDrawer> weakDrawer = new WeakReference<>(drawer);
+
+            weakDrawer.get()*/
+            setFlexatarGroup();
+            newFlexatarLoaded = true;
+            drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                mixWeight = getAnimatedMixWeight();
+                effectID = getEffectID();
+                isEffectsOn = isEffectOn();
+//                if (newFlexatarLoaded){
+//                    Log.d("FLX_INJECT","Change flexatar");
+//                    newFlexatarLoaded = false;
+
+                if (!isEffectsOn){
+                    if (groupFiles.size()>0) {
+                        FlxDrawer.GroupMorphState timerVal = groupTimer.getValue();
+                        mixWeight = timerVal.mixWeight;
+                        effectID = timerVal.effectID;
+                        isEffectsOn = timerVal.isEffectsOn;
+                        flexatarData = timerVal.flexatarData;
+                        flexatarDataAlt = timerVal.flexatarDataAlt;
+//                        Log.d("FLX_INJECT"," flexatarData "+flexatarData);
+//                        if (flexatarDataAlt == null) flexatarDataAlt = flexatarData;
+                    }else{
+                        flexatarData = getFirstFlxData();
+                        flexatarDataAlt = getSecondFlxData();
+                    }
+                }else{
+                    flexatarData = getFirstFlxData();
+                    flexatarDataAlt = getSecondFlxData();
+                }
+            }});
+//            subscribers.add(weakDrawer);
+        }
+
+
     }
 
     public static File getFlexatarStorage(Context context){
@@ -906,17 +1005,17 @@ public class FlexatarStorageManager {
         if (!file.exists()) return null;
         try {
             FlexatarMetaData flexatarMetaData = new FlexatarMetaData();
-            boolean isBuiltin = file.getName().startsWith("builtin");
+//            boolean isBuiltin = file.getName().startsWith("builtin");
             FileInputStream fileInputStream = new FileInputStream(file);
 
 
             boolean isHeader = true;
             String currentType = "";
-            String name = "";
-            String date = "";
-            float[] mouthCalibration = null;
-            Float amplitude = null;
-//            int headerLength = 0;
+//            String name = "";
+//            String date = "";
+//            float[] mouthCalibration = null;
+//            Float amplitude = null;
+////            int headerLength = 0;
             while (true) {
                 byte[] buffer = new byte[8];
                 int bytesRead = fileInputStream.read(buffer, 0, 8);

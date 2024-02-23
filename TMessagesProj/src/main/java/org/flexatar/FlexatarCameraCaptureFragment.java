@@ -681,42 +681,15 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
             throw new RuntimeException(e);
         }
 
-//        Data sendData = new Data(imagesCollector.get(0));
         Data sendData = new Data(jsonObject.toString());
         sendData = sendData.encodeLengthHeader().add(sendData);
-        /*if (flexatarBody != null) {
-            Data flxBodyData = new Data(flexatarBody);
-            flxBodyData = flxBodyData.encodeLengthHeader().add(flxBodyData);
-            sendData = sendData.add(flxBodyData);
-//            Log.d("FLX_INJECT", "add flx body of size " +flxBodyData.value.length);
-//            Log.d("FLX_INJECT", "sendData length " +sendData.value.length);
-        }*/
+
         for (int i = 0; i < imagesCollector.size(); i++) {
             Data cData = new Data(imagesCollector.get(i));
             cData = cData.encodeLengthHeader().add(cData);
             sendData = sendData.add(cData);
         }
-//        Log.d("FLX_INJECT", "full send data size " +sendData.value.length);
 
-
-//        JSONArray tickets = ValueStorage.getTickets(context);
-        /*if (flexatarBody != null)
-            FlexatarStorageManager.dataToFile(sendData.value,FlexatarStorageManager.makeFileInFlexatarStorage(context,"input_mouth.bin"));
-        else
-            if (imagesCollector.size() == 5)
-                FlexatarStorageManager.dataToFile(sendData.value,FlexatarStorageManager.makeFileInFlexatarStorage(context,"input_face.bin"));
-            else
-                FlexatarStorageManager.dataToFile(sendData.value,FlexatarStorageManager.makeFileInFlexatarStorage(context,"input_face_mouth.bin"));
-*/
-//        JSONObject flexatarLinks = new JSONObject();
-//        try {
-//            flexatarLinks.put("name",flexatarName);
-//            flexatarLinks.put("lfid",UUID.randomUUID().toString());
-//
-//        } catch (JSONException e) {
-//            throw new RuntimeException(e);
-//        }
-//        ValueStorage.addTicket(context, flexatarLinks);
         TicketsController.Ticket ticket = new TicketsController.Ticket();
         ticket.name = flexatarName;
         ticket.status = "new";
@@ -725,57 +698,25 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
         TicketStorage.setTicket(lfid,ticket);
 
-
-
         if (flexatarBody == null) {
-           /* FlexatarServerAccess.StdResponse vd = FlexatarServiceAuth.getVerifyData();
-            if (vd == null){
-                return;
-            }*/
             FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
                 public void onReady(FlexatarServerAccess.StdResponse response) {
                     Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());
-//                    String ftarId = FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).id;
-//                    Log.d("FLX_INJECT", "ftar id: " + ftarId);
                     ticket.status = "in_process";
                     ticket.formJson(FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).toJson());
-//                    ticket.ftarRecord = FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0);
                     TicketStorage.setTicket(lfid,ticket);
                     TicketsController.flexatarTaskStart(lfid,ticket);
                 }
 
                 @Override
                 public void onError() {
+                    TicketStorage.removeTicket(lfid);
+                    FlexatarCabinetActivity.makeFlexatarFailAction.run();
                     Log.d("FLX_INJECT", "make flx data error " );
+
                 }
             });
-
-            /*FlexatarServerAccess.lambdaRequest("/data", "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
-                @Override
-                public void onReady(String response) {
-                    try {
-
-                        JSONObject json = new JSONObject(response);
-                        JSONObject flexatarLinks = json.getJSONArray("private").getJSONObject(0);
-                        ticket.formJson(flexatarLinks);
-                        ticket.status = "in_process";
-                        TicketStorage.setTicket(lfid,ticket);
-                        TicketsController.flexatarTaskStart(lfid,ticket);
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
-                    }
-                    Log.d("FLX_INJECT", "data resp " + response);
-                }
-
-                @Override
-                public void onFail() {
-
-                    Log.d("FLX_INJECT", "data fail ");
-                }
-            });*/
-
-
         }else{
             FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "delta/"+flexatarBody, "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
@@ -792,34 +733,11 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
                 @Override
                 public void onError() {
+                    TicketStorage.removeTicket(lfid);
+                    FlexatarCabinetActivity.makeFlexatarFailAction.run();
                     Log.d("FLX_INJECT", "delta fail make flx data error " );
                 }
             });
-            /*FlexatarServerAccess.lambdaRequest("/delta/"+flexatarBody, "POST", sendData.value, null, new FlexatarServerAccess.CompletionListener() {
-                @Override
-                public void onReady(String response) {
-                    try {
-                        JSONObject json = new JSONObject(response);
-                        JSONObject flexatarLinks = json.getJSONArray("private").getJSONObject(0);
-                        ticket.formJson(flexatarLinks);
-                        ticket.status = "in_process";
-                        TicketStorage.setTicket(lfid,ticket);
-                        TicketsController.flexatarTaskStart(lfid,ticket);
-
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
-                    }
-                    Log.d("FLX_INJECT", "delta resp " + response);
-                }
-
-                @Override
-                public void onFail() {
-
-                    Log.d("FLX_INJECT", "delta fail ");
-                }
-            });*/
-
-//            Log.d("FLX_INJECT")
         }
         fragmentView.post(() -> {
             finishPage();

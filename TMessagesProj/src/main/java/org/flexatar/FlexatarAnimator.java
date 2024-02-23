@@ -56,6 +56,7 @@ public class FlexatarAnimator {
 //    private float effectsWeightStep = 0.05f;
     public int usageCounter = 0;
     public int counter5 = 0;
+    public float headScale = 0f;
     public void start(){
         usageCounter++;
         synchronized (mutexObject) {
@@ -121,7 +122,7 @@ public class FlexatarAnimator {
         point[1] = ry;
 
 
-        animUnit = new AnimationUnit(tx, ty, sc, rz, eyebrow, BlinkGenerator.nextBlinkWeight());
+        animUnit = new AnimationUnit(tx, ty, sc+headScale, rz, eyebrow, BlinkGenerator.nextBlinkWeight());
         animIdx += delta;
 
         if (animIdx >= FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).size() || animIdx<0) {
@@ -143,4 +144,21 @@ public class FlexatarAnimator {
     public void reverse() {
         delta = -delta;
     }
+
+
+    /*private int morphStage1Counter = 0;
+    private int morphStage2Counter = 0;
+    private final int changeDelta = 25*4;
+    private final int morphDelta = 25;
+    private boolean morphStage = false;
+    private int flexatarIdx = 0;
+
+    private void morphSequence(){
+        if (!morphStage)
+            morphStage1Counter+=1;
+        if (morphStage1Counter>changeDelta) {
+            morphStage1Counter = 0;
+            flexatarIdx+=1;
+        }
+    }*/
 }

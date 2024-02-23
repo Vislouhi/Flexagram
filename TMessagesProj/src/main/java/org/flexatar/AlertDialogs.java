@@ -87,6 +87,31 @@ public class AlertDialogs {
         });
         return builder.create();
     }
+    public static AlertDialog sayImpossibleToPerform(Context context){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("Info", R.string.Info));
+        builder.setMessage(LocaleController.getString("ImpossibleToPerform", R.string.ImpossibleToPerform));
+
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+
+
+        });
+        return builder.create();
+    }
+
+    public static AlertDialog sayImposableToDelete(Context context){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("Info", R.string.Info));
+        builder.setMessage(LocaleController.getString("ImpossibleToDeleteGroup", R.string.ImpossibleToDeleteGroup));
+
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+
+
+        });
+        return builder.create();
+    }
     public static AlertDialog showVerifyInProgress(Context context){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(LocaleController.getString("VerifyAlertCap", R.string.VerifyAlertCap));

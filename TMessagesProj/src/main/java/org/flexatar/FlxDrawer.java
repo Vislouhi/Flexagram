@@ -8,6 +8,7 @@ import org.flexatar.DataOps.FlexatarData;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.microedition.khronos.opengles.GL10;
 
@@ -44,10 +45,17 @@ public class FlxDrawer {
     private boolean isFrame = false;
     private boolean isEffectsOnVal = false;
     private FlexatarStorageManager.FlexatarChooser flexatarChooser;
+    private boolean needUpdateBuffer2;
+    private ShaderProgram promoProgram;
+    private boolean isPromo = false;
+    private boolean isTgRoundVideo = false;
 
     public FlxDrawer(){
         FlexatarNotificator.incDrawerCounter();
 
+    }
+    public void setPromo(){
+        isPromo = true;
     }
     public void setRealtimeAnimation(boolean realtimeAnimation) {
         isRealtimeAnimation = realtimeAnimation;
@@ -83,8 +91,12 @@ public class FlxDrawer {
 
     public void setFlexatarChooser(FlexatarStorageManager.FlexatarChooser flexatarChooser) {
         this.flexatarChooser=flexatarChooser;
+        flexatarChooser.subscribe(this);
     }
 
+    public void setTgRoundVideo() {
+        isTgRoundVideo = true;
+    }
 
 
     private static class GlBuffers {
@@ -166,14 +178,24 @@ public class FlxDrawer {
 
 
     }
+
+    private void initPromoProgram(){
+        if (promoProgram != null) return;
+        promoProgram = new ShaderProgram(ShaderLib.PROMO_VERTEX, ShaderLib.PROMO_FRAGMENT);
+        promoProgram.attribute("uv" , commonBuffers.frameVBO, 2);
+        TextureArray frameTexture = new TextureArray();
+        frameTexture.addTexture(FlexatarCommon.promoLabel);
+        promoProgram.textureArray("uSampler", frameTexture, 0);
+        promoProgram.addUniform4f("sizePosition");
+    }
     private void initFrameRoundedProgram(){
+        if (commonBuffers == null) return;
         if (frameRoundedProgram != null) return;
         frameRoundedProgram = new ShaderProgram(ShaderLib.FRAME_VERTEX, ShaderLib.ROUNDED_FRAGMENT);
         frameRoundedProgram.attribute("uv" , commonBuffers.frameVBO, 2);
         commonBuffers.frameTexture.addTexture(renderTexture[0]);
         frameRoundedProgram.textureArray("uSampler", commonBuffers.frameTexture, 0);
-
-
+//        frameRoundedProgram.uniform4f("sizePosition",1,1,0,0);
     }
     private void initHeadProgram() {
         if (headProgram != null) return;
@@ -246,9 +268,60 @@ public class FlxDrawer {
     public void setOnReadyListener(Runnable listener){
         onReadyListener = listener;
     }
-    private void initFlexatarBuffers() {
+    private void initFlexatarBuffers1() {
         if (buffers1 != null) return;
+        Log.d("FLX_INJECT","initFlexatarBuffers1");
         buffers1 = new FlxDrawer.GlBuffers(flexatarData);
+        if (headProgram != null) {
+            for (int i = 0; i < 5; i++) {
+                headProgram.attribute("bshp" + i, buffers1.headBuffers[i], 4);
+            }
+            headProgram.attribute("blinkBshp", buffers1.eyelidVbo, 2);
+            headProgram.textureArray(HEAD_TEXTURE_SAMPLER, buffers1.headTexture, 0);
+        }
+        if (mouthProgram != null) {
+            for (int i = 0; i < 5; i++) {
+                mouthProgram.attribute("bshp" + i, buffers1.mouthBuffers[i], 2);
+            }
+            mouthProgram.attribute("coordinates", buffers1.mouthUvVbo, 2);
+            mouthIdxVbo = buffers1.mouthIdxVbo;
+            mouthProgram.textureArray(HEAD_TEXTURE_SAMPLER, buffers1.mouthTexture, 0);
+        }
+        if (onReadyListener!=null) onReadyListener.run();
+    }
+    private void initFlexatarBuffers2() {
+        if ((flexatarDataAlt == null || buffers2 != null) && !needUpdateBuffer2) return;
+        needUpdateBuffer2=false;
+        if (flexatarDataAlt == null) return;
+        Log.d("FLX_INJECT","initFlexatarBuffers2");
+        if  (buffers2 == null) buffers2 = new FlxDrawer.GlBuffers(flexatarDataAlt);
+        if (headProgramDual != null) {
+            for (int i = 0; i < 5; i++) {
+                headProgramDual.attribute("bshp" + i, buffers1.headBuffers[i], 4);
+            }
+            headProgramDual.attribute("blinkBshp", buffers1.eyelidVbo, 2);
+            for (int i = 0; i < 5; i++) {
+                headProgramDual.attribute("bshp" + i + "o", buffers2.headBuffers[i], 4);
+            }
+            headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER, buffers1.headTexture, 0);
+            headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER_ALT, buffers2.headTexture, 5);
+            headProgramDual.addUniform1i("effectId");
+            headProgramDual.addUniform1f("mixWeight");
+        }
+        if (mouthProgramAlt != null) {
+            for (int i = 0; i < 5; i++) {
+                mouthProgramAlt.attribute("bshp" + i, buffers2.mouthBuffers[i], 2);
+            }
+            mouthProgramAlt.attribute("coordinates", buffers2.mouthUvVbo, 2);
+
+            mouthProgramAlt.textureArray(HEAD_TEXTURE_SAMPLER, buffers2.mouthTexture, 0);
+        }
+    }
+    /*private void initFlexatarBuffers() {
+        if (buffers1 != null && buffers2 != null) return;
+        if (buffers1 == null)
+            buffers1 = new FlxDrawer.GlBuffers(flexatarData);
+//        Log.d("FLX_INJECT","buffers1 "+buffers1);
         if (flexatarDataAlt!=null && buffers2 == null)
             buffers2 = new FlxDrawer.GlBuffers(flexatarDataAlt);
 
@@ -288,9 +361,9 @@ public class FlxDrawer {
 
             mouthProgramAlt.textureArray(HEAD_TEXTURE_SAMPLER, buffers2.mouthTexture, 0);
         }
-        if (onReadyListener!=null) onReadyListener.run();
 
-    }
+
+    }*/
     public void initFrameBuffer(){
         if (renderFrameBuffer != null) return;
         renderFrameBuffer = new int[1];
@@ -329,6 +402,7 @@ public class FlxDrawer {
     public  void drawRounded(){
         drawToFrameBuffer();
         initFrameRoundedProgram();
+        if (frameRoundedProgram == null) return;
         GLES20.glViewport(0, 0, width, height);
         frameRoundedProgram.use();
         frameRoundedProgram.bind();
@@ -374,17 +448,41 @@ public class FlxDrawer {
         isEffectsOnVal = val;
     }
     FlexatarAnimator builtinAnimator = new FlexatarAnimator();
+    public static class RenderParams{
+        public FlexatarData flexatarData;
+        public FlexatarData flexatarDataAlt;
+        public float mixWeight;
+        public int effectID;
+        public boolean isEffectsOn;
+    }
+    public static class GroupMorphState{
+        public final int changeDelta = 25*4;
+        public final int morphDelta = 25;
+        public boolean morphStage = false;
+        public int counter = 0;
+        public int morphCounter = 0;
+        public int flexatarCounter = 0;
+        public float mixWeight = 1;
+        public int effectID = 0;
+        public boolean isEffectsOn = false;
+        public FlexatarData flexatarData;
+        public FlexatarData flexatarDataAlt;
+
+    }
+    public interface OnFrameStart{
+        RenderParams onFrameStart();
+    }
+    public AtomicReference<OnFrameStart> onFrameStartListener = new AtomicReference<>();
     public void draw() {
 //        GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if (isStaticControlBind) {
             if (!FlexatarRenderer.isFlexatarCamera) return;
 
-//            effectID = FlexatarRenderer.effectID;
-//            mixWeight = FlexatarRenderer.effectsMixWeight;
-//            isEffectsOn = FlexatarRenderer.isEffectsOn;
             speechState = FlexatarRenderer.speechState;
-        }else{
+        }
+
+        /*else{
             effectID = effectIdVal;
             mixWeight = mixWeightVal;
             isEffectsOn = isEffectsOnVal;
@@ -419,7 +517,51 @@ public class FlxDrawer {
             buffers2 = buffers1;
             buffers1 = null;
             changeFlexatar= null;
+        }*/
+
+        if (onFrameStartListener.get()!=null){
+            RenderParams renderParams = onFrameStartListener.get().onFrameStart();
+            mixWeight = renderParams.mixWeight;
+            effectID = renderParams.effectID;
+            isEffectsOn = renderParams.isEffectsOn;
+
+            if (flexatarDataAlt!=renderParams.flexatarDataAlt){
+                if (buffers2!=null) buffers2.destroy();
+                if (renderParams.flexatarDataAlt == flexatarData){
+
+                    buffers2 = buffers1;
+                }else{
+                    buffers2 = null;
+                }
+                needUpdateBuffer2 = true;
+
+            }
+            if (flexatarData!=renderParams.flexatarData){
+                buffers1 = null;
+            }
+            flexatarData = renderParams.flexatarData;
+            flexatarDataAlt = renderParams.flexatarDataAlt;
+
+
+            /*if (renderParams.flexatarData!=null){
+                if (flexatarData != renderParams.flexatarData) {
+                    if (buffers2 != null) buffers2.destroy();
+                    flexatarDataAlt = flexatarData;
+                    if (flexatarDataAlt == null) {
+                        flexatarDataAlt = renderParams.flexatarDataAlt;
+                    }
+                    flexatarData = renderParams.flexatarData;
+//                    renderParams.flexatarData = null;
+                    buffers2 = buffers1;
+                    buffers1 = null;
+                }
+            }*/
+
+//            onFrameStartListener.set(null);
         }
+//        Log.d("FLX_INJECT","flexatarData "+flexatarData);
+        if (flexatarData == null) return;
+//        Log.d("FLX_INJECT", "mixWeight "+mixWeight);
         synchronized (loadBufferMutex) {
             initCommonBuffers();
             initFrameProgram();
@@ -427,16 +569,23 @@ public class FlxDrawer {
             initHeadEffectsProgram();
             initMouthProgram();
             initMouthAltProgram();
-            initFlexatarBuffers();
+            initFlexatarBuffers1();
+            initFlexatarBuffers2();
         }
 
         FlexatarAnimator animator = isStaticControlBind ? FlexatarRenderer.animator : builtinAnimator;
+        if (isTgRoundVideo){
+            animator.headScale = -0.15f;
+        }else{
+            animator.headScale = 0f;
+        }
         if (isRealtimeAnimation) {
 
             animator.start();
         }else{
             animator.next();
         }
+
 //        Log.d("FLX_INJECT", "drawer loop");
         InterUnit interUnit = animator.getInterUnit(flexatarData);
         if (interUnit == null || buffers1 == null || animator.animUnit == null) return;
@@ -531,6 +680,25 @@ public class FlxDrawer {
             frameProgram.bind();
             GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
             frameProgram.unbind();
+        }
+        if (isPromo) {
+            initPromoProgram();
+            promoProgram.use();
+            promoProgram.bind();
+            if (isTgRoundVideo) {
+                float width = 0.4f;
+                float height = width / FlexatarCommon.promoRatio;
+
+                promoProgram.uniform4f("sizePosition", width, height * screenRatio, (1f - width) / 2f, 0.8f);
+            }else{
+                float width = 0.5f;
+                float height = width / FlexatarCommon.promoRatio;
+
+                promoProgram.uniform4f("sizePosition", width, height * screenRatio, (1f - width) / 2f, 0.85f);
+            }
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+            promoProgram.unbind();
+
         }
 
         GLES20.glDisable(GLES20.GL_BLEND);

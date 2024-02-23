@@ -26,6 +26,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class FlexatarData {
     public static FlexatarData factory(File file){
@@ -34,6 +37,33 @@ public class FlexatarData {
         FlexatarData flexatarData = new FlexatarData(unpackedFlexatar);
         flexatarData.setParentFile(file);
         return flexatarData;
+    }
+    public interface OnFlexatarLoadedListener{
+        void onLoaded(FlexatarData flexatarData);
+    }
+    public static FlexatarData syncFactory(File file){
+        CountDownLatch latch = new CountDownLatch(1);
+        FlexatarData[] fd = new FlexatarData[1];
+        asyncFactory(file,flxData->{
+            fd[0] = flxData;
+            latch.countDown();
+        });
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return fd[0];
+    }
+    public static void asyncFactory(File file,OnFlexatarLoadedListener listener){
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            byte[] flxBytes = FlexatarStorageManager.dataFromFile(file);
+            LengthBasedFlxUnpack unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
+            FlexatarData flexatarData = new FlexatarData(unpackedFlexatar);
+            flexatarData.setParentFile(file);
+            listener.onLoaded(flexatarData);
+        });
     }
     private File parentFile;
     private void setParentFile(File file) {

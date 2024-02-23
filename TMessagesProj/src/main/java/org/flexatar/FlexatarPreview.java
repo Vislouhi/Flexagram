@@ -73,6 +73,7 @@ public class FlexatarPreview extends FrameLayout {
     private boolean foldUpOpened = false;
     private String groupId;
     private List<File> groupFiles = new ArrayList<>();
+    private TimerAutoDestroy<FlxDrawer.GroupMorphState> groupTimer;
 
     public FlexatarCell getFlexatarCell(){
         return flexatarCell;
@@ -107,7 +108,16 @@ public class FlexatarPreview extends FrameLayout {
         FlexatarViewRenderer renderer = new FlexatarViewRenderer();
         drawer = new FlxDrawer();
         renderer.drawer = drawer;
-        drawer.setFlexatarData(flexatarData);
+        drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+            flexatarData = FlexatarPreview.this.flexatarData;
+//            flexatarDataAlt = FlexatarPreview.this.flexatarData;
+
+            mixWeight = 1;
+            effectID = 0;
+            isEffectsOn = false;
+
+        }});
+//        drawer.setFlexatarData(flexatarData);
 //        renderer.drawer.setFlexatarDataAlt(FlexatarRenderer.currentFlxData);
 //        renderer.drawer.setEffect(true,1);
 //        renderer.drawer.setMixWeight(0.5f);
@@ -123,6 +133,7 @@ public class FlexatarPreview extends FrameLayout {
 //        cardview.setVisibility(View.INVISIBLE);
         cardview.addView(surfaceView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT, Gravity.CENTER));
         drawer.setOnReadyListener(()->{
+            drawer.setOnReadyListener(null);
             AndroidUtilities.runOnUIThread(()->{
                 cardview.animate().alpha(1f).setDuration(150).start();
 //                cardview.setVisibility(View.VISIBLE);
@@ -130,16 +141,80 @@ public class FlexatarPreview extends FrameLayout {
 
         });
         makeLayout(currentOrientation);
-        setupGroupTimer();
+//        startGroupAnimation();
 //        addView(cardview);
 
     }
-    public void setupGroupTimer(){
+
+    public void stopGroupAnimation(){
+        FlexatarData.asyncFactory(flexatarCell.getFlexatarFile(),fData->{
+            drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                mixWeight = 1f;
+                effectID = 0;
+                isEffectsOn = false;
+                flexatarData = fData;
+            }});
+        });
+    }
+
+    public void startGroupAnimation(){
         groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(getContext(), groupId);
         if (groupFiles.size() == 0) return;
         groupFiles.add(flexatarCell.getFlexatarFile());
+        groupTimer = new TimerAutoDestroy<FlxDrawer.GroupMorphState>();
+        FlxDrawer.GroupMorphState ms = new FlxDrawer.GroupMorphState();
+        ms.flexatarData = flexatarData;
+        groupTimer.setValue(ms);
+        drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+            FlxDrawer.GroupMorphState timerVal = groupTimer.getValue();
+            mixWeight = timerVal.mixWeight;
+            effectID = timerVal.effectID;
+            isEffectsOn = timerVal.isEffectsOn;
+            flexatarData = timerVal.flexatarData;
+            flexatarDataAlt = timerVal.flexatarDataAlt;
+        }});
 
-        Timer groupTimer = new Timer();
+        groupTimer.onTimerListener = x ->{
+            if (!x.morphStage)
+                x.counter+=1;
+            if (x.counter>x.changeDelta){
+                x.counter = 0;
+
+                    if (x.flexatarCounter>=groupFiles.size()){
+                        x.flexatarCounter=0;
+                    }
+
+                    FlexatarData.asyncFactory(groupFiles.get(x.flexatarCounter),fData->{
+                        x.morphStage = true;
+                        x.mixWeight = 0;
+                        x.effectID = 0;
+                        x.isEffectsOn = true;
+                        x.flexatarDataAlt = x.flexatarData;
+                        x.flexatarData = fData;
+                        x.flexatarCounter+=1;
+                    });
+            }
+            if (x.morphStage){
+                x.morphCounter+=1;
+                double w = (1d + Math.cos(Math.PI + Math.PI * (double) x.morphCounter / x.morphDelta)) / 2;
+                x.mixWeight = (float)w;
+                x.effectID = 0;
+//                x.isEffectsOn = true;
+                if (x.morphCounter>x.morphDelta){
+                    x.morphCounter = 0;
+                    x.morphStage =false;
+                    x.mixWeight = 1;
+                    x.effectID = 0;
+                    x.isEffectsOn = false;
+
+                }
+            }
+            
+            return x;
+        };
+
+
+        /*Timer groupTimer = new Timer();
         TimerTask task = new TimerTask() {
             private final int changeDelta = 25*4;
             private final int morphDelta = 25;
@@ -149,7 +224,8 @@ public class FlexatarPreview extends FrameLayout {
             private boolean morphStage = false;
             @Override
             public void run() {
-                counter+=1;
+                if (!morphStage)
+                    counter+=1;
                 if (counter>changeDelta){
                     counter = 0;
                     if (drawer!=null){
@@ -158,13 +234,25 @@ public class FlexatarPreview extends FrameLayout {
                         if (flexatarCounter>=groupFiles.size()){
                             flexatarCounter=0;
                         }
-                        drawer.changeFlexatar(FlexatarData.factory(groupFiles.get(flexatarCounter)));
-                        flexatarCounter+=1;
+//                        Log.d("FLX_INJECT", "Change flexatar");
+                        FlexatarData.asyncFactory(groupFiles.get(flexatarCounter),fData->{
+                            morphStage = true;
+                            drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                                mixWeight = 0;
+                                effectID = 0;
+                                isEffectsOn = true;
+                                flexatarData = fData;
+                            }});
+                            flexatarCounter+=1;
+                        });
+//                        drawer.changeFlexatar(FlexatarData.factory(groupFiles.get(flexatarCounter)));
 
-                        morphStage = true;
-                        drawer.setMixWeightVal(0);
-                        drawer.setisEffectOnVal(true);
-                        drawer.setEffectIdVal(0);
+
+
+
+//                        drawer.setMixWeightVal(0);
+//                        drawer.setisEffectOnVal(true);
+//                        drawer.setEffectIdVal(0);
 
 
                     }
@@ -173,16 +261,26 @@ public class FlexatarPreview extends FrameLayout {
                 if (morphStage){
                     morphCounter+=1;
                     if (drawer!=null) {
-                        double w = (1d + Math.cos(Math.PI + Math.PI * (double) morphCounter / morphDelta)) / 2;
-                        drawer.setMixWeightVal((float)w);
+//                        drawer.setMixWeightVal((float)w);
+                        drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                            double w = (1d + Math.cos(Math.PI + Math.PI * (double) morphCounter / morphDelta)) / 2;
+                            mixWeight = (float)w;
+                            effectID = 0;
+                            isEffectsOn = true;
+                        }});
                     }
                     if (morphCounter>morphDelta){
                         morphCounter = 0;
                         morphStage =false;
                         if (drawer!=null) {
-                            drawer.setMixWeightVal(1);
-                            drawer.setisEffectOnVal(false);
-                            drawer.setEffectIdVal(0);
+                            drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                                mixWeight = 1;
+                                effectID = 0;
+                                isEffectsOn = false;
+                            }});
+//                            drawer.setMixWeightVal(1);
+//                            drawer.setisEffectOnVal(false);
+//                            drawer.setEffectIdVal(0);
                         }
 
                     }
@@ -193,7 +291,7 @@ public class FlexatarPreview extends FrameLayout {
         };
 
 
-        groupTimer.scheduleAtFixedRate(task, 0, 40);
+        groupTimer.scheduleAtFixedRate(task, 0, 40);*/
     }
     public void reinitFlexatar(){
         if (cardview.getChildCount() == 0 ){
@@ -271,8 +369,8 @@ public class FlexatarPreview extends FrameLayout {
         };
         tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         tabsView.tabMarginDp = 16;
-        tabsView.addTab(0, "Settings");
-        tabsView.addTab(1, "Attachment");
+        tabsView.addTab(0, LocaleController.getString("SettingsFlexatar",R.string.SettingsFlexatar));
+        tabsView.addTab(1, LocaleController.getString("AttachmentFlexatar",R.string.AttachmentFlexatar));
         tabsView.setPadding(0,6,0,6);
         tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
             @Override
@@ -284,10 +382,12 @@ public class FlexatarPreview extends FrameLayout {
                 if (page == 0){
                     editContentLayout.removeView(recyclerView);
                     editContentLayout.addView(controlsScrollView,layoutParams);
+                    stopGroupAnimation();
 
                 } else if (page == 1) {
                     editContentLayout.removeView(controlsScrollView);
                     editContentLayout.addView(recyclerView,layoutParams);
+                    startGroupAnimation();
 
 
                 }
@@ -486,10 +586,15 @@ public class FlexatarPreview extends FrameLayout {
                     foldUpFlexatarChooseView.addOnRemoveViewListener(()->{foldUpOpened=false;});
                     foldUpFlexatarChooseView.addOnFlexatarChosenListener(file->{
                         FlexatarCabinetActivity.needRedrawFlexatarList = true;
-                        if (groupFiles.size() == 0 ){
-                            setupGroupTimer();
+                        /*if (groupFiles.size() == 0 ){
+                            startGroupAnimation();
+                        }*/
+                        if (groupFiles.size()>0)
+                            groupFiles.add(groupFiles.size()-1,file);
+                        else {
+                            startGroupAnimation();
                         }
-                        groupFiles.add(groupFiles.size()-1,file);
+
                         Log.d("FLX_INJECT","add flexatar file to group" + file.getName());
                         adapter.addFlexatar(file);
                     });
@@ -684,6 +789,13 @@ public class FlexatarPreview extends FrameLayout {
                     public void oClose() {
                         FlexatarCabinetActivity.needRedrawFlexatarList = true;
                         parent.groupFiles.remove(cell.getFlexatarFile());
+                        if(parent.groupFiles.size() == 1){
+                            parent.stopGroupAnimation();
+//                            parent.groupFiles.clear();
+//                            parent.groupTimer.destroy();
+//                            parent.groupTimer = null;
+                        }
+
                         String flxID = cell.getFlexatarFile().getName().replace(".flx","");
                         FlexatarStorageManager.removeGroupRecord(mContext, groupId,flxID);
                         FlexatarStorageManager.removeHiddenRecord(mContext,flxID);

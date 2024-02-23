@@ -196,6 +196,7 @@ public class YuvConverter {
         flxDrawer = new FlxDrawer();
         flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser);
         flxDrawer.setFrame();
+        flxDrawer.setPromo();
         flxDrawer.setIsStaticControlBind(true);
 //        flxDrawer = new FlxDrawer();
 //        flxDrawer.addHead(FlexatarRenderer.currentFlxData);

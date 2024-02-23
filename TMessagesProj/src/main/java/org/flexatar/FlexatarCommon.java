@@ -31,6 +31,8 @@ public class FlexatarCommon {
     private static Bitmap mouthLineBitmap;
     public static Bitmap blackFrame;
     public static ByteBuffer frameBB;
+    public static Bitmap promoLabel;
+    public static float promoRatio;
 
     public static void prepare(){
         prepareAnimationPatterns();
@@ -175,7 +177,8 @@ public class FlexatarCommon {
         InputStream inputStream = new ByteArrayInputStream(imgData);
         mouthLineBitmap = BitmapFactory.decodeStream(inputStream);
         blackFrame = BitmapFactory.decodeStream(new ByteArrayInputStream(AssetAccess.dataFromFile("flexatar/frame.png")));
-
+        promoLabel = BitmapFactory.decodeStream(new ByteArrayInputStream(AssetAccess.dataFromFile("flexatar/flexatar_telegram_promo.png")));
+        promoRatio = (float)promoLabel.getWidth()/promoLabel.getHeight();
         frameBB = Data.floatArrayToBytebuffer(new float[]{0,0,0,1,1,1,0,0,1,1,1,0});
     }
     static GlBuffers bufferFactory(){

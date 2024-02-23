@@ -444,24 +444,9 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
 //        FlexatarRenderer.isFlexatarRendering = position == 1;
 
         VoIPService voipInstance = VoIPService.getSharedInstance();
-        if (voipInstance != null) {
-//            voipInstance.setFlexatarDelay(FlexatarRenderer.isFlexatarRendering);
-//            voipInstance.switchToFlexatar(FlexatarRenderer.isFlexatarRendering);
-//            if (previousPage == 3){
-//                voipInstance.switchToFlexatar(false);
-//            }
-//            if (position == 3){
-//                voipInstance.switchToFlexatar(true);
-//            }
-//            if (FlexatarRenderer.isFlexatarRendering){
-//                voipInstance.switchToFlexatar(true);
-//            }
-        }
+//        if (voipInstance != null)
 
-//        if (FlexatarRenderer.isFlexatarRendering){
-//            animate = false;
-//        }
-        boolean isCurrentFontFace = voipInstance.isFrontFaceCamera();
+        boolean isCurrentFontFace = voipInstance == null || voipInstance.isFrontFaceCamera();
         if (animate) {
             if (realCurrentPage == 0) {
                 //switch from screencast to any camera
@@ -526,7 +511,8 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                     if (position == 1 ){
                         if (!FlexatarRenderer.isFlexatarCamera) {
                             FlexatarRenderer.isFlexatarCamera = true;
-                            voipInstance.restartCamera();
+                            if (voipInstance!=null)
+                                voipInstance.restartCamera();
                         }
                         flexatarPanelView.setVisibility(View.VISIBLE);
                         flexatarPanelView.setEnabled(true);
@@ -535,9 +521,11 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                         FlexatarRenderer.isFlexatarCamera = false;
                         boolean isFrontFaceCamera = VoIPService.getSharedInstance().isFrontFaceCamera();
                         if (!isFrontFaceCamera && position == 2 || isFrontFaceCamera && position == 3){
-                            VoIPService.getSharedInstance().switchCamera();
+                            if (voipInstance!=null)
+                                voipInstance.switchCamera();
                         }else{
-                            voipInstance.restartCamera();
+                            if (voipInstance!=null)
+                                voipInstance.restartCamera();
                         }
                         flexatarPanelView.setVisibility(View.GONE);
                         flexatarPanelView.setEnabled(false);

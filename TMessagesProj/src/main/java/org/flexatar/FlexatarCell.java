@@ -258,7 +258,8 @@ public class FlexatarCell extends RelativeLayout {
 
         icnFlx.setLayoutParams(layoutParams);
         nameTextView.setText(LocaleController.getString("Downloading", R.string.Downloading));
-        dateTextView.setText("");
+        if (groupCountTextView!=null)groupCountTextView.setText("");
+        if (dateTextView!=null) dateTextView.setText("");
         isDownload = true;
 
     }

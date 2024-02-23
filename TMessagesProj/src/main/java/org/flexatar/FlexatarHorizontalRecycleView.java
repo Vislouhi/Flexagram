@@ -36,7 +36,8 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
 
         public Adapter(Context context, FlexatarUI.FlexatarChooseListener onChooseListener){
             mContext = context;
-            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
+            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context, FlexatarStorageManager.getHiddenRecords(context)).toArray(new File[0]);
+//            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
             this.onChooseListener = onChooseListener;
         }
         public interface OnFlexatarChosen{
