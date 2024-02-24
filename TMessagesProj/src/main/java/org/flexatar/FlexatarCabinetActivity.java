@@ -275,6 +275,16 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             {
                 ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
                 item.setImageResource(R.drawable.msg_list);
+                item.setNameText("Record Video");
+                item.setOnClickListener(v -> {
+                    presentFragment(new FlexatarVideoCapFragment());
+                });
+
+                itemsAction.add(item);
+            }
+            {
+                ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+                item.setImageResource(R.drawable.msg_list);
                 item.setNameText("Check private storage");
                 item.setOnClickListener(v -> {
                     if (FlexatarServiceAuth.getVerification().isVerified()) {

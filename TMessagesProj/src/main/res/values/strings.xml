@@ -69,6 +69,8 @@
     <string name="ImpossibleToDeleteGroup">You can\'t delete flexatar with attachments.</string>
     <string name="AttachmentFlexatar">Attachments</string>
     <string name="SettingsFlexatar">Settings</string>
+    <string name="TakeShortVideo">Take a short video</string>
+    <string name="UseVideoForFlexatar">Make flexatar with this video?</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>
