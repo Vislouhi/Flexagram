@@ -50,7 +50,7 @@ public class ShaderProgram {
         }
 
     }
-    private final int id;
+    public final int id;
     private Map<String,VtxDescriptor> attributes = new HashMap<>();
     private Map<String,Integer> uniforms4f = new HashMap<>();
     private Map<String,Integer> uniforms1i = new HashMap<>();

@@ -383,19 +383,19 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
                 .build();
 
-        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .build();
+//        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+//                .build();
 
-        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), new ImageAnalysis.Analyzer() {
-            @Override
-            public void analyze(@NonNull ImageProxy image) {
-                if (needTakePhoto) {
-                    needTakePhoto = false;
-                    Log.d("FLX_INJECT", "ImageProxy width " + image.getWidth() + " height " + image.getHeight());
-                }
-                image.close();
-            }
-        });
+//        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), new ImageAnalysis.Analyzer() {
+//            @Override
+//            public void analyze(@NonNull ImageProxy image) {
+//                if (needTakePhoto) {
+//                    needTakePhoto = false;
+//                    Log.d("FLX_INJECT", "ImageProxy width " + image.getWidth() + " height " + image.getHeight());
+//                }
+//                image.close();
+//            }
+//        });
 
         ImageCapture.Builder builder = new ImageCapture.Builder();
 
@@ -410,7 +410,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
         preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
 
-        Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, imageCapture);
+        Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview,  imageCapture);
         isTakePhotoAvailable = true;
 
     }

@@ -54,6 +54,53 @@ public class ShaderLib {
 //                    " gl_FragColor = vec4(color.xyz,1.0-alpha);" +
                     " gl_FragColor = color;" +
                     "}";
+
+    public static final String VIDEO_VERTEX =
+            "attribute vec2 uv;\n" +
+                    "attribute vec4 speechBuff0;" +
+                    "attribute vec4 speechBuff1;" +
+                    "attribute vec4 speechBuff2;" +
+                    "varying highp vec2 UV;" +
+                    "uniform vec4 parSet0;" +
+                    "uniform vec4 parSet1;" +
+//                    "uniform vec4 sizePosition;" +
+                    "void main(void) {\n" +
+                    " vec2 speechBshp[5];" +
+                    " speechBshp[0] = speechBuff0.xy;" +
+                    " speechBshp[1] = speechBuff0.zw;" +
+                    " speechBshp[2] = speechBuff1.xy;" +
+                    " speechBshp[3] = speechBuff1.zw;" +
+                    " speechBshp[4] = speechBuff2.xy;" +
+                    " float speechWeights[5];" +
+                    " speechWeights[0] = parSet0.x;" +
+                    " speechWeights[1] = parSet0.y;" +
+                    " speechWeights[2] = parSet0.z;" +
+                    " speechWeights[3] = parSet0.w;" +
+                    " speechWeights[4] = parSet1.x;" +
+                    "UV = uv.yx;" +
+                    "UV.x = 1.0-UV.x;" +
+                    "vec2 result = uv*vec2(2.0,2.0)-vec2(1.0,1.0);" +
+                    "for (int i = 0; i < 5; i++) {" +
+
+                    "   result.xy += speechWeights[i]*speechBshp[i];" +
+                    "}" +
+//                    "result -= speechBshp[2];" +
+                    "result.xy *= vec2(1.0,-1.0);" +
+                    "gl_Position = vec4(result,0.0,1.0);" +
+                    "}\n";
+    public static final String VIDEO_FRAGMENT =
+            "#extension GL_OES_EGL_image_external : require\n" +
+            "varying highp vec2 UV;" +
+                    "uniform samplerExternalOES uSampler;" +
+
+
+                    "void main(void) {" +
+                    "highp vec4 color = texture2D(uSampler, UV);"+
+//                    "highp float alpha_inv = 1.0-alpha;"+
+//                            "if (alpha>0.5) discard;"+
+//                    " gl_FragColor = vec4(color.xyz,1.0-alpha);" +
+                    " gl_FragColor = vec4(color.xyz,1.0);" +
+                    "}";
     public static final String HEAD_SINGLE_VERTEX =
             "attribute vec4 bshp0;\n" +
                     "attribute vec4 bshp1;\n" +

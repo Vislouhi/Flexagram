@@ -1,11 +1,23 @@
 package org.flexatar;
 
+import android.graphics.SurfaceTexture;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.util.Log;
+import android.view.Surface;
 
+
+
+import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.FlexatarData;
+import org.flexatar.DataOps.FlexatarVData;
+import org.flexatar.DataOps.LengthBasedFlxUnpack;
+import org.telegram.messenger.ApplicationLoader;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,6 +61,9 @@ public class FlxDrawer {
     private ShaderProgram promoProgram;
     private boolean isPromo = false;
     private boolean isTgRoundVideo = false;
+    private ShaderProgram videoProgram;
+    private SurfaceTexture surfaceTexture;
+    private FlexatarVData flxvData;
 
     public FlxDrawer(){
         FlexatarNotificator.incDrawerCounter();
@@ -170,6 +185,65 @@ public class FlxDrawer {
             makeViewModelMatrix();
         }
     }
+    private int[] videoTexture;
+    private int frameCounter = 0;
+    public void initVideoTexture(){
+        if (videoTexture!=null) return;
+        videoTexture = new int[1];
+        GLES20.glGenTextures(1, videoTexture, 0);
+
+        surfaceTexture = new SurfaceTexture(videoTexture[0]);
+        Surface surface = new Surface(surfaceTexture);
+        surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+            @Override
+            public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                Log.d("FLX_INJECT","video frame avalibale "+frameCounter);
+                frameCounter+=1;
+            }
+        });
+
+
+        flxvData = new FlexatarVData(new LengthBasedFlxUnpack(AssetAccess.dataFromFile("flexatar/test_flx.v")));
+//        flxvData.markerBB
+        MediaPlayer mediaPlayer = new MediaPlayer();
+        File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "saved_video.mp4");
+        try {
+//            mediaPlayer.setDataSource(flxvData.getVideoFile());
+            mediaPlayer.setDataSource(ApplicationLoader.applicationContext,Uri.fromFile(videoFile));
+            mediaPlayer.setSurface(surface);
+            mediaPlayer.setLooping(false); // Enable looping
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    Log.d("FLX_INJECT","video loop finished ");
+                    frameCounter=0;
+                    mediaPlayer.seekTo(0);
+                    mediaPlayer.start();
+                }
+            });
+
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void initVideoProgram(){
+        if (videoProgram != null) return;
+        videoProgram = new ShaderProgram(ShaderLib.VIDEO_VERTEX, ShaderLib.VIDEO_FRAGMENT);
+        videoProgram.addUniform4f(PARAMETER_SET_0);
+        videoProgram.addUniform4f(PARAMETER_SET_1);
+//        for (int i = 0; i < 3; i++) {
+//            videoProgram.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
+//        }
+//        videoProgram.attribute("uv" , commonBuffers.frameVBO, 2);
+//        TextureArray frameTexture = new TextureArray();
+//        frameTexture.addTexture(videoTexture[0]);
+//        videoProgram.textureArray("uSampler", frameTexture, 0);
+//        videoProgram.addUniform4f("sizePosition");
+    }
+
     private void initFrameProgram(){
         if (frameProgram != null) return;
         frameProgram = new ShaderProgram(ShaderLib.FRAME_VERTEX, ShaderLib.FRAME_FRAGMENT);
@@ -571,6 +645,9 @@ public class FlxDrawer {
             initMouthAltProgram();
             initFlexatarBuffers1();
             initFlexatarBuffers2();
+
+            initVideoTexture();
+            initVideoProgram();
         }
 
         FlexatarAnimator animator = isStaticControlBind ? FlexatarRenderer.animator : builtinAnimator;
@@ -701,7 +778,63 @@ public class FlxDrawer {
 
         }
 
+        drawVideo();
         GLES20.glDisable(GLES20.GL_BLEND);
+    }
+    private void drawVideo(){
+        surfaceTexture.updateTexImage();
+        videoProgram.use();
+        videoProgram.bind();
+//        videoProgram.uniform4f("sizePosition", 1, 1, 0, 0);
+        int positionHandle = GLES20.glGetAttribLocation(videoProgram.id, "uv");
+        flxvData.markerBB.position(FlexatarCommon.videoStride*frameCounter);
+//        flxvData.markerBB.position(FlexatarCommon.videoStride*frameCounter);
+        GLES20.glEnableVertexAttribArray(positionHandle);
+        GLES20.glVertexAttribPointer(
+                positionHandle,
+                2,
+                GLES20.GL_FLOAT,
+                false,
+                0,
+                flxvData.markerBB);
+        for (int i = 0; i < 3; i++) {
+            int positionHandle1 = GLES20.glGetAttribLocation(videoProgram.id, "speechBuff"+i);
+            GLES20.glEnableVertexAttribArray(positionHandle1);
+            GLES20.glVertexAttribPointer(
+                    positionHandle1,
+                    4,
+                    GLES20.GL_FLOAT,
+                    false,
+                    0,
+                    FlexatarCommon.speechBshBB[1]);
+        }
+
+
+
+       /* FlexatarCommon.frameBB.position(0);
+        GLES20.glEnableVertexAttribArray(positionHandle);
+        GLES20.glVertexAttribPointer(
+                positionHandle,
+                2,
+                GLES20.GL_FLOAT,
+                false,
+                0,
+                FlexatarCommon.frameBB);*/
+
+        videoProgram.uniform4f(PARAMETER_SET_0,  speechState[0], speechState[1], speechState[2], speechState[3]);
+        videoProgram.uniform4f(PARAMETER_SET_1, speechState[4], 0, 0, 0);
+
+
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, videoTexture[0]);
+        int videoTextureHandle = GLES20.glGetUniformLocation(videoProgram.id, "uSampler");
+        GLES20.glUniform1i(videoTextureHandle, 0);
+        commonBuffers.idxVBO.bind();
+//        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+
+        commonBuffers.idxVBO.unbind();
+        videoProgram.unbind();
     }
 
     private void drawMouth(ShaderProgram mouthProgram, FlexatarData flexatarData, FlexatarData.MouthPivots mp, float[] hw5, List<float[]> keyVtxList, float[] zRotMatrixInv, float alpha) {

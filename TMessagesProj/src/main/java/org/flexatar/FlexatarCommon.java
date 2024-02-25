@@ -33,6 +33,7 @@ public class FlexatarCommon {
     public static ByteBuffer frameBB;
     public static Bitmap promoLabel;
     public static float promoRatio;
+    public static int videoStride;
 
     public static void prepare(){
         prepareAnimationPatterns();
@@ -139,7 +140,7 @@ public class FlexatarCommon {
 
     }
     private static ByteBuffer eyebrowBB;
-    private static ByteBuffer[] speechBshBB = new ByteBuffer[3];
+    static ByteBuffer[] speechBshBB = new ByteBuffer[3];
     private static ByteBuffer uvBB;
     private static ByteBuffer idxBB;
     private static void prepareGlBuffers(){
@@ -169,6 +170,7 @@ public class FlexatarCommon {
         }
         uvBB = AssetAccess.bufferFromFile("flexatar/FLX_mesh_uv.dat");
         idxBB = AssetAccess.bufferFromFile("flexatar/FLX_mesh_idx.dat");
+        videoStride = uvBB.capacity();
         FloatBuffer uvFB = uvBB.asFloatBuffer();
         int keIdx = 50;
         uvKeyPoint = new float[]{uvFB.get(keIdx * 2), uvFB.get(keIdx * 2 + 1)-0.15f,1f};

@@ -11,6 +11,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.media.AudioAttributes;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.FileObserver;
@@ -50,6 +51,7 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.util.Consumer;
+import androidx.exifinterface.media.ExifInterface;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
@@ -57,6 +59,9 @@ import androidx.lifecycle.LifecycleRegistry;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.flexatar.DataOps.Data;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FileStreamLoadOperation;
@@ -72,11 +77,14 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.VideoPlayer;
 import org.telegram.ui.LaunchActivity;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
 
 public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleOwner {
@@ -349,6 +357,22 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
 
         ImageView okIcon = new ImageView(getContext());
         okIcon.setImageResource(R.drawable.floating_check);
+        okIcon.setOnClickListener(v->{
+            packVideoDataToMakeFlexatar();
+            /*MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            retriever.setDataSource(getContext(), Uri.fromFile(videoFile));
+
+            String rotationString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+            Log.d("FLX_INJECT","imageRotation "+rotationString);
+            try {
+                retriever.release();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }*/
+
+
+
+        });
         frameLayout.addView(okIcon,LayoutHelper.createFrame(36,36,Gravity.RIGHT | Gravity.BOTTOM,0,0,66,66));
 
 
@@ -361,8 +385,32 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
 
 
     }
-    private void startCamera() {
+    public void packVideoDataToMakeFlexatar(){
+        File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "saved_video.mp4");
+        byte[] videoBytes = FlexatarStorageManager.dataFromFile(videoFile);
 
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("flx_type", "video");
+            jsonObject.put("name", "Test video flexatar");
+            LocalDateTime currentDateTime = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            jsonObject.put("date", currentDateTime.format(formatter));
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        Data sendData = new Data(jsonObject.toString());
+        sendData = sendData.encodeLengthHeader().add(sendData);
+        Data cData = new Data(videoBytes);
+        cData = cData.encodeLengthHeader().add(cData);
+        sendData = sendData.add(cData);
+        File makeFlxFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "make_flx_by_video.mp4");
+        FlexatarStorageManager.dataToFile(sendData.value,makeFlxFile);
+
+    }
+    private void startCamera() {
+        Log.d("FLX_INJECT","startCamera");
         final ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(getContext());
 
         cameraProviderFuture.addListener(() -> {
@@ -382,6 +430,7 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
     }
     void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
 
+
         Preview preview = new Preview.Builder()
                 .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                 .build();
@@ -390,7 +439,7 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
                 .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
                 .build();
 
-        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+        /*ImageAnalysis   imageAnalysis = new ImageAnalysis.Builder()
                 .build();
 
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(getContext()), new ImageAnalysis.Analyzer() {
@@ -399,7 +448,7 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
 
                 image.close();
             }
-        });
+        });*/
 
 //        ImageCapture.Builder builder = new ImageCapture.Builder();
 
@@ -419,7 +468,7 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
         //        builder.setTargetAspectRatio(AspectRatio.RATIO_4_3);
        videoCapture = VideoCapture.withOutput(builder.build());
 
-        Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, videoCapture);
+        Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview,  videoCapture);
 
 
 
