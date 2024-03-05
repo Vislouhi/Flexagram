@@ -534,6 +534,11 @@ public class FlxDrawer {
             }
             flexatarData = renderParams.flexatarData;
             flexatarDataAlt = renderParams.flexatarDataAlt;
+
+            if (flxvData != renderParams.flexatarDataVideo){
+                if (videoToTextureArray!=null) videoToTextureArray.release();
+                videoToTextureArray=null;
+            }
             flxvData = renderParams.flexatarDataVideo;
 
 

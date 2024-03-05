@@ -586,11 +586,13 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             }
 
             @Override
-            public void downloaded(File file) {
+            public void downloaded(File file,int flexatarType) {
 //                itemAdapter.removeFlexatarCell(1);
-                ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
-                item.setFlexatarFile(file);
-                itemAdapter.addFlexatarItem(item,FlexatarServerAccess.isDownloadingFlexatars ? 2 : 1);
+                if (flexatarType == tabsView.getCurrentTabId()) {
+                    ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
+                    item.setFlexatarFile(file);
+                    itemAdapter.addFlexatarItem(item, FlexatarServerAccess.isDownloadingFlexatars ? 2 : 1);
+                }
 
 
             }

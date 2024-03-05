@@ -3,7 +3,9 @@ package org.flexatar;
 import com.google.android.exoplayer2.util.Log;
 
 import org.flexatar.DataOps.Data;
+import org.flexatar.DataOps.FlexatarData;
 import org.flexatar.DataOps.LengthBasedFlxUnpack;
+import org.flexatar.DataOps.LengthBasedUnpack;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -368,7 +370,9 @@ public class FlexatarServerAccess {
                     public void onReady(boolean finished, ByteArrayOutputStream byteArrayOutputStream) {
                         Log.d("FLX_INJECT","downloaded "+links.get(position)[1]);
                         byte[] downloadedData = byteArrayOutputStream.toByteArray();
-                        if (!new LengthBasedFlxUnpack(downloadedData).validate()){
+                        int flexatarType = new LengthBasedUnpack(downloadedData,true).getFlexatarType() == FlexatarData.FlxDataType.PHOTO
+                                ? 1 : 0;
+                        if (!new LengthBasedFlxUnpack(downloadedData).validate(flexatarType)){
 
                             try {
                                 byteArrayOutputStream.close();
@@ -381,11 +385,12 @@ public class FlexatarServerAccess {
 
                         if (links.get(position)[4]==null){
 
+                            File downloadedFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext, downloadedData, links.get(position)[1], links.get(position)[2],flexatarType);
 
-                            File downloadedFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,downloadedData,links.get(position)[1],links.get(position)[2]);
                             if (downloadBuiltinObserver != null){
-                                downloadBuiltinObserver.downloaded(downloadedFile);
+                                downloadBuiltinObserver.downloaded(downloadedFile,flexatarType);
                             }
+
                             try {
                                 byteArrayOutputStream.close();
                             } catch (IOException e) {
@@ -397,10 +402,10 @@ public class FlexatarServerAccess {
                                 public void onReady(boolean finished, ByteArrayOutputStream metaByteArray) {
                                     FlexatarStorageManager.FlexatarMetaData metaData = new FlexatarStorageManager.FlexatarMetaData();
                                     metaData.data = new Data(metaByteArray.toByteArray());
-                                    File downloadedFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,byteArrayOutputStream.toByteArray(),links.get(position)[1],links.get(position)[2]);
+                                    File downloadedFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,byteArrayOutputStream.toByteArray(),links.get(position)[1],links.get(position)[2],flexatarType);
                                     FlexatarStorageManager.rewriteFlexatarHeader(downloadedFile,metaData);
                                     if (downloadBuiltinObserver != null){
-                                        downloadBuiltinObserver.downloaded(downloadedFile);
+                                        downloadBuiltinObserver.downloaded(downloadedFile,flexatarType);
                                     }
                                     try {
                                         byteArrayOutputStream.close();
@@ -520,7 +525,7 @@ public class FlexatarServerAccess {
     public interface DownloadBuiltinObserver{
         void start();
         void onError();
-        void downloaded(File file);
+        void downloaded(File file,int flexatarType);
     }
     public static DownloadBuiltinObserver downloadBuiltinObserver = null;
 

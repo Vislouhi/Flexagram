@@ -52,7 +52,10 @@ public class LengthBasedFlxUnpack {
 
 
     }
-    public boolean validate(){
+    public boolean validate(int flexatarType){
+        if (flexatarType == 0){
+            return validateVideo();
+        }
         String[] keysMustBe = {
                 "Info","PreviewImage","mandalaBlendshapes","mandalaTextureBlurBkg",
                 "mandalaCheckpoints","mandalaFaces","mandalaBorder"

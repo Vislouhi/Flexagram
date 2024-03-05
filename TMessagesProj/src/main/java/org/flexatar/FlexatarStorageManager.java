@@ -315,6 +315,8 @@ public class FlexatarStorageManager {
                 editor.putString(VIDEO, path);
                 editor.apply();
                 chosenVideoFile = new File(path);
+                videoFlxData = null;
+                Log.d("FLX_INJECT","selected video flexatar: "+chosenVideoFile.getName());
 
 
             }

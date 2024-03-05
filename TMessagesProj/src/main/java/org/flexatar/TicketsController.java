@@ -189,7 +189,7 @@ public class TicketsController {
                                     if (isOk) {
                                         Log.d("FLX_INJECT", "downloaded " + listElement.ftar);
                                         byte[] flexatarData = byteArrayOutputStream.toByteArray();
-                                        if (new LengthBasedFlxUnpack(flexatarData).validate()) {
+                                        if (new LengthBasedFlxUnpack(flexatarData).validate(1)) {
                                             File flexatarReadyFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext, flexatarData, listElement.id);
                                             TicketStorage.removeTicket(lfid);
                                             lfidsPooling.remove(lfid);

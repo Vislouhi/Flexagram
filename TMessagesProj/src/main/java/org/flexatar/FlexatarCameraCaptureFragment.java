@@ -652,10 +652,6 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
             sendImagesToMakeFlexatar(editText.getText().toString());
         });
-        /*builder.setNegativeButton("Skip", (dialogInterface, i) -> {
-            sendImagesToMakeFlexatar();
-        });*/
-
         AlertDialog alertDialog = builder.create();
         showDialog(alertDialog,true,false,null);
     }

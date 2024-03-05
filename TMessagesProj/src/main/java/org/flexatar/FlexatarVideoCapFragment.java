@@ -24,8 +24,10 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.VideoView;
@@ -70,6 +72,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.video.VideoPlayerHolderBase;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -358,7 +361,8 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
         ImageView okIcon = new ImageView(getContext());
         okIcon.setImageResource(R.drawable.floating_check);
         okIcon.setOnClickListener(v->{
-            packVideoDataToMakeFlexatar();
+            askFlexatarName();
+
             /*MediaMetadataRetriever retriever = new MediaMetadataRetriever();
             retriever.setDataSource(getContext(), Uri.fromFile(videoFile));
 
@@ -385,14 +389,39 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
 
 
     }
-    public void packVideoDataToMakeFlexatar(){
+    private void askFlexatarName(){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+
+
+        builder.setTitle(LocaleController.getString("FlexatarName", R.string.FlexatarName));
+
+        LinearLayout linearLayout = new LinearLayout(getContext());
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+
+        final EditText editText = new EditText(getContext());
+        editText.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        editText.setHint(LocaleController.getString("EnterFlexatarsName", R.string.EnterFlexatarsName));
+        int pad = AndroidUtilities.dp(12);
+        linearLayout.setPadding(pad, pad, pad, pad);
+        linearLayout.addView(editText,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER));
+        builder.setView(linearLayout);
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+            packVideoDataToMakeFlexatar(editText.getText().toString());
+        });
+        AlertDialog alertDialog = builder.create();
+        showDialog(alertDialog,true,false,null);
+    }
+    public void packVideoDataToMakeFlexatar(String flxName){
         File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "saved_video.mp4");
         byte[] videoBytes = FlexatarStorageManager.dataFromFile(videoFile);
 
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("flx_type", "video");
-            jsonObject.put("name", "Test video flexatar");
+            jsonObject.put("name", flxName);
             LocalDateTime currentDateTime = LocalDateTime.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             jsonObject.put("date", currentDateTime.format(formatter));
@@ -405,9 +434,26 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
         Data cData = new Data(videoBytes);
         cData = cData.encodeLengthHeader().add(cData);
         sendData = sendData.add(cData);
-        File makeFlxFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "make_flx_by_video.mp4");
-        FlexatarStorageManager.dataToFile(sendData.value,makeFlxFile);
+        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+            @Override
+            public void onReady(FlexatarServerAccess.StdResponse response) {
+                Log.d("FLX_INJECT", "make video flx data response: " + response.toJson().toString());
+//                ticket.status = "in_process";
+//                ticket.formJson(FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).toJson());
+//                TicketStorage.setTicket(lfid,ticket);
+//                TicketsController.flexatarTaskStart(lfid,ticket);
+            }
 
+            @Override
+            public void onError() {
+//                TicketStorage.removeTicket(lfid);
+//                FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                Log.d("FLX_INJECT", "make flx data error " );
+            }
+        });
+//        FlexatarStorageManager.dataToFile(sendData.value,makeFlxFile);
+        File makeFlxFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "make_flx_by_video.pack");
+        finishFragment();
     }
     private void startCamera() {
         Log.d("FLX_INJECT","startCamera");
