@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.opengl.GLSurfaceView;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -45,9 +47,9 @@ import java.util.TimerTask;
 public class FlexatarPreview extends FrameLayout {
     private FlxDrawer drawer;
     private final CardView cardview;
-    private final LengthBasedFlxUnpack unpackedFlexatar;
+//    private final LengthBasedFlxUnpack unpackedFlexatar;
     private final BaseFragment parentFragment;
-    private final byte[] flxData;
+//    private final byte[] flxData;
     private final FlexatarData flexatarData;
     private final FlexatarCell flexatarCell;
 
@@ -87,16 +89,14 @@ public class FlexatarPreview extends FrameLayout {
         this.parentFragment = parentFragment;
         int currentOrientation = getResources().getConfiguration().orientation;
 
-        byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarCell.getFlexatarFile());
-        flxData = flxBytes;
-//        Log.d("FLX_INJECT",""+flxBytes);
-        unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
-        flexatarData = new FlexatarData(unpackedFlexatar);
-//        FlexatarRenderer.currentFlxData = flexatarData;
+//        byte[] flxBytes = FlexatarStorageManager.dataFromFile(flexatarCell.getFlexatarFile());
+//        flxData = flxBytes;
+////        Log.d("FLX_INJECT",""+flxBytes);
+//        unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
+//        flexatarData = new FlexatarData(unpackedFlexatar);
+//        Log.d("FLX_INJECT","Preview flx file "+flexatarCell.getFlexatarFile().getAbsolutePath());
+        flexatarData = FlexatarData.factory(flexatarCell.getFlexatarFile());
         View overlayView = new View(context);
-//        overlayView.setLayoutParams(new ViewGroup.LayoutParams(
-//                ViewGroup.LayoutParams.MATCH_PARENT,
-//                ViewGroup.LayoutParams.MATCH_PARENT));
         overlayView.setBackgroundColor(Color.BLACK);
         overlayView.setAlpha(0.8f);
         overlayView.setEnabled(true);
@@ -104,23 +104,23 @@ public class FlexatarPreview extends FrameLayout {
         addView(overlayView,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT, Gravity.CENTER));
         GLSurfaceView surfaceView = new GLSurfaceView(context);
         surfaceView.setEGLContextClientVersion(2);
-//        FlexatarRenderer.speechState = new float[]{0,0,-1,0,0};
         FlexatarViewRenderer renderer = new FlexatarViewRenderer();
         drawer = new FlxDrawer();
+        drawer.setHandler(new Handler(Looper.getMainLooper()));
         renderer.drawer = drawer;
         drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
-            flexatarData = FlexatarPreview.this.flexatarData;
-//            flexatarDataAlt = FlexatarPreview.this.flexatarData;
-
+            if (FlexatarPreview.this.flexatarData.flxDataType == FlexatarData.FlxDataType.PHOTO) {
+                flexatarData = FlexatarPreview.this.flexatarData;
+                flexatarType=1;
+            }else if (FlexatarPreview.this.flexatarData.flxDataType == FlexatarData.FlxDataType.VIDEO) {
+                flexatarDataVideo = FlexatarPreview.this.flexatarData;
+                flexatarType=0;
+                drawer.prepareVideoTextures();
+            }
             mixWeight = 1;
             effectID = 0;
             isEffectsOn = false;
-
         }});
-//        drawer.setFlexatarData(flexatarData);
-//        renderer.drawer.setFlexatarDataAlt(FlexatarRenderer.currentFlxData);
-//        renderer.drawer.setEffect(true,1);
-//        renderer.drawer.setMixWeight(0.5f);
         surfaceView.setRenderer(renderer);
 
         cardview = new CardView(context);
@@ -153,6 +153,7 @@ public class FlexatarPreview extends FrameLayout {
                 effectID = 0;
                 isEffectsOn = false;
                 flexatarData = fData;
+                flexatarType = 1;
             }});
         });
     }
@@ -172,6 +173,7 @@ public class FlexatarPreview extends FrameLayout {
             isEffectsOn = timerVal.isEffectsOn;
             flexatarData = timerVal.flexatarData;
             flexatarDataAlt = timerVal.flexatarDataAlt;
+            flexatarType = 1;
         }});
 
         groupTimer.onTimerListener = x ->{
@@ -297,17 +299,42 @@ public class FlexatarPreview extends FrameLayout {
         if (cardview.getChildCount() == 0 ){
             GLSurfaceView surfaceView = new GLSurfaceView(getContext());
             surfaceView.setEGLContextClientVersion(2);
-//            FlexatarRenderer.speechState = new float[]{0,0,-1,0,0};
             FlexatarViewRenderer renderer = new FlexatarViewRenderer();
+
             drawer = new FlxDrawer();
+            drawer.setHandler(new Handler(Looper.getMainLooper()));
             renderer.drawer = drawer;
-            drawer.setFlexatarData(flexatarData);
+            drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
+                if (FlexatarPreview.this.flexatarData.flxDataType == FlexatarData.FlxDataType.PHOTO) {
+                    flexatarData = FlexatarPreview.this.flexatarData;
+                    flexatarType=1;
+                }else if (FlexatarPreview.this.flexatarData.flxDataType == FlexatarData.FlxDataType.VIDEO) {
+                    flexatarDataVideo = FlexatarPreview.this.flexatarData;
+                    flexatarType=0;
+                    drawer.prepareVideoTextures();
+                }
+                mixWeight = 1;
+                effectID = 0;
+                isEffectsOn = false;
+            }});
             surfaceView.setRenderer(renderer);
+
             cardview.addView(surfaceView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT, Gravity.CENTER));
 
         }
     }
     public void destroyFlexatarView(){
+        if (drawer!=null){
+
+            drawer.getHandler().post(()->{
+                if (drawer.videoToTextureArray!=null) {
+                    Log.d("FLX_INJECT","video textures released");
+                    drawer.videoToTextureArray.release();
+                    drawer.videoToTextureArray = null;
+                }
+                drawer.releaseHeadBuffers();
+            });
+        }
         cardview.removeAllViews();
     }
     @Override
@@ -444,7 +471,7 @@ public class FlexatarPreview extends FrameLayout {
                 AlertDialogs.askFlexatarNameDialog(getContext(),flexatarData.getMetaData().name,name -> {
                     if (name.isEmpty()) name = "No Name";
                     newName = name;
-                    changeNameCell.setTextAndValue(name, LocaleController.getString("FlexatarName", R.string.ViewInstructions), true);
+                    changeNameCell.setTextAndValue(name, LocaleController.getString("FlexatarName", R.string.FlexatarName), true);
                 }).show();
 //                        ,true,null
 //            );

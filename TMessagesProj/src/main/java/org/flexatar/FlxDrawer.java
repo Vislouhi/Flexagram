@@ -2,22 +2,19 @@ package org.flexatar;
 
 import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
-import android.net.Uri;
-import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.os.Debug;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Surface;
 
 
 
-import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.FlexatarData;
-import org.flexatar.DataOps.FlexatarVData;
-import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.ApplicationLoader;
 
-import java.io.File;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -52,8 +49,8 @@ public class FlxDrawer {
     private float[] speechState = {0,0,0.05f,0,0};
     private ShaderProgram frameProgram;
     private ShaderProgram frameRoundedProgram;
-    private int width;
-    private int height;
+    private int width = 400;
+    private int height = 600;
     private boolean isFrame = false;
     private boolean isEffectsOnVal = false;
     private FlexatarStorageManager.FlexatarChooser flexatarChooser;
@@ -63,8 +60,21 @@ public class FlxDrawer {
     private boolean isTgRoundVideo = false;
     private ShaderProgram videoProgram;
     private SurfaceTexture surfaceTexture;
-    private FlexatarVData flxvData;
-
+    private FlexatarData flxvData;
+    private int vidoeoOesTextureid;
+    private Surface surface;
+    private MediaPlayer mediaPlayer;
+    private GlBuffers buffersVideo;
+    private ShaderProgram mouthVideoProgram;
+    private int flexatarType = -1;
+//    public int[] viewport = {0,0,400,600};
+    private Handler handler;
+    public Handler getHandler(){
+        return handler;
+    }
+    public void setHandler(Handler handler){
+        this.handler=handler;
+    }
     public FlxDrawer(){
         FlexatarNotificator.incDrawerCounter();
 
@@ -115,7 +125,7 @@ public class FlxDrawer {
 
 
     private static class GlBuffers {
-        private final VBO eyelidVbo;
+        private VBO eyelidVbo;
         private VBO[] mouthBuffers = new VBO[5];
         public VBO[] headBuffers = new VBO[5];
         public TextureArray headTexture;
@@ -126,19 +136,21 @@ public class FlxDrawer {
 
         public GlBuffers(FlexatarData flxData) {
             //            ======HEAD PART=======
-            for (int i = 0; i < 5; i++) {
-                VBO bshpVbo = new VBO(flxData.headBB[i], GLES20.GL_ARRAY_BUFFER);
-                headBuffers[i] = bshpVbo;
+            if (flxData.flxDataType == FlexatarData.FlxDataType.PHOTO) {
+                for (int i = 0; i < 5; i++) {
+                    VBO bshpVbo = new VBO(flxData.headBB[i], GLES20.GL_ARRAY_BUFFER);
+                    headBuffers[i] = bshpVbo;
 
+                }
+                eyelidVbo = new VBO(flxData.eyelidBlendshape, GLES20.GL_ARRAY_BUFFER);
+
+                headTexture = new TextureArray();
+                for (int i = 0; i < 5; i++) {
+                    headTexture.addTexture(flxData.headBitmaps[i]);
+                }
             }
-            eyelidVbo = new VBO(flxData.eyelidBlendshape, GLES20.GL_ARRAY_BUFFER);
 
-            headTexture = new TextureArray();
-            for (int i = 0; i < 5; i++) {
-                headTexture.addTexture(flxData.headBitmaps[i]);
-            }
-
-//            ======HEAD PART=======
+//            ======MOUTH PART=======
             for (int i = 0; i < 5; i++) {
                 VBO bshpVbo = new VBO(flxData.mouthBlendshapeBB[i], GLES20.GL_ARRAY_BUFFER);
                 mouthBuffers[i] = bshpVbo;
@@ -185,64 +197,8 @@ public class FlxDrawer {
             makeViewModelMatrix();
         }
     }
-    private int[] videoTexture;
-    private int frameCounter = 0;
-    public void initVideoTexture(){
-        if (videoTexture!=null) return;
-        videoTexture = new int[1];
-        GLES20.glGenTextures(1, videoTexture, 0);
-
-        surfaceTexture = new SurfaceTexture(videoTexture[0]);
-        Surface surface = new Surface(surfaceTexture);
-        surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-            @Override
-            public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-                Log.d("FLX_INJECT","video frame avalibale "+frameCounter);
-                frameCounter+=1;
-            }
-        });
 
 
-        flxvData = new FlexatarVData(new LengthBasedFlxUnpack(AssetAccess.dataFromFile("flexatar/test_flx.v")));
-//        flxvData.markerBB
-        MediaPlayer mediaPlayer = new MediaPlayer();
-        File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "saved_video.mp4");
-        try {
-//            mediaPlayer.setDataSource(flxvData.getVideoFile());
-            mediaPlayer.setDataSource(ApplicationLoader.applicationContext,Uri.fromFile(videoFile));
-            mediaPlayer.setSurface(surface);
-            mediaPlayer.setLooping(false); // Enable looping
-            mediaPlayer.prepare();
-            mediaPlayer.start();
-            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mediaPlayer) {
-                    Log.d("FLX_INJECT","video loop finished ");
-                    frameCounter=0;
-                    mediaPlayer.seekTo(0);
-                    mediaPlayer.start();
-                }
-            });
-
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-    private void initVideoProgram(){
-        if (videoProgram != null) return;
-        videoProgram = new ShaderProgram(ShaderLib.VIDEO_VERTEX, ShaderLib.VIDEO_FRAGMENT);
-        videoProgram.addUniform4f(PARAMETER_SET_0);
-        videoProgram.addUniform4f(PARAMETER_SET_1);
-//        for (int i = 0; i < 3; i++) {
-//            videoProgram.attribute("speechBuff" + i, commonBuffers.speechBshVBO[i], 4);
-//        }
-//        videoProgram.attribute("uv" , commonBuffers.frameVBO, 2);
-//        TextureArray frameTexture = new TextureArray();
-//        frameTexture.addTexture(videoTexture[0]);
-//        videoProgram.textureArray("uSampler", frameTexture, 0);
-//        videoProgram.addUniform4f("sizePosition");
-    }
 
     private void initFrameProgram(){
         if (frameProgram != null) return;
@@ -325,6 +281,10 @@ public class FlxDrawer {
         if (mouthProgram != null) return;
         mouthProgram = mouthProgramFactory();
     }
+    private void initMouthVideoProgram() {
+        if (mouthVideoProgram != null) return;
+        mouthVideoProgram = mouthProgramFactory();
+    }
 
     private void initMouthAltProgram() {
         if (mouthProgramAlt != null || flexatarDataAlt == null) return;
@@ -341,6 +301,21 @@ public class FlxDrawer {
     private Runnable onReadyListener = null;
     public void setOnReadyListener(Runnable listener){
         onReadyListener = listener;
+    }
+    private void initFlexatarVideoBuffers() {
+        if (buffersVideo != null) return;
+        Log.d("FLX_INJECT","initFlexatarVideoBuffers");
+        buffersVideo = new FlxDrawer.GlBuffers(flxvData);
+
+        if (mouthVideoProgram != null) {
+            for (int i = 0; i < 5; i++) {
+                mouthVideoProgram.attribute("bshp" + i, buffersVideo.mouthBuffers[i], 2);
+            }
+            mouthVideoProgram.attribute("coordinates", buffersVideo.mouthUvVbo, 2);
+            mouthIdxVbo = buffersVideo.mouthIdxVbo;
+            mouthVideoProgram.textureArray(HEAD_TEXTURE_SAMPLER, buffersVideo.mouthTexture, 0);
+        }
+        if (onReadyListener!=null) onReadyListener.run();
     }
     private void initFlexatarBuffers1() {
         if (buffers1 != null) return;
@@ -391,53 +366,7 @@ public class FlxDrawer {
             mouthProgramAlt.textureArray(HEAD_TEXTURE_SAMPLER, buffers2.mouthTexture, 0);
         }
     }
-    /*private void initFlexatarBuffers() {
-        if (buffers1 != null && buffers2 != null) return;
-        if (buffers1 == null)
-            buffers1 = new FlxDrawer.GlBuffers(flexatarData);
-//        Log.d("FLX_INJECT","buffers1 "+buffers1);
-        if (flexatarDataAlt!=null && buffers2 == null)
-            buffers2 = new FlxDrawer.GlBuffers(flexatarDataAlt);
 
-        if (headProgram != null) {
-            for (int i = 0; i < 5; i++) {
-                headProgram.attribute("bshp" + i, buffers1.headBuffers[i], 4);
-            }
-            headProgram.attribute("blinkBshp", buffers1.eyelidVbo, 2);
-            headProgram.textureArray(HEAD_TEXTURE_SAMPLER, buffers1.headTexture, 0);
-        }
-        if (headProgramDual != null && buffers2 != null) {
-            for (int i = 0; i < 5; i++) {
-                headProgramDual.attribute("bshp" + i, buffers1.headBuffers[i], 4);
-            }
-            headProgramDual.attribute("blinkBshp", buffers1.eyelidVbo, 2);
-            for (int i = 0; i < 5; i++) {
-                headProgramDual.attribute("bshp" + i + "o", buffers2.headBuffers[i], 4);
-            }
-            headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER, buffers1.headTexture, 0);
-            headProgramDual.textureArray(HEAD_TEXTURE_SAMPLER_ALT, buffers2.headTexture, 5);
-            headProgramDual.addUniform1i("effectId");
-            headProgramDual.addUniform1f("mixWeight");
-        }
-        if (mouthProgram != null) {
-            for (int i = 0; i < 5; i++) {
-                mouthProgram.attribute("bshp" + i, buffers1.mouthBuffers[i], 2);
-            }
-            mouthProgram.attribute("coordinates", buffers1.mouthUvVbo, 2);
-            mouthIdxVbo = buffers1.mouthIdxVbo;
-            mouthProgram.textureArray(HEAD_TEXTURE_SAMPLER, buffers1.mouthTexture, 0);
-        }
-        if (mouthProgramAlt != null && buffers2 != null) {
-            for (int i = 0; i < 5; i++) {
-                mouthProgramAlt.attribute("bshp" + i, buffers2.mouthBuffers[i], 2);
-            }
-            mouthProgramAlt.attribute("coordinates", buffers2.mouthUvVbo, 2);
-
-            mouthProgramAlt.textureArray(HEAD_TEXTURE_SAMPLER, buffers2.mouthTexture, 0);
-        }
-
-
-    }*/
     public void initFrameBuffer(){
         if (renderFrameBuffer != null) return;
         renderFrameBuffer = new int[1];
@@ -450,7 +379,7 @@ public class FlxDrawer {
         GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameteri(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
 
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 512, 512, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 400, 600, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
         if (status == GLES20.GL_FRAMEBUFFER_COMPLETE) {
@@ -487,14 +416,32 @@ public class FlxDrawer {
         this.width=width;
         this.height=height;
     }
+    public void prepareVideoTextures(){
+        initCommonBuffers();
+        initVideoTexture();
+        if (videoToTextureArray != null)
+            videoToTextureArray.draw();
+//        checkMemoryAvailable();
+    }
     public int drawToFrameBuffer(){
+//        drawVideo();
+
+        initCommonBuffers();
+        if (flexatarType == 0) {
+            initVideoTexture();
+            if (videoToTextureArray == null) return 0;
+            videoToTextureArray.draw();
+        }
         initFrameBuffer();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFrameBuffer[0]);
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, renderTexture[0], 0);
 
-        GLES20.glViewport(0, 0, 512, 512);
+
+
+        GLES20.glViewport(0, 0, 400, 600);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         draw();
+//        drawVideo();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
@@ -503,6 +450,12 @@ public class FlxDrawer {
         return renderTexture[0];
     }
 
+    private void checkMemoryAvailable(){
+        IntBuffer textureLimit = IntBuffer.allocate(1);
+        GLES20.glGetIntegerv(GL10.GL_MAX_TEXTURE_SIZE, textureLimit);
+        int mTextureLimit = textureLimit.get(0);
+        Log.d("FLX_INJECT","mTextureLimit "+mTextureLimit);
+    }
     private static final Object loadBufferMutex = new Object();
 
     private FlexatarData changeFlexatar = null;
@@ -523,11 +476,13 @@ public class FlxDrawer {
     }
     FlexatarAnimator builtinAnimator = new FlexatarAnimator();
     public static class RenderParams{
+        public FlexatarData flexatarDataVideo;
         public FlexatarData flexatarData;
         public FlexatarData flexatarDataAlt;
         public float mixWeight;
         public int effectID;
         public boolean isEffectsOn;
+        public int flexatarType = -1;
     }
     public static class GroupMorphState{
         public final int changeDelta = 25*4;
@@ -556,49 +511,13 @@ public class FlxDrawer {
             speechState = FlexatarRenderer.speechState;
         }
 
-        /*else{
-            effectID = effectIdVal;
-            mixWeight = mixWeightVal;
-            isEffectsOn = isEffectsOnVal;
-        }
-        if (flexatarChooser == null){
-            effectID = effectIdVal;
-            mixWeight = mixWeightVal;
-            isEffectsOn = isEffectsOnVal;
-        }else{
-            if (flexatarData != flexatarChooser.getFirstFlxData()) {
-                if (flexatarData == null) {
-                    flexatarDataAlt = flexatarChooser.getSecondFlxData();
-                    flexatarData = flexatarChooser.getFirstFlxData();
-                } else {
-                    buffers2.destroy();
-                    flexatarDataAlt = flexatarData;
-                    flexatarData = flexatarChooser.getFirstFlxData();
-                    buffers2 = buffers1;
-                    buffers1 = null;
-                }
-            }
-            mixWeight = flexatarChooser.getAnimatedMixWeight();
-            effectID = flexatarChooser.getEffectID();
-            isEffectsOn = flexatarChooser.isEffectOn();
-        }
-
-
-        if (changeFlexatar!=null){
-            if (buffers2!=null) buffers2.destroy();
-            flexatarDataAlt = flexatarData;
-            flexatarData = changeFlexatar;
-            buffers2 = buffers1;
-            buffers1 = null;
-            changeFlexatar= null;
-        }*/
 
         if (onFrameStartListener.get()!=null){
             RenderParams renderParams = onFrameStartListener.get().onFrameStart();
             mixWeight = renderParams.mixWeight;
             effectID = renderParams.effectID;
             isEffectsOn = renderParams.isEffectsOn;
-
+            flexatarType = renderParams.flexatarType;
             if (flexatarDataAlt!=renderParams.flexatarDataAlt){
                 if (buffers2!=null) buffers2.destroy();
                 if (renderParams.flexatarDataAlt == flexatarData){
@@ -615,149 +534,153 @@ public class FlxDrawer {
             }
             flexatarData = renderParams.flexatarData;
             flexatarDataAlt = renderParams.flexatarDataAlt;
+            flxvData = renderParams.flexatarDataVideo;
 
 
-            /*if (renderParams.flexatarData!=null){
-                if (flexatarData != renderParams.flexatarData) {
-                    if (buffers2 != null) buffers2.destroy();
-                    flexatarDataAlt = flexatarData;
-                    if (flexatarDataAlt == null) {
-                        flexatarDataAlt = renderParams.flexatarDataAlt;
-                    }
-                    flexatarData = renderParams.flexatarData;
-//                    renderParams.flexatarData = null;
-                    buffers2 = buffers1;
-                    buffers1 = null;
-                }
-            }*/
-
-//            onFrameStartListener.set(null);
         }
+        GLES20.glViewport(0, 0, width, height);
+        if (flexatarType == 0) {
+            drawVideo();
+        }else if (flexatarType == 1) {
+
 //        Log.d("FLX_INJECT","flexatarData "+flexatarData);
-        if (flexatarData == null) return;
+            if (flexatarData == null) return;
 //        Log.d("FLX_INJECT", "mixWeight "+mixWeight);
-        synchronized (loadBufferMutex) {
-            initCommonBuffers();
-            initFrameProgram();
-            initHeadProgram();
-            initHeadEffectsProgram();
-            initMouthProgram();
-            initMouthAltProgram();
-            initFlexatarBuffers1();
-            initFlexatarBuffers2();
+            synchronized (loadBufferMutex) {
+                initCommonBuffers();
+                initFrameProgram();
+                initHeadProgram();
+                initHeadEffectsProgram();
+                initMouthProgram();
+                initMouthAltProgram();
+                initFlexatarBuffers1();
+                initFlexatarBuffers2();
+//            ExternalVideoTexture.startVideoTexture();
 
-            initVideoTexture();
-            initVideoProgram();
-        }
+//            initVideoTexture();
+//            initVideoProgram();
+            }
 
-        FlexatarAnimator animator = isStaticControlBind ? FlexatarRenderer.animator : builtinAnimator;
-        if (isTgRoundVideo){
-            animator.headScale = -0.15f;
-        }else{
-            animator.headScale = 0f;
-        }
-        if (isRealtimeAnimation) {
+            FlexatarAnimator animator = isStaticControlBind ? FlexatarRenderer.animator : builtinAnimator;
+            if (isTgRoundVideo) {
+                animator.headScale = -0.15f;
+            } else {
+                animator.headScale = 0f;
+            }
+            if (isRealtimeAnimation) {
 
-            animator.start();
-        }else{
-            animator.next();
-        }
+                animator.start();
+            } else {
+                animator.next();
+            }
 
 //        Log.d("FLX_INJECT", "drawer loop");
-        InterUnit interUnit = animator.getInterUnit(flexatarData);
-        if (interUnit == null || buffers1 == null || animator.animUnit == null) return;
+            InterUnit interUnit = animator.getInterUnit(flexatarData);
+            if (interUnit == null || buffers1 == null || animator.animUnit == null) return;
 
-        float[] zRotMatrix = new float[16];
-        Matrix.setIdentityM(zRotMatrix, 0);
-        float ang = animator.animUnit.rz / 3.14f * 180f;
-        Matrix.rotateM(zRotMatrix, 0, -ang, 0f, 0f, 1f);
+            float[] zRotMatrix = new float[16];
+            Matrix.setIdentityM(zRotMatrix, 0);
+            float ang = animator.animUnit.rz / 3.14f * 180f;
+            Matrix.rotateM(zRotMatrix, 0, -ang, 0f, 0f, 1f);
 
-        float[] zRotMatrixInv = new float[16];
-        Matrix.setIdentityM(zRotMatrixInv, 0);
-        Matrix.rotateM(zRotMatrixInv, 0, ang, 0f, 0f, 1f);
-        float[] extraRotMat = interUnit.calcExtraMatrix();
+            float[] zRotMatrixInv = new float[16];
+            Matrix.setIdentityM(zRotMatrixInv, 0);
+            Matrix.rotateM(zRotMatrixInv, 0, ang, 0f, 0f, 1f);
+            float[] extraRotMat = interUnit.calcExtraMatrix();
 
-        FlexatarData.MouthPivots[] mouthPivots = new FlexatarData.MouthPivots[2];
-        mouthPivots[0] = flexatarData.calcMouthPivots(interUnit);
+            FlexatarData.MouthPivots[] mouthPivots = new FlexatarData.MouthPivots[2];
+            mouthPivots[0] = flexatarData.calcMouthPivots(interUnit);
 
-        float mouthMix = mixWeight;
-        if (effectID == 1) {
-            mouthMix = calcWeightByKeyUv(mixWeight);
-        }
-
-
+            float mouthMix = mixWeight;
+            if (effectID == 1) {
+                mouthMix = calcWeightByKeyUv(mixWeight);
+            }
 
 
 //        float opFactor = 0;
-        float opFactor = 0.03f + (-speechState[2] + speechState[3]) * 0.5f;
-        if (opFactor<0) opFactor =0; else if (opFactor>1) opFactor = 1;
+            float opFactor = 0.03f + (-speechState[2] + speechState[3]) * 0.5f;
+            if (opFactor < 0) opFactor = 0;
+            else if (opFactor > 1) opFactor = 1;
 //        Log.d("FLX_INJECT","opFactor "+opFactor);
-        List<float[]> keyVtxList;
-        if (isEffectsOn) {
-            List<float[]> keyVtxList1 = flexatarData.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
-            List<float[]> keyVtxList2 = flexatarDataAlt.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
-            keyVtxList = keyVtxWeightedSum(keyVtxList1, keyVtxList2, mouthMix);
-            mouthPivots[1] = flexatarDataAlt.calcMouthPivots(interUnit);
-        } else {
-            keyVtxList = flexatarData.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
-        }
+            List<float[]> keyVtxList;
+            if (isEffectsOn) {
+                List<float[]> keyVtxList1 = flexatarData.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
+                List<float[]> keyVtxList2 = flexatarDataAlt.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
+                keyVtxList = keyVtxWeightedSum(keyVtxList1, keyVtxList2, mouthMix);
+                mouthPivots[1] = flexatarDataAlt.calcMouthPivots(interUnit);
+            } else {
+                keyVtxList = flexatarData.calcMouthKeyVtx(interUnit, viewModelMatrix, zRotMatrix, extraRotMat, animator.animUnit, screenRatio, speechState);
+            }
 
-        float[] hw = interUnit.weights;
-        int[] hi = interUnit.idx;
+            float[] hw = interUnit.weights;
+            int[] hi = interUnit.idx;
 
-        float[] hw5 = {0, 0, 0, 0, 0};
-        for (int i = 0; i < 3; i++) {
-            hw5[hi[i]] = hw[i];
-        }
+            float[] hw5 = {0, 0, 0, 0, 0};
+            for (int i = 0; i < 3; i++) {
+                hw5[hi[i]] = hw[i];
+            }
 
-        GLES20.glEnable(GLES20.GL_BLEND);
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+            GLES20.glEnable(GLES20.GL_BLEND);
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
-        drawMouth(mouthProgram, flexatarData, mouthPivots[0], hw5, keyVtxList, zRotMatrixInv, 1f);
+            drawMouth(mouthProgram, flexatarData, mouthPivots[0], hw5, keyVtxList, zRotMatrixInv, 1f);
+            if (isEffectsOn) {
+
+                drawMouth(mouthProgramAlt, flexatarDataAlt, mouthPivots[1], hw5, keyVtxList, zRotMatrixInv,
+                        1f - mouthMix);
+            }
+            if (isEffectsOn) {
+                headProgramDual.use();
+                headProgramDual.bind();
+                headProgramDual.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
+                headProgramDual.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
+                headProgramDual.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
+                headProgramDual.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], animator.animUnit.eyebrow, animator.animUnit.blink);
+                headProgramDual.uniform1i("effectId", effectID);
+                headProgramDual.uniform1f("mixWeight", mixWeight);
+                headProgramDual.uniform1f("opFactor", opFactor);
+                headProgramDual.uniformMatrix4fv("zRotMatrix", zRotMatrix);
+                headProgramDual.uniformMatrix4fv("extraRotMatrix", extraRotMat);
+                commonBuffers.idxVBO.bind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+                headProgramDual.unbind();
+                commonBuffers.idxVBO.unbind();
+            } else {
+                headProgram.use();
+                headProgram.bind();
+
+                headProgram.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
+                headProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
+                headProgram.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
+//            headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], 1, 1);
+                headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], animator.animUnit.eyebrow, animator.animUnit.blink);
+                headProgram.uniformMatrix4fv("zRotMatrix", zRotMatrix);
+                headProgram.uniformMatrix4fv("extraRotMatrix", extraRotMat);
+                headProgram.uniform1f("opFactor", opFactor);
+                commonBuffers.idxVBO.bind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+                headProgram.unbind();
+                commonBuffers.idxVBO.unbind();
+            }
+       /* drawMouth(mouthProgram, flexatarData, mouthPivots[0], hw5, keyVtxList, zRotMatrixInv, 1f);
         if (isEffectsOn) {
 
             drawMouth(mouthProgramAlt, flexatarDataAlt, mouthPivots[1], hw5, keyVtxList, zRotMatrixInv,
                     1f - mouthMix);
-        }
-        if (isEffectsOn) {
-            headProgramDual.use();
-            headProgramDual.bind();
-            headProgramDual.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
-            headProgramDual.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
-            headProgramDual.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
-            headProgramDual.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], animator.animUnit.eyebrow, animator.animUnit.blink);
-            headProgramDual.uniform1i("effectId", effectID);
-            headProgramDual.uniform1f("mixWeight", mixWeight);
-            headProgramDual.uniform1f("opFactor", opFactor);
-            headProgramDual.uniformMatrix4fv("zRotMatrix", zRotMatrix);
-            headProgramDual.uniformMatrix4fv("extraRotMatrix", extraRotMat);
-            commonBuffers.idxVBO.bind();
-            GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
-            headProgramDual.unbind();
-            commonBuffers.idxVBO.unbind();
-        } else {
-            headProgram.use();
-            headProgram.bind();
+        }*/
+            if (isFrame) {
+                frameProgram.use();
+                frameProgram.bind();
+                GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+                frameProgram.unbind();
+            }
 
-            headProgram.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
-            headProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, animator.animUnit.tx, animator.animUnit.ty);
-            headProgram.uniform4f(PARAMETER_SET_2, animator.animUnit.scale, speechState[0], speechState[1], speechState[2]);
-//            headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], 1, 1);
-            headProgram.uniform4f(PARAMETER_SET_3, speechState[3], speechState[4], animator.animUnit.eyebrow, animator.animUnit.blink);
-            headProgram.uniformMatrix4fv("zRotMatrix", zRotMatrix);
-            headProgram.uniformMatrix4fv("extraRotMatrix", extraRotMat);
-            headProgram.uniform1f("opFactor", opFactor);
-            commonBuffers.idxVBO.bind();
-            GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
-            headProgram.unbind();
-            commonBuffers.idxVBO.unbind();
+            drawPromo();
         }
-        if (isFrame) {
-            frameProgram.use();
-            frameProgram.bind();
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
-            frameProgram.unbind();
-        }
+//        drawVideo();
+        GLES20.glDisable(GLES20.GL_BLEND);
+    }
+    public void drawPromo(){
         if (isPromo) {
             initPromoProgram();
             promoProgram.use();
@@ -777,65 +700,8 @@ public class FlxDrawer {
             promoProgram.unbind();
 
         }
-
-        drawVideo();
-        GLES20.glDisable(GLES20.GL_BLEND);
     }
-    private void drawVideo(){
-        surfaceTexture.updateTexImage();
-        videoProgram.use();
-        videoProgram.bind();
-//        videoProgram.uniform4f("sizePosition", 1, 1, 0, 0);
-        int positionHandle = GLES20.glGetAttribLocation(videoProgram.id, "uv");
-        flxvData.markerBB.position(FlexatarCommon.videoStride*frameCounter);
-//        flxvData.markerBB.position(FlexatarCommon.videoStride*frameCounter);
-        GLES20.glEnableVertexAttribArray(positionHandle);
-        GLES20.glVertexAttribPointer(
-                positionHandle,
-                2,
-                GLES20.GL_FLOAT,
-                false,
-                0,
-                flxvData.markerBB);
-        for (int i = 0; i < 3; i++) {
-            int positionHandle1 = GLES20.glGetAttribLocation(videoProgram.id, "speechBuff"+i);
-            GLES20.glEnableVertexAttribArray(positionHandle1);
-            GLES20.glVertexAttribPointer(
-                    positionHandle1,
-                    4,
-                    GLES20.GL_FLOAT,
-                    false,
-                    0,
-                    FlexatarCommon.speechBshBB[1]);
-        }
 
-
-
-       /* FlexatarCommon.frameBB.position(0);
-        GLES20.glEnableVertexAttribArray(positionHandle);
-        GLES20.glVertexAttribPointer(
-                positionHandle,
-                2,
-                GLES20.GL_FLOAT,
-                false,
-                0,
-                FlexatarCommon.frameBB);*/
-
-        videoProgram.uniform4f(PARAMETER_SET_0,  speechState[0], speechState[1], speechState[2], speechState[3]);
-        videoProgram.uniform4f(PARAMETER_SET_1, speechState[4], 0, 0, 0);
-
-
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, videoTexture[0]);
-        int videoTextureHandle = GLES20.glGetUniformLocation(videoProgram.id, "uSampler");
-        GLES20.glUniform1i(videoTextureHandle, 0);
-        commonBuffers.idxVBO.bind();
-//        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
-
-        commonBuffers.idxVBO.unbind();
-        videoProgram.unbind();
-    }
 
     private void drawMouth(ShaderProgram mouthProgram, FlexatarData flexatarData, FlexatarData.MouthPivots mp, float[] hw5, List<float[]> keyVtxList, float[] zRotMatrixInv, float alpha) {
         mouthProgram.use();
@@ -853,6 +719,29 @@ public class FlxDrawer {
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, flexatarData.mouthIdxCount, GLES20.GL_UNSIGNED_SHORT, 0);
 
         mouthProgram.uniform4f(PARAMETER_SET_1, hw5[4], screenRatio, keyVtxList.get(1)[0], keyVtxList.get(0)[1]);
+        mouthProgram.uniform4f(PARAMETER_SET_2, mp.topPivot[0], mp.topPivot[1], mp.botPivot[0], mp.botPivot[1]);
+        mouthProgram.uniform1i("isTop", 1);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, flexatarData.mouthIdxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+        mouthProgram.unbind();
+        mouthIdxVbo.unbind();
+    }
+
+    private void drawMouthV(ShaderProgram mouthProgram, FlexatarData flexatarData, FlexatarData.MouthPivots mp, float[] hw5, List<float[]> keyVtxList, float[] zRotMatrixInv, float alpha) {
+        mouthProgram.use();
+        mouthProgram.bind();
+        mouthIdxVbo.bind();
+        float mouthScale = - (keyVtxList.get(5)[0] - keyVtxList.get(4)[0]) / mp.lipSize;
+        mouthProgram.uniform4f(PARAMETER_SET_3, flexatarData.mouthRatio, mouthScale, flexatarData.teethGap[0], flexatarData.teethGap[1]);
+        mouthProgram.uniform4f(PARAMETER_SET_0, hw5[0], hw5[1], hw5[2], hw5[3]);
+        mouthProgram.uniform4f(PARAMETER_SET_1, hw5[4], videoScreenRatio, keyVtxList.get(3)[0], keyVtxList.get(2)[1]);
+        mouthProgram.uniformMatrix4fv("zRotMatrix", zRotMatrixInv);
+        mouthProgram.uniform1f("alpha", alpha);
+        mouthProgram.uniform4f(PARAMETER_SET_2, mp.botPivot[0], mp.botPivot[1], mp.botPivot[0], mp.botPivot[1]);
+
+        mouthProgram.uniform1i("isTop", 0);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, flexatarData.mouthIdxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+
+        mouthProgram.uniform4f(PARAMETER_SET_1, hw5[4], videoScreenRatio, keyVtxList.get(1)[0], keyVtxList.get(0)[1]);
         mouthProgram.uniform4f(PARAMETER_SET_2, mp.topPivot[0], mp.topPivot[1], mp.botPivot[0], mp.botPivot[1]);
         mouthProgram.uniform1i("isTop", 1);
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, flexatarData.mouthIdxCount, GLES20.GL_UNSIGNED_SHORT, 0);
@@ -883,6 +772,142 @@ public class FlxDrawer {
 
     }
 
+    private void initVideoProgram(){
+        if (videoProgram != null) return;
+//        flxvData = new FlexatarData(new LengthBasedFlxUnpack(AssetAccess.dataFromFile("flexatar/test_flx.v")));
+        videoProgram = new ShaderProgram(ShaderLib.VIDEO_VERTEX, ShaderLib.VIDEO_FRAGMENT);
+        videoProgram.addUniform4f(PARAMETER_SET_0);
+        videoProgram.addUniform4f(PARAMETER_SET_1);
+        videoProgram.addUniform1f("opFactor");
+        videoProgram.textureArray("mLine", commonBuffers.mouthLineTexture, 10);
+    }
+
+    public VideoToTextureArray videoToTextureArray;
+    private float videoScreenRatio = 1f;
+    private void initVideoTexture(){
+        if (videoToTextureArray!=null || flxvData == null ) return;
+        videoToTextureArray = new VideoToTextureArray(commonBuffers,flxvData.getVideo());
+        videoToTextureArray.getNextFrame();
+        videoScreenRatio = (400f/600f)/((float)videoToTextureArray.saveWidth/videoToTextureArray.saveHeight);
+//        videoScreenRatio = (600f/400f)/((float)videoToTextureArray.saveHeight/videoToTextureArray.saveWidth);
+    }
+    private void drawVideo(){
+        if (videoToTextureArray == null || flxvData == null) return;
+        synchronized (loadBufferMutex) {
+//            initFrameBuffer();
+
+            initVideoProgram();
+            initMouthVideoProgram();
+            initFlexatarVideoBuffers();
+            initFrameProgram();
+        }
+
+
+        int videoTextureId = videoToTextureArray.getVideoTexId();
+//        Log.d("FLX_INJECT","videoTextureId "+videoTextureId);
+//        if (videoTextureId>=0) renderTexture[0] = videoTextureId;
+//        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFrameBuffer[0]);
+//        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, renderTexture[0], 0);
+//        GLES20.glViewport(0, 0, 400, 600);
+//        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
+        if (videoTextureId>=0) {
+
+
+            speechState = FlexatarRenderer.speechState;
+            float opFactor = 0.03f + (-speechState[2] + speechState[3]) * 0.5f;
+            if (opFactor<0) opFactor =0; else if (opFactor>1) opFactor = 1;
+//            if (opFactor>0.1f)
+//                opFactor=1f;
+            float zRot = flxvData.getHeadRotZVideo(videoToTextureArray.currentTextureIdx);
+
+//            InterUnit interUnit = new InterUnit(new float[]{1f, 0.0f, 0.0f}, new int[]{0, 1, 2}, new float[]{0, 0});
+            InterUnit interUnit = flxvData.makeVideoInterUnit(videoToTextureArray.currentTextureIdx);
+            FlexatarData.MouthPivots mouthPivots = flxvData.calcMouthPivots(interUnit);
+            float[] hw = interUnit.weights;
+            int[] hi = interUnit.idx;
+
+            float[] hw5 = {0, 0, 0, 0, 0};
+            for (int i = 0; i < 3; i++) {
+                hw5[hi[i]] = hw[i];
+            }
+            float[] zRotMatrixInv = new float[16];
+            Matrix.setIdentityM(zRotMatrixInv, 0);
+            Matrix.rotateM(zRotMatrixInv, 0, -zRot/3.14f*150f, 0f, 0f, 1f);
+            List<float[]> keyVtxList = flxvData.calcMouthKeyVtxVideo(videoToTextureArray.currentTextureIdx, videoScreenRatio,speechState);
+
+            drawMouthV(mouthVideoProgram,flxvData,mouthPivots,hw5,keyVtxList,zRotMatrixInv,1f);
+
+    //        speechState = new float[]{0f,0f,-1f,0f,0f};
+            videoProgram.use();
+            videoProgram.bind();
+            int positionHandle = GLES20.glGetAttribLocation(videoProgram.id, "uv");
+            flxvData.videoMarkerBB.position(FlexatarCommon.videoStride*videoToTextureArray.currentTextureIdx);
+            GLES20.glEnableVertexAttribArray(positionHandle);
+            GLES20.glVertexAttribPointer(
+                    positionHandle,
+                    2,
+                    GLES20.GL_FLOAT,
+                    false,
+                    0,
+                    flxvData.videoMarkerBB);
+            int positionHandle2 = GLES20.glGetAttribLocation(videoProgram.id, "uvCoordinates");
+            GLES20.glEnableVertexAttribArray(positionHandle2);
+            GLES20.glVertexAttribPointer(
+                    positionHandle2,
+                    2,
+                    GLES20.GL_FLOAT,
+                    false,
+                    0,
+                    FlexatarCommon.uvBB);
+
+            for (int i = 0; i < 3; i++) {
+                int positionHandle1 = GLES20.glGetAttribLocation(videoProgram.id, "speechBuff"+i);
+                GLES20.glEnableVertexAttribArray(positionHandle1);
+                GLES20.glVertexAttribPointer(
+                        positionHandle1,
+                        4,
+                        GLES20.GL_FLOAT,
+                        false,
+                        0,
+                        FlexatarCommon.speechBshBB[i]);
+            }
+            float mouthScale =  -(keyVtxList.get(5)[0] - keyVtxList.get(4)[0]);
+
+            videoProgram.uniform4f(PARAMETER_SET_0,  speechState[0], speechState[1], speechState[2], speechState[3]);
+            videoProgram.uniform4f(PARAMETER_SET_1, speechState[4], videoScreenRatio, mouthScale, 0);
+            videoProgram.uniform1f("opFactor",opFactor);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, videoTextureId);
+            int videoTextureHandle = GLES20.glGetUniformLocation(videoProgram.id, "uSampler");
+            GLES20.glUniform1i(videoTextureHandle, 0);
+            commonBuffers.idxVBO.bind();
+            GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+            commonBuffers.idxVBO.unbind();
+            videoProgram.unbind();
+//            drawMouthV(mouthProgram,flxvData,mouthPivots,hw5,keyVtxList,zRotMatrixInv,1f);
+            if (isFrame) {
+                frameProgram.use();
+                frameProgram.bind();
+                GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+                frameProgram.unbind();
+            }
+        }
+        GLES20.glDisable(GLES20.GL_BLEND);
+//        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+    }
+    public void releaseHeadBuffers(){
+        if (buffers1!=null){
+            buffers1.destroy();
+            buffers1 = null;
+        }
+        if (buffers2!=null){
+            buffers2.destroy();
+            buffers2 = null;
+        }
+    }
     @Override
     protected void finalize() throws Throwable {
         super.finalize();

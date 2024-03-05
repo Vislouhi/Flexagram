@@ -9,6 +9,20 @@ public class ShaderLib {
                         "UV = uv;" +
                         "gl_Position = vec4(uv *vec2(2.0,2.0)-vec2(1.0,1.0),0.0,1.0);" +
                     "}\n";
+
+    public static final String TEX_ROT_VERTEX =
+            "attribute vec2 uv;\n" +
+                    "varying highp vec2 UV;" +
+                    "uniform mat4 uvRot;" +
+                    "void main(void) {\n" +
+
+                    "vec2 tmp = uv-vec2(0.5,0.5);" +
+                    "tmp = (uvRot*vec4(tmp,0.0,1.0)).xy;" +
+                    "tmp += vec2(0.5,0.5);" +
+                    "UV = tmp;" +
+//                    "UV = (uvRot*vec4(uv,0.0,1.0)).xy;" +
+                    "gl_Position = vec4(uv *vec2(2.0,2.0)-vec2(1.0,1.0),0.0,1.0);" +
+                    "}\n";
     public static final String FRAME_FRAGMENT =
                     "varying highp vec2 UV;" +
                     "uniform sampler2D uSampler[1];" +
@@ -56,15 +70,18 @@ public class ShaderLib {
                     "}";
 
     public static final String VIDEO_VERTEX =
+            "attribute vec2 uvCoordinates;" +
             "attribute vec2 uv;\n" +
                     "attribute vec4 speechBuff0;" +
                     "attribute vec4 speechBuff1;" +
                     "attribute vec4 speechBuff2;" +
                     "varying highp vec2 UV;" +
+                    "varying highp vec2 UV1;" +
                     "uniform vec4 parSet0;" +
                     "uniform vec4 parSet1;" +
 //                    "uniform vec4 sizePosition;" +
                     "void main(void) {\n" +
+                    "UV1 = (uvCoordinates*vec2(1.0,-1.0) + vec2(1.0,1.0))*vec2(0.5,0.5);" +
                     " vec2 speechBshp[5];" +
                     " speechBshp[0] = speechBuff0.xy;" +
                     " speechBshp[1] = speechBuff0.zw;" +
@@ -77,29 +94,41 @@ public class ShaderLib {
                     " speechWeights[2] = parSet0.z;" +
                     " speechWeights[3] = parSet0.w;" +
                     " speechWeights[4] = parSet1.x;" +
-                    "UV = uv.yx;" +
-                    "UV.x = 1.0-UV.x;" +
+                    " float ratio = parSet1.y;" +
+                    " float mScale = parSet1.z;" +
+                    "UV = vec2(1.0) - uv;" +
+//                    "UV = 1.0-UV.y;" +
+//                    "UV.x += 0.003;" +
                     "vec2 result = uv*vec2(2.0,2.0)-vec2(1.0,1.0);" +
                     "for (int i = 0; i < 5; i++) {" +
-
-                    "   result.xy += speechWeights[i]*speechBshp[i];" +
+                    "   result.xy += speechWeights[i]*speechBshp[i] * mScale / 0.3;" +
                     "}" +
 //                    "result -= speechBshp[2];" +
-                    "result.xy *= vec2(1.0,-1.0);" +
+                    "result.xy *= vec2(1.0,-ratio);" +
                     "gl_Position = vec4(result,0.0,1.0);" +
                     "}\n";
-    public static final String VIDEO_FRAGMENT =
+    public static final String TEX_ROT_FRAGMENT =
             "#extension GL_OES_EGL_image_external : require\n" +
-            "varying highp vec2 UV;" +
+                    "varying highp vec2 UV;" +
                     "uniform samplerExternalOES uSampler;" +
 
 
                     "void main(void) {" +
                     "highp vec4 color = texture2D(uSampler, UV);"+
-//                    "highp float alpha_inv = 1.0-alpha;"+
-//                            "if (alpha>0.5) discard;"+
-//                    " gl_FragColor = vec4(color.xyz,1.0-alpha);" +
                     " gl_FragColor = vec4(color.xyz,1.0);" +
+                    "}";
+    public static final String VIDEO_FRAGMENT =
+
+            "varying highp vec2 UV;" +
+            "varying highp vec2 UV1;" +
+                    "uniform sampler2D uSampler;" +
+                    "uniform sampler2D mLine[1];" +
+                    "uniform highp float opFactor;" +
+                    "void main(void) {" +
+                    "highp vec4 color = texture2D(uSampler, UV);"+
+                    "highp vec4 mlMaskCol = texture2D( mLine[0], UV1 );" +
+                    "color.a=mlMaskCol.x*opFactor + (1.0-opFactor);" +
+                    " gl_FragColor = color;" +
                     "}";
     public static final String HEAD_SINGLE_VERTEX =
             "attribute vec4 bshp0;\n" +
@@ -304,6 +333,7 @@ public class ShaderLib {
                     " result.xyz*=xDarken;" +
 //            " gl_FragColor = vec4(vec3(1.0),0.1);" +
 //            " gl_FragColor = result;" +
+//                    " gl_FragColor = vec4(result.xyz,0.5);" +
                     " gl_FragColor = vec4(result.xyz,result.a*alpha);" +
                     "}";
 

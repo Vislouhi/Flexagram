@@ -188,11 +188,11 @@ public class YuvConverter {
     renderMatrix.preTranslate(-0.5f, -0.5f);
 
 
-
     try {
       i420TextureFrameBuffer.setSize(viewportWidth, totalHeight);
 
-      if (flxDrawer == null &&  isFlexatar){
+      /*if (flxDrawer == null &&  isFlexatar){
+//        flxDrawer = VideoFrameDrawer.flxDrawer;
         flxDrawer = new FlxDrawer();
         flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser);
         flxDrawer.setFrame();
@@ -200,16 +200,17 @@ public class YuvConverter {
         flxDrawer.setIsStaticControlBind(true);
 //        flxDrawer = new FlxDrawer();
 //        flxDrawer.addHead(FlexatarRenderer.currentFlxData);
-      }
-      if (flxDrawer!=null)
-        flxDrawer.screenRatio = (float) frameHeight / (float) frameWidth;
+      }*/
+//      if (flxDrawer!=null)
+//        flxDrawer.screenRatio = (float) frameHeight / (float) frameWidth;
       /*if (fromEncoder) {
         flxDrawer.screenRatio = (float) renderWidth / (float) renderHeight;
       }else{
         flxDrawer.screenRatio = (float)  frame.getRotatedWidth() / (float) frame.getRotatedHeight();
       }*/
 //      Log.d("FLX_INJECT","DRAW TO ENCODER");
-      int flxRenderTextureId = isFlexatar ? flxDrawer == null ? -1 : flxDrawer.drawToFrameBuffer() : -1;
+//      int flxRenderTextureId = isFlexatar ? flxDrawer == null ? -1 : flxDrawer.renderTexture[0] : -1;
+//      int flxRenderTextureId = isFlexatar ? flxDrawer == null ? -1 : flxDrawer.drawToFrameBuffer() : -1;
 //      if (FlexatarRenderer.isFlexatarRendering){
 //        flxDrawer.drawToFB();
 //      }
@@ -223,19 +224,19 @@ public class YuvConverter {
       shaderCallbacks.setPlaneY();
       VideoFrameDrawer.drawTexture(drawer, preparedBuffer, renderMatrix, frameWidth, frameHeight, frameWidth, frameHeight,
               /* viewportX= */ 0, /* viewportY= */ 0, viewportWidth,
-              /* viewportHeight= */ frameHeight, false,false,false,flxRenderTextureId);
+              /* viewportHeight= */ frameHeight, false,false,false,0);
 
       // Draw U.
       shaderCallbacks.setPlaneU();
       VideoFrameDrawer.drawTexture(drawer, preparedBuffer, renderMatrix, frameWidth, frameHeight, frameWidth, frameHeight,
               /* viewportX= */ 0, /* viewportY= */ frameHeight, viewportWidth / 2,
-              /* viewportHeight= */ uvHeight, false,false,false,flxRenderTextureId);
+              /* viewportHeight= */ uvHeight, false,false,false,0);
 
       // Draw V.
       shaderCallbacks.setPlaneV();
       VideoFrameDrawer.drawTexture(drawer, preparedBuffer, renderMatrix, frameWidth, frameHeight, frameWidth, frameHeight,
               /* viewportX= */ viewportWidth / 2, /* viewportY= */ frameHeight, viewportWidth / 2,
-              /* viewportHeight= */ uvHeight, false,false,false,flxRenderTextureId);
+              /* viewportHeight= */ uvHeight, false,false,false,0);
 
       GLES20.glReadPixels(0, 0, i420TextureFrameBuffer.getWidth(), i420TextureFrameBuffer.getHeight(),
               GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, i420ByteBuffer);

@@ -64,5 +64,17 @@ public class LengthBasedFlxUnpack {
         Log.d("FLX_INJECT","flexatar file validation: "+isValid);
         return isValid;
     }
+    public boolean validateVideo(){
+        String[] keysMustBe = {
+                "Info","PreviewImage","video","markers","positions",
+                "mandalaCheckpoints","mandalaFaces","mandalaBorder"
+        };
+        boolean isValid = true;
+        for (String key:keysMustBe){
+            isValid = isValid && hPacks.contains(key);
+        }
+        Log.d("FLX_INJECT","video flexatar file validation: "+isValid);
+        return isValid;
+    }
 
 }

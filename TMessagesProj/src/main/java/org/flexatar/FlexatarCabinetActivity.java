@@ -46,6 +46,8 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.BasePermissionsActivity;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
+import org.telegram.ui.Components.ViewPagerFixed;
+import org.telegram.ui.LaunchActivity;
 
 
 import java.io.ByteArrayOutputStream;
@@ -79,6 +81,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     private FrameLayout frameLayout;
     private int checkedCount = 0;
     private TLRPC.User currentUser;
+    private LinearLayout mainLayout;
+    private ViewPagerFixed.TabsView tabsView;
 
     @Override
     public boolean onFragmentCreate() {
@@ -101,7 +105,60 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         return super.onBackPressed();
 
     }
+    public void createVideoPhotoTabController(){
+        tabsView = new ViewPagerFixed.TabsView(getContext(), true, 3, LaunchActivity.getLastFragment().getResourceProvider()) {
+            @Override
+            public void selectTab(int currentPosition, int nextPosition, float progress) {
+                super.selectTab(currentPosition, nextPosition, progress);
 
+            }
+        };
+//        tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        tabsView.tabMarginDp = 16;
+        tabsView.addTab(0, LocaleController.getString("VideoTab",R.string.VideoTab));
+        tabsView.addTab(1, LocaleController.getString("PhotoTab",R.string.PhotoTab));
+        tabsView.selectTabWithId(0,1f);
+        tabsView.setPadding(0,6,0,6);
+        tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
+            @Override
+            public void onPageSelected(int page, boolean forward) {
+                if (page == 0){
+                    itemAdapter.changeActionCellName(1,LocaleController.getString("NewFlexatarByVideo", R.string.NewFlexatarByVideo));
+                }else if (page == 1){
+                    itemAdapter.changeActionCellName(1,LocaleController.getString("NewFlexatarByPhoto", R.string.NewFlexatarByPhoto));
+
+                }
+                itemAdapter.setUpFlexatarList(page);
+
+            }
+
+            @Override
+            public void onPageScrolled(float progress) {
+
+            }
+
+            @Override
+            public void onSamePageSelected() {
+
+            }
+
+            @Override
+            public boolean canPerformActions() {
+                return true;
+            }
+
+            @Override
+            public void invalidateBlur() {
+
+            }
+        });
+
+        tabsView.finishAddingTabs();
+        tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,0,0,0,0));
+        mainLayout.addView(tabsView);
+
+
+    }
     @Override
     public View createView(Context context) {
 
@@ -112,11 +169,15 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 //                showDialog(AlertDialogs.sayImpossibleToPerform(getContext()),true,null);
             });
         };
-
-        fragmentView = new FrameLayout(context);
+        mainLayout = new LinearLayout(context);
+        mainLayout.setOrientation(LinearLayout.VERTICAL);
+        createVideoPhotoTabController();
+        fragmentView = mainLayout;
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
-        frameLayout = (FrameLayout) fragmentView;
 
+
+        frameLayout = new FrameLayout(context);
+        mainLayout.addView(frameLayout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
         actionBar.setBackButtonDrawable(new BackDrawable(false));
         actionBar.setAllowOverlayTitle(true);
         actionBar.setTitle(LocaleController.getString("FlexatarMenuName", R.string.FlexatarMenuName));
@@ -178,7 +239,11 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         {
             ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
             item.setImageResource(R.drawable.msg_addphoto);
-            item.setNameText(LocaleController.getString("NewFlexatarByPhoto", R.string.NewFlexatarByPhoto));
+            if (tabsView.getCurrentTabId() == 0){
+                item.setNameText(LocaleController.getString("NewFlexatarByVideo", R.string.NewFlexatarByVideo));
+            }else if (tabsView.getCurrentTabId() == 1){
+                item.setNameText(LocaleController.getString("NewFlexatarByPhoto", R.string.NewFlexatarByPhoto));
+            }
             item.setOnClickListener(v-> {
                 if (Build.VERSION.SDK_INT >= 23 && getParentActivity().checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                     getParentActivity().requestPermissions(new String[]{Manifest.permission.CAMERA},  BasePermissionsActivity.REQUEST_CODE_OPEN_CAMERA);
@@ -186,7 +251,12 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 }
                 if (FlexatarServiceAuth.getVerification()!=null && FlexatarServiceAuth.getVerification().isVerified()) {
                     if (ValueStorage.checkIfInstructionsComplete(context)) {
-                        presentFragment(new FlexatarCameraCaptureFragment());
+                        if (tabsView.getCurrentTabId() == 0){
+                            presentFragment(new FlexatarVideoCapFragment());
+                        }else if (tabsView.getCurrentTabId() == 1){
+                            presentFragment(new FlexatarCameraCaptureFragment());
+                        }
+
                     } else {
                         showDialog(AlertDialogs.askToCompleteInstructions(context));
                     }
@@ -439,7 +509,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         itemAdapter = new ItemAdapter(context, itemsAction,itemsProgress,itemsFlexatar);
 
-        itemAdapter.setUpFlexatarList();
+        itemAdapter.setUpFlexatarList( tabsView.getCurrentTabId());
 
         itemAdapter.setFlexatarCellOnClickListener((item,cell)->{
 //            ItemModel item = (ItemModel) v;
@@ -525,19 +595,6 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             }
         };
-    /*file -> {
-            ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
-            item.setFlexatarFile(file);
-            itemAdapter.addFlexatarItem(item);
-//            handler.post(()->{
-//                itemAdapter.notifyDataSetChanged();
-//            });
-
-        };*/
-
-
-
-
         return fragmentView;
     }
     Map<String,ItemModel> progressCells = new HashMap<>();
@@ -711,7 +768,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         super.onResume();
 
         if (needRedrawFlexatarList) {
-            itemAdapter.setUpFlexatarList();
+            itemAdapter.setUpFlexatarList( tabsView.getCurrentTabId());
             FlexatarCabinetActivity.needRedrawFlexatarList = false;
         }
 //        Log.d("FLX_INJECT","resume ");

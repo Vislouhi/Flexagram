@@ -28,6 +28,8 @@ import java.util.concurrent.Callable;
 import org.flexatar.AnimationUnit;
 import org.flexatar.BlinkGenerator;
 import org.flexatar.FlexatarCommon;
+import org.flexatar.FlexatarStorageManager;
+import org.flexatar.FlxDrawer;
 import org.webrtc.EglBase.Context;
 import org.webrtc.TextureBufferImpl.RefCountMonitor;
 import org.webrtc.VideoFrame.TextureBuffer;
@@ -291,7 +293,7 @@ public class SurfaceTextureHelper {
     TimerTask task = new TimerTask() {
       @Override
       public void run() {
-        forceFrame();
+        forceFlexatarFrame();
       }
     };
     timer.scheduleAtFixedRate(task, 0, 40);
@@ -300,6 +302,21 @@ public class SurfaceTextureHelper {
    * Forces a frame to be produced. If no new frame is available, the last frame is sent to the
    * listener again.
    */
+  private FlxDrawer flxDrawer;
+  public void forceFlexatarFrame() {
+    handler.post(() -> {
+      if (flxDrawer == null) {
+        flxDrawer = new FlxDrawer();
+        flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser);
+        flxDrawer.setIsStaticControlBind(true);
+        flxDrawer.setFrame();
+        flxDrawer.screenRatio = (float)textureHeight/textureWidth;
+      }
+      flxDrawer.drawToFrameBuffer();
+      hasPendingTexture = true;
+      tryDeliverTextureFrame();
+    });
+  }
   public void forceFrame() {
     handler.post(() -> {
       hasPendingTexture = true;
@@ -423,8 +440,13 @@ public class SurfaceTextureHelper {
 
     }
 //    Log.d("tryDeliverTextureFrame","textureWidth " +textureWidth +" textureHeight "+textureHeight + " oesTextureId "+oesTextureId);
+    int texId = oesTextureId;
+    if (flxDrawer!=null){
+      if (flxDrawer.renderTexture!=null)
+        texId = flxDrawer.renderTexture[0];
+    }
     final VideoFrame.TextureBuffer buffer =
-        new TextureBufferImpl(textureWidth, textureHeight, tetxureType, oesTextureId,
+        new TextureBufferImpl(textureWidth, textureHeight, tetxureType, texId,
             RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix), handler,
             yuvConverter, textureRefCountMonitor);
     if (frameRefMonitor != null) {

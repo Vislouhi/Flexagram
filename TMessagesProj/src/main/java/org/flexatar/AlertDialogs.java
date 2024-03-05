@@ -199,6 +199,7 @@ public class AlertDialogs {
         surfaceView.setBackgroundColor(Color.TRANSPARENT);
         surfaceView.setEGLConfigChooser(8, 8, 8, 8, 0, 0);
         surfaceView.getHolder().setFormat(android.graphics.PixelFormat.RGBA_8888);
+
 //        surfaceView.setZOrderOnTop(true);
 
 

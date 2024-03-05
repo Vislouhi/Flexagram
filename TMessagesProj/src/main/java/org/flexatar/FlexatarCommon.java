@@ -141,7 +141,7 @@ public class FlexatarCommon {
     }
     private static ByteBuffer eyebrowBB;
     static ByteBuffer[] speechBshBB = new ByteBuffer[3];
-    private static ByteBuffer uvBB;
+    public static ByteBuffer uvBB;
     private static ByteBuffer idxBB;
     private static void prepareGlBuffers(){
         eyebrowBB = AssetAccess.bufferFromFile("flexatar/FLX_bkg_anim_blendshapes.dat");

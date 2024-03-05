@@ -126,60 +126,12 @@ public class FlexatarRenderer {
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!Config.debugMode);
         animator = new FlexatarAnimator();
         FlexatarCommon.prepare();
-
+//        VideoToTextureArray.decode();
+//        FlexatarServiceAuth.integrityCheck();
     }
 
-//    public static boolean isFlexatarRendering = false;
-    /*public static boolean isVoiceProcessingNeed = false;
-    private static Timer checkTmer;
-    private static final Object mutexObject = new Object();*/
-    /*public static void startVoiceProcessingIfNotRunning(){
 
-        synchronized (mutexObject) {
-            isVoiceProcessingNeed = true;
-            if (checkTmer == null) {
-                checkTmer = new Timer();
-                TimerTask task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        if (!isVoiceProcessingNeed) {
-                            stopAnimateSpeech();
-                            if (checkTmer != null) {
-                                checkTmer.cancel();
-                                checkTmer.purge();
-                                checkTmer = null;
-                            }
-                        }
-                        isVoiceProcessingNeed = false;
-                    }
-                };
-                checkTmer.scheduleAtFixedRate(task, 0, 1000);
-            }
-            startVoiceProcessing();
-        }
 
-    }*/
-
-//    private static boolean isVoiceProcessingOn = false;
-    /*public static void stopAnimateSpeech(){
-        synchronized (mutexObject) {
-            if (audioRecord != null) {
-                try {
-                    audioRecord.stop();
-                    audioRecord.release();
-                }catch (IllegalStateException ignored){
-
-                }
-            }
-            if (executor != null)
-                executor.shutdown();
-            audioRecord = null;
-            executor = null;
-            isVoiceProcessingOn = false;
-            isRecording = false;
-//            isFlexatarRendering = false;
-        }
-    }*/
     private static List<float[]> audioToTF = new ArrayList<>();
 
     private static float[] concatenateFloatArrays(List<float[]> arrays) {

@@ -62,6 +62,7 @@ public class VideoCapturerDevice {
             if (eglBase == null) {
 //                eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_RGBA_BUFFER);
                 eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
+
             }
             instance[screencast ? 1 : 0] = this;
             thread = new HandlerThread("CallThread");
@@ -69,7 +70,9 @@ public class VideoCapturerDevice {
             handler = new Handler(thread.getLooper());
         });
     }
-
+    public static void post(Runnable runnable){
+        instance[0].handler.post(runnable);
+    }
     public static void checkScreenCapturerSize() {
         if (instance[1] == null) {
             return;
@@ -420,6 +423,7 @@ public class VideoCapturerDevice {
     public static EglBase getEglBase() {
         if (eglBase == null) {
             eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN);
+            Log.d("FLX_INJECT","video cap base context created ");
         }
         return eglBase;
     }

@@ -12,6 +12,8 @@ package org.webrtc;
 
 import android.graphics.SurfaceTexture;
 import androidx.annotation.Nullable;
+
+import android.util.Log;
 import android.view.Surface;
 import java.util.ArrayList;
 import javax.microedition.khronos.egl.EGL10;
@@ -153,6 +155,7 @@ public interface EglBase {
    * 1.4 context if possible, and an EGL 1.0 context otherwise.
    */
   public static EglBase create(@Nullable Context sharedContext, int[] configAttributes) {
+    Log.d("FLX_INJECT","sharedContext " + sharedContext);
     if (sharedContext == null) {
       return EglBase14Impl.isEGL14Supported() ? createEgl14(configAttributes)
                                               : createEgl10(configAttributes);

@@ -218,7 +218,7 @@ public class FlexatarUI {
         int pad = AndroidUtilities.dp(12);
         linearLayout.setPadding(pad, pad, pad, pad);
 
-        FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context, null);
+        FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,1, null);
         ((FlexatarHorizontalRecycleView.Adapter)recyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
             FlexatarStorageManager.callFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
         });

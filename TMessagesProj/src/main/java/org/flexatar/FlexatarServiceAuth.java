@@ -18,12 +18,16 @@ import org.telegram.messenger.UserConfig;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import com.google.android.gms.tasks.Task;
+import com.google.android.play.core.integrity.IntegrityManagerFactory;
+import com.google.android.play.core.integrity.StandardIntegrityManager;
 
 public class FlexatarServiceAuth {
     private static final String VERIFY_COMMAND = "/verify";
@@ -32,6 +36,48 @@ public class FlexatarServiceAuth {
 
     private static long currentUserId = -1;
     public static FlexatarServerAccess.StdResponse verifyData;
+
+    public static void integrityCheck(){
+        StandardIntegrityManager standardIntegrityManager =
+                IntegrityManagerFactory.createStandard(ApplicationLoader.applicationContext);
+
+
+        long cloudProjectNumber = 642143043531L;
+
+
+        standardIntegrityManager.prepareIntegrityToken(
+                        StandardIntegrityManager.PrepareIntegrityTokenRequest.builder()
+                                .setCloudProjectNumber(cloudProjectNumber)
+                                .build())
+                .addOnSuccessListener(tokenProvider -> {
+                    Log.d("FLX_INJECT","token provider obtained success ");
+                    StandardIntegrityManager.StandardIntegrityTokenProvider integrityTokenProvider = tokenProvider;
+                    getIntegrityToken(integrityTokenProvider);
+                })
+                .addOnFailureListener(exception -> {
+                    Log.d("FLX_INJECT","integrity warmup error");
+                });
+
+
+    }
+    public static void getIntegrityToken(StandardIntegrityManager.StandardIntegrityTokenProvider integrityTokenProvider){
+        String requestHash = UUID.randomUUID().toString();
+        Task<StandardIntegrityManager.StandardIntegrityToken> integrityTokenResponse =
+                integrityTokenProvider.request(
+                        StandardIntegrityManager.StandardIntegrityTokenRequest.builder()
+                                .setRequestHash(requestHash)
+                                .build());
+        integrityTokenResponse
+                .addOnSuccessListener(response -> {
+                    Log.d("FLX_INJECT","integrity token obtained:"+response.token());
+
+                })
+                .addOnFailureListener(exception -> {
+                    Log.d("FLX_INJECT","integrity token obtained");
+                });
+
+    }
+//    public static void
 
 
     /*public static void clearVerificationData(){

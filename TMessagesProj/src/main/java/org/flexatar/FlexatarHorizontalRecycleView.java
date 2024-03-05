@@ -21,10 +21,10 @@ import org.telegram.ui.Cells.TextCell;
 import java.io.File;
 
 public class FlexatarHorizontalRecycleView extends RecyclerView {
-    public FlexatarHorizontalRecycleView(@NonNull Context context,FlexatarUI.FlexatarChooseListener onChooseListener) {
+    public FlexatarHorizontalRecycleView(@NonNull Context context,int flexatarType,FlexatarUI.FlexatarChooseListener onChooseListener) {
         super(context);
         setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-        setAdapter(new Adapter(context,onChooseListener));
+        setAdapter(new Adapter(context,flexatarType,onChooseListener));
     }
 
     public static class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
@@ -34,9 +34,17 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
         private final FlexatarUI.FlexatarChooseListener onChooseListener;
         private OnFlexatarChosen onFlexatarChosenListener = null;
 
-        public Adapter(Context context, FlexatarUI.FlexatarChooseListener onChooseListener){
+        public Adapter(Context context,int flexatarType, FlexatarUI.FlexatarChooseListener onChooseListener){
             mContext = context;
-            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context, FlexatarStorageManager.getHiddenRecords(context)).toArray(new File[0]);
+            if (flexatarType == 0){
+                flexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context);
+
+            }else if (flexatarType == 1){
+                flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context, FlexatarStorageManager.getHiddenRecords(context)).toArray(new File[0]);
+
+            }else{
+                flexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context);
+            }
 //            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
             this.onChooseListener = onChooseListener;
         }

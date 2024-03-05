@@ -3,6 +3,7 @@
 <!--    flexatar locale-->
     <string name="FlexatarMenuName">Flexatar</string>
     <string name="NewFlexatarByPhoto">New Flexatar by Photo</string>
+    <string name="NewFlexatarByVideo">New Flexatar by Video</string>
     <string name="MouthByPhoto">Make Mouth by Photo</string>
     <string name="FlexatarFromCloud">Load Flexatars From Cloud</string>
     <string name="LoadingFlexatarFromCloud">Loading …</string>
@@ -71,6 +72,8 @@
     <string name="SettingsFlexatar">Settings</string>
     <string name="TakeShortVideo">Take a short video</string>
     <string name="UseVideoForFlexatar">Make flexatar with this video?</string>
+    <string name="VideoTab">Video</string>
+    <string name="PhotoTab">Photo</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

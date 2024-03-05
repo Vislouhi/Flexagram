@@ -11,6 +11,7 @@ import android.util.Log;
 import org.flexatar.DataOps.AssetAccess;
 import org.flexatar.DataOps.Data;
 import org.flexatar.DataOps.FlexatarData;
+import org.flexatar.DataOps.LengthBasedUnpack;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -50,28 +50,46 @@ public class FlexatarStorageManager {
     public static final String FLEXATAR_PREFIX = "flexatar_";
     public static final String BUILTIN_PREFIX = "builtin_";
     private static final String FLEXATAR_FILES = "flexatar_files";
+    private static final String FLEXATAR_VIDEO_FILES = "flexatar_video_files";
     private static final String HIDDEN_FILES = "hidden_files";
 
     public static final FlexatarChooser callFlexatarChooser = new FlexatarChooser("call",0.005f,0.0025f);
     public static final FlexatarChooser roundFlexatarChooser = new FlexatarChooser("round",0.02f,0.0025f);
     public static class FlexatarChooser {
+        private static final String VIDEO = "video";
         private static final String FIRST = "first";
         private static final String SECOND = "second";
+        private static final String FLX_TYPE = "flexatar_type";
+
         private final String tag;
         private final float d2;
         private final float d3;
         private final TimerAutoDestroy<FlxDrawer.GroupMorphState> groupTimer;
 
+        private File chosenVideoFile;
         private File first;
         private File second;
 
         private FlexatarData firstFlxData;
         private FlexatarData secondFlxData;
+        private FlexatarData videoFlxData;
         private final Object flexatarDataLoadMutex = new Object();
         private final Object flexatarFileLoadMutex = new Object();
         private int effectIndex = -1;
         private float mixWeight = -1;
         private List<File> groupFiles = new ArrayList<>();
+        private int flxType = -1;
+        public int getFlxType(){
+            if (flxType!=-1) return flxType;
+            synchronized (flexatarFileLoadMutex) {
+
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                flxType = sharedPreferences.getInt(FLX_TYPE, 0);
+            }
+            return flxType;
+        }
         public FlexatarChooser(String tag,float d2,float d3){
             this.tag=tag;
             this.d2=d2;
@@ -140,6 +158,13 @@ public class FlexatarStorageManager {
                 if (secondFlxData != null) return secondFlxData;
                 secondFlxData = FlexatarData.syncFactory(getChosenSecond());
                 return secondFlxData;
+            }
+        }
+        public FlexatarData getVideoFlxData() {
+            synchronized (flexatarDataLoadMutex) {
+                if (videoFlxData != null) return videoFlxData;
+                videoFlxData = FlexatarData.syncFactory(getChosenVideo());
+                return videoFlxData;
             }
         }
 
@@ -281,11 +306,43 @@ public class FlexatarStorageManager {
                 Log.d("FLX_INJECT","change flexatar group size "+groupFiles.size());
             }
         }
+        public void setChosenVideoFlexatar(String path) {
+            synchronized (flexatarFileLoadMutex) {
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(VIDEO, path);
+                editor.apply();
+                chosenVideoFile = new File(path);
+
+
+            }
+        }
         public void setFlexatarGroup(){
             String groupId = getChosenFirst().getName().replace(".flx", "");
             groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(ApplicationLoader.applicationContext, groupId);
             if (groupFiles.size() != 0) {
                 groupFiles.add(getChosenFirst());
+            }
+        }
+        public File getChosenVideo() {
+            synchronized (flexatarFileLoadMutex) {
+                if (chosenVideoFile != null && chosenVideoFile.exists()) return chosenVideoFile;
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                String videoPath = sharedPreferences.getString(VIDEO, null);
+                if (videoPath == null) {
+                    File file = getVideoFlexatarFileList(context)[0];
+                    chosenVideoFile = file;
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putString(VIDEO, file.getAbsolutePath());
+                    editor.apply();
+                    return file;
+                }
+                chosenVideoFile = new File(videoPath);
+                return chosenVideoFile;
             }
         }
         public File getChosenFirst() {
@@ -390,33 +447,48 @@ public class FlexatarStorageManager {
                 mixWeight = getAnimatedMixWeight();
                 effectID = getEffectID();
                 isEffectsOn = isEffectOn();
-//                if (newFlexatarLoaded){
-//                    Log.d("FLX_INJECT","Change flexatar");
-//                    newFlexatarLoaded = false;
+                flexatarType = getFlxType();
+                if (flexatarType == 0){
+                    flexatarDataVideo = getVideoFlxData();
+                }else {
 
-                if (!isEffectsOn){
-                    if (groupFiles.size()>0) {
-                        FlxDrawer.GroupMorphState timerVal = groupTimer.getValue();
-                        mixWeight = timerVal.mixWeight;
-                        effectID = timerVal.effectID;
-                        isEffectsOn = timerVal.isEffectsOn;
-                        flexatarData = timerVal.flexatarData;
-                        flexatarDataAlt = timerVal.flexatarDataAlt;
+                    if (!isEffectsOn) {
+                        if (groupFiles.size() > 0) {
+                            FlxDrawer.GroupMorphState timerVal = groupTimer.getValue();
+                            mixWeight = timerVal.mixWeight;
+                            effectID = timerVal.effectID;
+                            isEffectsOn = timerVal.isEffectsOn;
+                            flexatarData = timerVal.flexatarData;
+                            flexatarDataAlt = timerVal.flexatarDataAlt;
 //                        Log.d("FLX_INJECT"," flexatarData "+flexatarData);
 //                        if (flexatarDataAlt == null) flexatarDataAlt = flexatarData;
-                    }else{
+                        } else {
+                            flexatarData = getFirstFlxData();
+                            flexatarDataAlt = getSecondFlxData();
+                        }
+                    } else {
                         flexatarData = getFirstFlxData();
                         flexatarDataAlt = getSecondFlxData();
                     }
-                }else{
-                    flexatarData = getFirstFlxData();
-                    flexatarDataAlt = getSecondFlxData();
                 }
+
             }});
 //            subscribers.add(weakDrawer);
         }
 
 
+        public void setFlxType(int page) {
+            synchronized (flexatarFileLoadMutex) {
+                flxType = page;
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putInt(FLX_TYPE, flxType);
+                editor.apply();
+//                String firstPath = sharedPreferences.getInt(FLX_TYPE, null);
+            }
+        }
     }
 
     public static File getFlexatarStorage(Context context){
@@ -470,7 +542,10 @@ public class FlexatarStorageManager {
         return addToStorage(context,  flexatarData,fId, "flexatar_");
 
     }
-    public static File addToStorage(Context context, byte[] flexatarData,String fId,String prefix){
+    public static File addToStorage(Context context, byte[] flexatarData,String fId,String prefix) {
+        return addToStorage(context, flexatarData, fId, prefix, 1);
+    }
+    public static File addToStorage(Context context, byte[] flexatarData,String fId,String prefix,int flexatarType){
         File flexatarStorageFolder = getFlexatarStorage(context);
 
 //        File rootDir = context.getFilesDir();
@@ -479,9 +554,21 @@ public class FlexatarStorageManager {
         String fileName = ServerDataProc.routToFileName(fId,"");
         File flexataFile = new File(flexatarStorageFolder,fileName);
         if (!flexataFile.exists()){
+            if (flexatarType == 1) {
+                addStorageRecord(context, fId);
+                dataToFile(flexatarData,flexataFile);
+            }else if (flexatarType == 0) {
+                String videoFileName = fileName.replace(".flx",".mp4");
+                File videoFile = new File(flexatarStorageFolder,videoFileName);
+                byte[][] extractResult = extractVideo(flexatarData);
+                Log.d("FLX_INJECT","flxPack size "+extractResult[0].length);
+                Log.d("FLX_INJECT","flxVideo size "+extractResult[1].length);
+                addStorageRecordVideo(context, fId);
+                dataToFile(extractResult[0],flexataFile);
+                dataToFile(extractResult[1],videoFile);
 
-            addStorageRecord(context,fId);
-            dataToFile(flexatarData,flexataFile);
+            }
+
         }
         return flexataFile;
 
@@ -535,6 +622,22 @@ public class FlexatarStorageManager {
             flexatarFilesString = jsonArray.toString();
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString(FLEXATAR_FILES, flexatarFilesString);
+            editor.apply();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static synchronized void addStorageRecordVideo(Context context,String fId){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(FLEXATAR_VIDEO_FILES, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            Log.d("FLX_INJECT","addStorageRecord fid "+ fId);
+            jsonArray.put(fId);
+            flexatarFilesString = jsonArray.toString();
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(FLEXATAR_VIDEO_FILES, flexatarFilesString);
             editor.apply();
         } catch (JSONException e) {
             throw new RuntimeException(e);
@@ -697,6 +800,26 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
+    private static synchronized void removeVideoRecord(Context context,String fid){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(FLEXATAR_VIDEO_FILES, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                if(jsonArray.getString(i).equals(fid)){
+                    jsonArray.remove(i);
+                    break;
+                }
+            }
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(FLEXATAR_VIDEO_FILES, jsonArray.toString());
+            editor.apply();
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static synchronized void removeHiddenRecord(Context context,String fid){
         String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
@@ -742,6 +865,24 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
 
+    }
+    public static synchronized String[] getVideoRecords(Context context){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        String flexatarFilesString = sharedPreferences.getString(FLEXATAR_VIDEO_FILES, "[]");
+        try {
+            JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+            String[] result = new String[jsonArray.length()];
+            for (int i = 0; i < jsonArray.length(); i++) {
+                result[i] = jsonArray.getString(jsonArray.length() - i - 1);
+
+            }
+            return result;
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
     }
     public static synchronized List<String> getHiddenRecords(Context context){
         String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
@@ -846,6 +987,33 @@ public class FlexatarStorageManager {
         }
 
     }
+    public static void deleteVideoFromStorage(Context context,File flexatarFile,boolean deleteOnCloaud){
+        if (flexatarFile.exists()){
+            removeVideoRecord(context,flexatarFile.getName().replace(".flx",""));
+            if (deleteOnCloaud) {
+                String ftarRout = ServerDataProc.fileNameToRout(flexatarFile.getName());
+                if (ftarRout != null) {
+                    String deleteRout = ServerDataProc.genDeleteRout(ftarRout);
+                    FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), deleteRout, "DELETE", new FlexatarServerAccess.OnRequestJsonReady() {
+                        @Override
+                        public void onReady(FlexatarServerAccess.StdResponse response) {
+                            Log.d("FLX_INJECT", "flexatar remote deletion success");
+                        }
+
+                        @Override
+                        public void onError() {
+                            Log.d("FLX_INJECT", "flexatar remote deletion error");
+                        }
+                    });
+//                    FlexatarServerAccess.lambdaRequest("/" + deleteRout, "DELETE", null, null, null);
+                }
+            }
+            File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx","mp4"));
+            if (videoFile.exists()) videoFile.delete();
+            flexatarFile.delete();
+        }
+
+    }
     public static File storePreviewImage(File file){
         File imageFile = null;
 //        if (imageFile.exists()) return imageFile;
@@ -897,6 +1065,7 @@ public class FlexatarStorageManager {
         public Float amplitude;
         public float[] mouthCalibration;
         public Data data;
+        public String type;
 
         public Data toHeaderAsData(){
             if (data!=null) return data;
@@ -955,6 +1124,31 @@ public class FlexatarStorageManager {
         }
 */
     }
+    public static byte[][] extractVideo(byte[] data){
+        LengthBasedUnpack unpackedData = new LengthBasedUnpack(data);
+
+        byte[] videoFileData = null;
+        Data flxPackData = new Data(new byte[0]);
+        for (int i = 0; i < unpackedData.bPacks.size()/2; i++) {
+            try {
+                String packType = unpackedData.asJson(i * 2).getString("type");
+
+                if (packType.equals("video")){
+                    videoFileData = unpackedData.bPacks.get(i * 2 + 1);
+                }else{
+                    Data pData1 = new Data(unpackedData.bPacks.get(i * 2));
+                    pData1 = pData1.encodeLengthHeader().add(pData1);
+                    Data pData2 = new Data(unpackedData.bPacks.get(i * 2 + 1));
+                    pData2 = pData2.encodeLengthHeader().add(pData2);
+                    flxPackData = flxPackData.add(pData1);
+                    flxPackData = flxPackData.add(pData2);
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return new byte[][]{flxPackData.value, videoFileData};
+    }
     public static JSONObject metaDataToJson(FlexatarMetaData md){
 
         try {
@@ -995,6 +1189,9 @@ public class FlexatarStorageManager {
             }
             if (jsonObject.has("amplitude")) {
                 md.amplitude = (float) jsonObject.getDouble("amplitude");
+            }
+            if (jsonObject.has("type")) {
+                md.type = jsonObject.getString("type");
             }
             return md;
         } catch (JSONException e) {
@@ -1097,7 +1294,22 @@ public class FlexatarStorageManager {
             FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,flxRaw,fName,"builtin_");
 
         }
+    }
+    public static void addDefaultVideoFlexatars(){
+//        for(File f :getVideoFlexatarFileList(ApplicationLoader.applicationContext)){
+//            deleteVideoFromStorage(ApplicationLoader.applicationContext,f,false);
+//        }
+//        deleteVideoFromStorage(ApplicationLoader.applicationContext,new File(getFlexatarStorage(ApplicationLoader.applicationContext),"builtin_test_flx.flx"),false);
+        String[] flxFileNames = { "test_flx"};
+        for (int i = 0; i < flxFileNames.length; i++) {
+            String fName = flxFileNames[flxFileNames.length - i - 1];
 
+            String flexatarLink = "flexatar/" + fName+".p";
+
+            byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
+            FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,flxRaw,fName,"builtin_",0);
+
+        }
     }
     public static File[] getFlexatarFileList(Context context){
         File flexatarStorageFolder = getFlexatarStorage(context);
@@ -1105,6 +1317,27 @@ public class FlexatarStorageManager {
         if (fids.length == 0){
             addDefaultFlexatars();
             fids = getRecords(context);
+        }
+        File[] files = new File[fids.length];
+//        Log.d("FLX_INJECT", "length files "+files.length);
+        for (int i = 0; i < fids.length; i++) {
+            files[i] = new File(flexatarStorageFolder,ServerDataProc.routToFileName(fids[i],""));
+
+//            Log.d("FLX_INJECT", files[i].getAbsolutePath());
+//            Log.d("FLX_INJECT", "lastModified "+files[i].lastModified());
+        }
+
+
+        return files;
+    }
+
+    public static File[] getVideoFlexatarFileList(Context context){
+        File flexatarStorageFolder = getFlexatarStorage(context);
+        String[] fids = getVideoRecords(context);
+        addDefaultVideoFlexatars();
+        if (fids.length == 0){
+            addDefaultVideoFlexatars();
+            fids = getVideoRecords(context);
         }
         File[] files = new File[fids.length];
 //        Log.d("FLX_INJECT", "length files "+files.length);

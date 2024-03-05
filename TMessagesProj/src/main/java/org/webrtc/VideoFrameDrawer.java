@@ -13,9 +13,11 @@ package org.webrtc;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.opengl.GLES20;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import org.flexatar.ExternalVideoTexture;
 import org.flexatar.FlexatarStorageManager;
 import org.flexatar.FlxDrawer;
 
@@ -28,7 +30,7 @@ import java.nio.ByteBuffer;
  */
 public class VideoFrameDrawer {
   public static final String TAG = "VideoFrameDrawer";
-  private FlxDrawer flxDrawer;
+  public FlxDrawer flxDrawer;
 
   /**
    * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb
@@ -66,8 +68,11 @@ public class VideoFrameDrawer {
         break;
       case FLX:
 //        Log.d("FLX_INJECT","drawFlx");
-        drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+
+        drawer.drawFlx( buffer.getTextureId(),512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
                 viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
+//        drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
+//                viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
         break;
       case RGB:
 //        Log.d("FLX_INJECT","drawRgb");
@@ -282,7 +287,7 @@ public class VideoFrameDrawer {
     if (isTextureFrame) {
 
       lastI420Frame = null;
-      int flexatarTextureId = -1;
+      /*int flexatarTextureId = -1;
       if ( isFlexatar) {
 //      if (frame.getIsFlexatar() && isFlexatar) {
         if (flxDrawer == null) {
@@ -312,17 +317,22 @@ public class VideoFrameDrawer {
         }
         flxDrawer.drawToFrameBuffer();
 //        Log.d("FLX_INJECT","flexatar is drawing");
-        flexatarTextureId = flxDrawer.renderTexture[0];
-      }
+        flexatarTextureId = ExternalVideoTexture.getTextureFrame();
+//        flexatarTextureId = flxDrawer.renderTexture[0];
+      }*/
 
-//      Log.d("FLX_INJECT","ratio "+ (float)viewportWidth/(float)viewportHeight);
-      drawTexture(drawer, (VideoFrame.TextureBuffer) frame.getBuffer(), renderMatrix, frame.getRotatedWidth(), frame.getRotatedHeight(), renderWidth,
-          renderHeight, viewportX, viewportY, viewportWidth, viewportHeight, blur,fromEncoder,frame.getIsFlexatar(),flexatarTextureId);
+//      Log.d("FLX_INJECT","tread "+ Thread.currentThread());
+//      if (flexatarTextureId>=0) {
+        int flexatarTextureId = 0;
+        drawTexture(drawer, (VideoFrame.TextureBuffer) frame.getBuffer(), renderMatrix, frame.getRotatedWidth(), frame.getRotatedHeight(), renderWidth,
+                renderHeight, viewportX, viewportY, viewportWidth, viewportHeight, blur, fromEncoder, frame.getIsFlexatar(), flexatarTextureId);
+//      }
     } else {
       // Only upload the I420 data to textures once per frame, if we are called multiple times
       // with the same frame.
       if (frame != lastI420Frame) {
         lastI420Frame = frame;
+
         final VideoFrame.I420Buffer i420Buffer = frame.getBuffer().toI420();
         yuvUploader.uploadFromBuffer(i420Buffer);
         i420Buffer.release();

@@ -21,6 +21,9 @@ import android.opengl.EGLSurface;
 import android.os.Build;
 import androidx.annotation.Nullable;
 import android.view.Surface;
+
+import com.google.android.exoplayer2.util.Log;
+
 import org.webrtc.EglBase;
 
 /**
@@ -317,6 +320,7 @@ class EglBase14Impl implements EglBase14 {
   // Return an EGLConfig, or die trying.
   private static EGLContext createEglContext(@Nullable EGLContext sharedContext,
       EGLDisplay eglDisplay, EGLConfig eglConfig, int openGlesVersion) {
+//    Log.d("FLX_INJECT","sharedContext " + sharedContext);
     if (sharedContext != null && sharedContext == EGL14.EGL_NO_CONTEXT) {
       throw new RuntimeException("Invalid sharedContext");
     }
@@ -325,6 +329,7 @@ class EglBase14Impl implements EglBase14 {
     final EGLContext eglContext;
     synchronized (EglBase.lock) {
       eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, rootContext, contextAttributes, 0);
+//      Log.d("FLX_INJECT","new context " + eglContext);
     }
     if (eglContext == EGL14.EGL_NO_CONTEXT) {
       throw new RuntimeException(

@@ -247,6 +247,7 @@ public class EglRenderer implements VideoSink {
               }
             }
           });
+
       // Create EGL context on the newly created render thread. It should be possibly to create the
       // context on this thread and make it current on the render thread, but this causes failure on
       // some Marvel based JB devices. https://bugs.chromium.org/p/webrtc/issues/detail?id=6350.

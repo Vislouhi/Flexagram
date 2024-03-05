@@ -636,11 +636,6 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
 
         builder.setTitle(LocaleController.getString("FlexatarName", R.string.FlexatarName));
-//        builder.setMessage("Enter flexatar name");
-
-
-
-
 
         LinearLayout linearLayout = new LinearLayout(getContext());
         linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -742,15 +737,6 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         fragmentView.post(() -> {
             finishPage();
         });
-
-//            Log.d("FLX_INJECT", "addTicket : " + tickets + " " + tickets.length());
-
-//        ExecutorService executor = Executors.newSingleThreadExecutor();
-//        Data finalSendData = sendData;
-//        executor.execute(() -> {
-//                    FlexatarServerAccess.makeFlexatarRequest(finalSendData.value);
-//                });
-
     }
 
 

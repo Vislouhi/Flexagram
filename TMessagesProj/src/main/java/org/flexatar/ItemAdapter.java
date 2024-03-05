@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -81,12 +82,17 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
             notifyItemRemoved(start);
         });
     }
-    public void setUpFlexatarList(){
+    public void setUpFlexatarList(int flexatarType){
         itemsFlexatar.subList(1,itemsFlexatar.size()).clear();
-        List<File> flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context, FlexatarStorageManager.getHiddenRecords(context));
+        List<File> flexatarsInLocalStorage = null;
+        if (flexatarType == 0){
+            flexatarsInLocalStorage = Arrays.asList(FlexatarStorageManager.getVideoFlexatarFileList(context));
+
+        }else if (flexatarType == 1){
+            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context, FlexatarStorageManager.getHiddenRecords(context));
+        }
         for (int i = 0; i < flexatarsInLocalStorage.size(); i++) {
             ItemModel item = FlexatarCabinetActivity.flexatarItemFactory(flexatarsInLocalStorage.get(i));
-
             itemsFlexatar.add(item);
         }
         notifyDataSetChanged();
@@ -244,7 +250,12 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
 
         return itemsFlexatar.get(p);
     }
-
+    public void changeActionCellName(int cellIdx,String text){
+        itemsAction.get(cellIdx).setNameText(text);
+        handler.post(()->{
+            notifyItemChanged(cellIdx);
+        });
+    }
     public void addCheckBoxes() {
         this.isCheckBoxes = true;
         handler.post(()->{

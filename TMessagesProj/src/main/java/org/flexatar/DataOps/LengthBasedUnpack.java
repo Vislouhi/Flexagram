@@ -1,5 +1,9 @@
 package org.flexatar.DataOps;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +23,14 @@ public class LengthBasedUnpack {
             bPacks.add(body);
         }
 
+    }
+
+    public JSONObject asJson(int idx){
+        try {
+            return new JSONObject(new String(bPacks.get(idx), StandardCharsets.UTF_8));
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

@@ -3,7 +3,6 @@ package org.flexatar.DataOps;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import org.flexatar.AnimationUnit;
 import org.flexatar.FlexatarAnimator;
@@ -31,6 +30,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class FlexatarData {
+    public ByteBuffer videoMarkerBB;
+    private float[] videoPositions;
+
     public static FlexatarData factory(File file){
         byte[] flxBytes = FlexatarStorageManager.dataFromFile(file);
         LengthBasedFlxUnpack unpackedFlexatar = new LengthBasedFlxUnpack(flxBytes);
@@ -69,6 +71,9 @@ public class FlexatarData {
     private void setParentFile(File file) {
         parentFile = file;
     }
+    public File getVideo() {
+        return new File(parentFile.getAbsolutePath().replace(".flx",".mp4"));
+    }
     public boolean isParentFileExists(){
         if (parentFile == null) return false;
         return parentFile.exists();
@@ -95,7 +100,8 @@ public class FlexatarData {
     private float[] lipSizeModified;
     public float headRotationAmplitude = 1;
     private FlexatarStorageManager.FlexatarMetaData metaData = new FlexatarStorageManager.FlexatarMetaData();
-
+    public enum FlxDataType {PHOTO,VIDEO}
+    public FlxDataType flxDataType = FlxDataType.PHOTO;
     public FlexatarData(LengthBasedFlxUnpack dataLB){
         String currentPartName = "exp0";
         Map<String, List<byte[]>> currentPart = new HashMap<>();
@@ -130,7 +136,7 @@ public class FlexatarData {
             }
         }
         if (!checkMouthExists()){
-            Log.d("====DEB====","mouth not found");
+//            Log.d("====DEB====","mouth not found");
             flxData.remove("mouth");
             currentPart = new HashMap<>();
             flxData.put("mouth",currentPart);
@@ -158,19 +164,28 @@ public class FlexatarData {
         try {
             JSONObject flxInfo = new JSONObject(flxInfoString);
             JSONArray bbox = flxInfo.getJSONArray("bbox");
-            mouthRatio = 1f/(float)(flxInfo.getDouble("camFovX")/flxInfo.getDouble("camFovY")*
-                    bbox.getDouble(3)/bbox.getDouble(2));
+            if (flxDataType == FlxDataType.PHOTO) {
+                mouthRatio = 1f / (float) (flxInfo.getDouble("camFovX") / flxInfo.getDouble("camFovY") *
+                        bbox.getDouble(3) / bbox.getDouble(2));
+            }else{
+                mouthRatio = 1f / (float) (480f / 640f *
+                        bbox.getDouble(3) / bbox.getDouble(2));
+            }
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
-
+        String str = new String(this.flxData.get("exp0").get("Info").get(0), StandardCharsets.UTF_8);
+        metaData = FlexatarStorageManager.jsonToMetaData(str);
+        flxDataType = metaData.type!=null && metaData.type.equals("video") ? FlxDataType.VIDEO : FlxDataType.PHOTO;
+        if (flxDataType == FlxDataType.VIDEO)
+            prepareVideoPositions();
         repackMandalaBlendshapeMouth();
-        repackMandalaBlendshape();
+        if (flxDataType == FlxDataType.PHOTO)
+            repackMandalaBlendshape();
         makeMandalaVtx();
         prepareGlBuffers();
 
-        String str = new String(this.flxData.get("exp0").get("Info").get(0), StandardCharsets.UTF_8);
-        metaData = FlexatarStorageManager.jsonToMetaData(str);
+
         if (metaData.mouthCalibration!=null){
             correctTopHorizontalLipAnchor(metaData.mouthCalibration[0]);
             correctTopVerticalLipAnchor(metaData.mouthCalibration[1]);
@@ -192,8 +207,20 @@ public class FlexatarData {
         }*/
 
     }
+    public InterUnit makeVideoInterUnit(int idx){
+        float[] point = new float[]{videoPositions[idx * 6], videoPositions[idx * 6 + 1]};
+        return InterUnit.makeInterUnit(point, this.mandalaTriangles, this.mandalaFaces, this.mandalaBorder);
+    }
+    public float getHeadRotZVideo(int idx){
+        return videoPositions[idx*6+5];
+    }
+    public void prepareVideoPositions(){
+
+        videoPositions = Data.dataToFloatArray(this.flxData.get("exp0").get("positions").get(0));
+    }
     public Bitmap getPreviewImage(){
         byte[] buffer = this.flxData.get("exp0").get("PreviewImage").get(0);
+
         Bitmap bitmapOrig = BitmapFactory.decodeStream(new ByteArrayInputStream(buffer));
         Bitmap bitmap = Bitmap.createScaledBitmap(bitmapOrig, (int) (bitmapOrig.getWidth() * 0.5f), (int) (bitmapOrig.getHeight() * 0.5f), false);
         bitmapOrig.recycle();
@@ -208,34 +235,53 @@ public class FlexatarData {
     public List<List<float[]>> mouthPoints;
     private static final int[] idxOfInterest = {88,97,50,43,54,46};
 
+    float[][][] videoMouthPoints;
     private void prepareGlBuffers(){
 //         ===========HEAD PART==============
-        mouthPoints = new ArrayList<>();
+        if (flxDataType == FlxDataType.VIDEO){
+            videoMarkerBB = Data.dataToBuffer(flxData.get("exp0").get("markers").get(0));
+            int frameCount = videoMarkerBB.capacity()/FlexatarCommon.videoStride;
+            videoMouthPoints = new float[frameCount][idxOfInterest.length][2];
+            FloatBuffer fb = videoMarkerBB.asFloatBuffer();
+            int floatVideoStride = FlexatarCommon.videoStride / 4;
 
-        for (int i = 0; i < idxOfInterest.length; i++) {
-            List<float[]> vtxMandala = new ArrayList<>();
-            mouthPoints.add(vtxMandala);
-        }
-
-        for (int i = 0; i < 5; i++) {
-            ByteBuffer headBlendshapeBB = Data.dataToBuffer(flxData.get("exp0").get("mandalaBlendshapes").get(i));
-            headBB[i] = headBlendshapeBB;
-            FloatBuffer fb = headBlendshapeBB.asFloatBuffer();
-            int c = 0;
-            for(int idx:idxOfInterest){
-                float[] vtx = { fb.get(idx * 4), fb.get(idx*4 + 1), fb.get(idx*4 + 2), 1f };
-                mouthPoints.get(c).add(vtx);
-                c+=1;
+            for (int j = 0; j < frameCount; j++) {
+                int c = 0;
+                for (int idx : idxOfInterest) {
+                    videoMouthPoints[j][c][0] = fb.get(floatVideoStride*j + idx * 2)*2f-1f;
+                    videoMouthPoints[j][c][1] = fb.get(floatVideoStride*j + idx * 2 + 1)*2f-1f;
+                    c += 1;
+                }
             }
-            headBlendshapeBB.position(0);
-        }
-        eyelidBlendshape = Data.dataToBuffer(flxData.get("exp0").get("eyelidBlendshape").get(0));
 
-        for (int i = 0; i < 5; i++) {
-            byte[] imgData = flxData.get("exp0").get("mandalaTextureBlurBkg").get(i);
-            InputStream inputStream = new ByteArrayInputStream(imgData);
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            headBitmaps[i] = bitmap;
+        }else {
+            mouthPoints = new ArrayList<>();
+
+            for (int i = 0; i < idxOfInterest.length; i++) {
+                List<float[]> vtxMandala = new ArrayList<>();
+                mouthPoints.add(vtxMandala);
+            }
+
+            for (int i = 0; i < 5; i++) {
+                ByteBuffer headBlendshapeBB = Data.dataToBuffer(flxData.get("exp0").get("mandalaBlendshapes").get(i));
+                headBB[i] = headBlendshapeBB;
+                FloatBuffer fb = headBlendshapeBB.asFloatBuffer();
+                int c = 0;
+                for (int idx : idxOfInterest) {
+                    float[] vtx = {fb.get(idx * 4), fb.get(idx * 4 + 1), fb.get(idx * 4 + 2), 1f};
+                    mouthPoints.get(c).add(vtx);
+                    c += 1;
+                }
+                headBlendshapeBB.position(0);
+            }
+            eyelidBlendshape = Data.dataToBuffer(flxData.get("exp0").get("eyelidBlendshape").get(0));
+
+            for (int i = 0; i < 5; i++) {
+                byte[] imgData = flxData.get("exp0").get("mandalaTextureBlurBkg").get(i);
+                InputStream inputStream = new ByteArrayInputStream(imgData);
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                headBitmaps[i] = bitmap;
+            }
         }
 //         ===========MOUTH PART==============
         mouthUvBB = Data.dataToBuffer(mouthData.dict.get("uv"));
@@ -517,6 +563,23 @@ public class FlexatarData {
             c += 1;
         }
         return keyVtxList;
+    }
+    public List<float[]> calcMouthKeyVtxVideo(int frameIdx,float ratio,float[] speechState){
+        float[][] currentPoints = videoMouthPoints[frameIdx];
+
+        List<float[]> ret = new ArrayList<>();
+        for (int i = 0; i < currentPoints.length; i++) {
+            float[] point = new float[2];
+            point[0] = currentPoints[i][0];
+            point[1] = currentPoints[i][1];
+            point[1]*=-ratio;
+            ret.add(point);
+        }
+        float mScale =  -(ret.get(5)[0] - ret.get(4)[0]);
+        for (int j = 0; j < 5; j++) {
+            ret.get(2)[1] += -ratio*speechState[j] * FlexatarCommon.speechBspKeyBshp[j] * mScale / 0.3f * 0.3f;
+        }
+        return ret;
     }
     private float[] calcMouthKeyVtx(List<float[]> vtxMandala, InterUnit interUnit, float[] viewModel, float[] zRot, float[] extraRotMat, AnimationUnit animUnit, float screenRatio, float[] speechState, boolean calcSpeech){
         float[] resultVtx = {0f,0f,0f,0f};
