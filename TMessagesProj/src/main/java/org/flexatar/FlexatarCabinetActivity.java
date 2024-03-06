@@ -342,16 +342,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
 //        ===============DEBUG CELLS============
         if (Config.debugMode) {
-            {
-                ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
-                item.setImageResource(R.drawable.msg_list);
-                item.setNameText("Record Video");
-                item.setOnClickListener(v -> {
-                    presentFragment(new FlexatarVideoCapFragment());
-                });
 
-                itemsAction.add(item);
-            }
             {
                 ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
                 item.setImageResource(R.drawable.msg_list);
@@ -429,6 +420,10 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     if (FlexatarServiceAuth.getVerification().isVerified()) {
                         File[] localFlexatars = FlexatarStorageManager.getFlexatarFileList(context, FlexatarStorageManager.FLEXATAR_PREFIX);
                         for (File file : localFlexatars) {
+                            FlexatarStorageManager.deleteFromStorage(context, file, false);
+                        }
+                        File[] localFlexatars1 = FlexatarStorageManager.getVideoFlexatarFileList(context);
+                        for (File file : localFlexatars1) {
                             FlexatarStorageManager.deleteFromStorage(context, file, false);
                         }
                         Log.d("FLX_INJECT", "local flexatars deleted");

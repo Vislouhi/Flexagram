@@ -61,7 +61,7 @@ import java.io.FileOutputStream;
 @TargetApi(21)
 public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implements VoIPService.StateListener {
 
-    private final FlexatarUI.FlexatarPanelLayout flexatarPanelView;
+    private final LinearLayout flexatarPanelView;
     private boolean isDismissed;
 
     private FrameLayout viewPager;

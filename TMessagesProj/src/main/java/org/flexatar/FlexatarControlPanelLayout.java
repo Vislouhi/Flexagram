@@ -13,6 +13,7 @@ import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -122,43 +123,19 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 
             }
         };
+        currentPage = currentFlexatarChooser.getFlxType();
 //        tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         tabsView.tabMarginDp = 16;
         tabsView.addTab(0, LocaleController.getString("VideoTab",R.string.VideoTab));
         tabsView.addTab(1, LocaleController.getString("PhotoTab",R.string.PhotoTab));
-        tabsView.selectTabWithId(currentFlexatarChooser.getFlxType(),1f);
+        tabsView.selectTabWithId(currentPage,1f);
         tabsView.setPadding(0,6,0,6);
         tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
             @Override
             public void onPageSelected(int page, boolean forward) {
                 currentFlexatarChooser.setFlxType(page);
-                if (page==0){
-                    for (View v : new View[]{flexatarRecyclerView,imgPairLayout,effectLayout,seekBar} ){
-                        if (v!=null && panelLayout.indexOfChild(v)!=-1){
-                            panelLayout.removeView(v);
-                        }
-                    }
-                    if (videoFlexatarRecyclerView == null){
-                        createVideoFlexatarRecyclerView();
-                    }
-                    panelLayout.addView(videoFlexatarRecyclerView);
-                }else  if (page==1){
-                    for (View v : new View[]{videoFlexatarRecyclerView} ){
-                        if (v!=null && panelLayout.indexOfChild(v)!=-1){
-                            panelLayout.removeView(v);
-                        }
-                    }
-                    if (flexatarRecyclerView == null){
-                        createFlexatarRecyclerView();
-                        addPhotoFlexatarViews();
-                    }else {
-                        for (View v : new View[]{flexatarRecyclerView, imgPairLayout, effectLayout, seekBar}) {
-                            if (v != null && panelLayout.indexOfChild(v) == -1) {
-                                panelLayout.addView(v);
-                            }
-                        }
-                    }
-                }
+                switchTabs(page);
+
 //                flexatarRecyclerView
 //                imgPairLayout
 //                effectLayout
@@ -287,6 +264,49 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(6), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
         paint = new Paint();
         paint.setARGB(200, 0, 0, 0);
+        this.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                int visibility = FlexatarControlPanelLayout.this.getVisibility();
+                if (visibility == View.VISIBLE) {
+
+                    switchTabs(currentFlexatarChooser.getFlxType());
+
+                }
+            }
+        });
+    }
+    int currentPage = -1;
+    public void switchTabs(int page){
+        if (currentPage == page) return;
+        currentPage = page;
+        if (page==0){
+            for (View v : new View[]{flexatarRecyclerView,imgPairLayout,effectLayout,seekBar} ){
+                if (v!=null && panelLayout.indexOfChild(v)!=-1){
+                    panelLayout.removeView(v);
+                }
+            }
+            if (videoFlexatarRecyclerView == null){
+                createVideoFlexatarRecyclerView();
+            }
+            panelLayout.addView(videoFlexatarRecyclerView);
+        }else  if (page==1){
+            for (View v : new View[]{videoFlexatarRecyclerView} ){
+                if (v!=null && panelLayout.indexOfChild(v)!=-1){
+                    panelLayout.removeView(v);
+                }
+            }
+            if (flexatarRecyclerView == null){
+                createFlexatarRecyclerView();
+                addPhotoFlexatarViews();
+            }else {
+                for (View v : new View[]{flexatarRecyclerView, imgPairLayout, effectLayout, seekBar}) {
+                    if (v != null && panelLayout.indexOfChild(v) == -1) {
+                        panelLayout.addView(v);
+                    }
+                }
+            }
+        }
     }
     private void addPhotoFlexatarViews(){
         panelLayout.addView(flexatarRecyclerView);

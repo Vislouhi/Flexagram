@@ -147,7 +147,12 @@ public class VideoToTextureArray {
     public int getVideoTexId(){
         return videoTextures.size() == 0 ? -1:videoTextures.get(currentTextureIdx)[0];
     }
+    long currentTime = 0;
     public void draw(){
+        long time = System.nanoTime();
+        if (time-currentTime<40_000_000L) return;
+//        Log.d("FLX_INJECT","time " +(time/1_000_000));
+        currentTime = time;
         if (isAllFramesReady){
             currentTextureIdx+=1;
             if (currentTextureIdx>=videoTextures.size()) currentTextureIdx = 0;

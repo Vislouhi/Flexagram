@@ -111,6 +111,7 @@ public class FlxDrawer {
     }
 
     public FlexatarData getFlexatarData() {
+        if (flexatarData == null) return flxvData;
         return flexatarData;
     }
 
@@ -503,6 +504,7 @@ public class FlxDrawer {
     }
     public AtomicReference<OnFrameStart> onFrameStartListener = new AtomicReference<>();
     public void draw() {
+
 //        GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if (isStaticControlBind) {
@@ -542,7 +544,8 @@ public class FlxDrawer {
             flxvData = renderParams.flexatarDataVideo;
 
 
-        }
+        }else {return;}
+//        if (true) return;
         GLES20.glViewport(0, 0, width, height);
         if (flexatarType == 0) {
             drawVideo();
@@ -793,7 +796,8 @@ public class FlxDrawer {
         if (videoToTextureArray!=null || flxvData == null ) return;
         videoToTextureArray = new VideoToTextureArray(commonBuffers,flxvData.getVideo());
         videoToTextureArray.getNextFrame();
-        videoScreenRatio = (400f/600f)/((float)videoToTextureArray.saveWidth/videoToTextureArray.saveHeight);
+        videoScreenRatio = screenRatio/((float)videoToTextureArray.saveWidth/videoToTextureArray.saveHeight);
+//        videoScreenRatio = (400f/600f)/((float)videoToTextureArray.saveWidth/videoToTextureArray.saveHeight);
 //        videoScreenRatio = (600f/400f)/((float)videoToTextureArray.saveHeight/videoToTextureArray.saveWidth);
     }
     private void drawVideo(){
@@ -820,8 +824,9 @@ public class FlxDrawer {
 
         if (videoTextureId>=0) {
 
-
-            speechState = FlexatarRenderer.speechState;
+            if (isStaticControlBind) {
+                speechState = FlexatarRenderer.speechState;
+            }
             float opFactor = 0.03f + (-speechState[2] + speechState[3]) * 0.5f;
             if (opFactor<0) opFactor =0; else if (opFactor>1) opFactor = 1;
 //            if (opFactor>0.1f)

@@ -30,6 +30,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +112,7 @@ public class FlexatarStorageManager {
                     if (x.flexatarCounter>=groupFiles.size()){
                         x.flexatarCounter=0;
                     }
+//                    Log.d("FLX_INJECT","flx chooser file" + groupFiles.get(x.flexatarCounter));
                     FlexatarData.asyncFactory(groupFiles.get(x.flexatarCounter),fData->{
                         x.morphStage = true;
                         x.mixWeight = 0;
@@ -163,6 +165,7 @@ public class FlexatarStorageManager {
         public FlexatarData getVideoFlxData() {
             synchronized (flexatarDataLoadMutex) {
                 if (videoFlxData != null) return videoFlxData;
+                Log.d("FLX_INJECT","get video flexatar " + getChosenVideo());
                 videoFlxData = FlexatarData.syncFactory(getChosenVideo());
                 return videoFlxData;
             }
@@ -335,7 +338,8 @@ public class FlexatarStorageManager {
                 String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 String videoPath = sharedPreferences.getString(VIDEO, null);
-                if (videoPath == null) {
+
+                if (videoPath == null  || !(new File(videoPath).exists()) ) {
                     File file = getVideoFlexatarFileList(context)[0];
                     chosenVideoFile = file;
                     SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -450,6 +454,7 @@ public class FlexatarStorageManager {
                 effectID = getEffectID();
                 isEffectsOn = isEffectOn();
                 flexatarType = getFlxType();
+//                Log.d("FLX_INJECT","flxTyrp: "+flexatarType);
                 if (flexatarType == 0){
                     flexatarDataVideo = getVideoFlxData();
                 }else {
@@ -966,7 +971,13 @@ public class FlexatarStorageManager {
     }
     public static void deleteFromStorage(Context context,File flexatarFile,boolean deleteOnCloaud){
         if (flexatarFile.exists()){
-            removeRecord(context,flexatarFile.getName().replace(".flx",""));
+            File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx", ".mp4"));
+            if (videoFile.exists()){
+                removeVideoRecord(context, flexatarFile.getName().replace(".flx", ""));
+                videoFile.delete();
+            }else {
+                removeRecord(context, flexatarFile.getName().replace(".flx", ""));
+            }
             if (deleteOnCloaud) {
                 String ftarRout = ServerDataProc.fileNameToRout(flexatarFile.getName());
                 if (ftarRout != null) {
@@ -1078,6 +1089,11 @@ public class FlexatarStorageManager {
             headerData = infoHeader.add(headerData);
             return headerData;
         }
+        public int isVideo(){
+            if (type == null) return 1;
+            if (type.equals("photo")) return 1;
+            return 0;
+        }
 
     }
     public static byte[] rewriteFlexatarHeader(File flexatarFile, FlexatarMetaData metaData){
@@ -1166,6 +1182,8 @@ public class FlexatarStorageManager {
             }
             if (md.amplitude != null)
                 mdJSON.put("amplitude",md.amplitude);
+            if (md.type != null)
+                mdJSON.put("type",md.type);
             Log.d("FLX_INJECT", "meta json "+mdJSON.toString());
             return mdJSON;
         } catch (JSONException e) {
@@ -1336,11 +1354,12 @@ public class FlexatarStorageManager {
     public static File[] getVideoFlexatarFileList(Context context){
         File flexatarStorageFolder = getFlexatarStorage(context);
         String[] fids = getVideoRecords(context);
-        addDefaultVideoFlexatars();
+//        addDefaultVideoFlexatars();
         if (fids.length == 0){
             addDefaultVideoFlexatars();
             fids = getVideoRecords(context);
         }
+        Log.d("FLX_INJECT", "video flx list" + Arrays.toString(fids));
         File[] files = new File[fids.length];
 //        Log.d("FLX_INJECT", "length files "+files.length);
         for (int i = 0; i < fids.length; i++) {

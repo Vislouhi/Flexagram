@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.microedition.khronos.opengles.GL10;
+
 public class FlexatarPreview extends FrameLayout {
     private FlxDrawer drawer;
     private final CardView cardview;
@@ -104,6 +106,7 @@ public class FlexatarPreview extends FrameLayout {
         addView(overlayView,LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT, Gravity.CENTER));
         GLSurfaceView surfaceView = new GLSurfaceView(context);
         surfaceView.setEGLContextClientVersion(2);
+
         FlexatarViewRenderer renderer = new FlexatarViewRenderer();
         drawer = new FlxDrawer();
         drawer.setHandler(new Handler(Looper.getMainLooper()));
@@ -147,6 +150,7 @@ public class FlexatarPreview extends FrameLayout {
     }
 
     public void stopGroupAnimation(){
+//        Log.d("FLX_INJECT","stopGroupAnimation " );
         FlexatarData.asyncFactory(flexatarCell.getFlexatarFile(),fData->{
             drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
                 mixWeight = 1f;
@@ -185,7 +189,7 @@ public class FlexatarPreview extends FrameLayout {
                     if (x.flexatarCounter>=groupFiles.size()){
                         x.flexatarCounter=0;
                     }
-
+//                        Log.d("FLX_INJECT","startGroupAnimation " );
                     FlexatarData.asyncFactory(groupFiles.get(x.flexatarCounter),fData->{
                         x.morphStage = true;
                         x.mixWeight = 0;

@@ -59,7 +59,7 @@ import androidx.viewpager.widget.ViewPager;
 @TargetApi(21)
 public abstract class PrivateVideoPreviewDialog extends FrameLayout implements VoIPService.StateListener {
 
-    private final FlexatarUI.FlexatarPanelLayout flexatarPanelView;
+    private final LinearLayout flexatarPanelView;
     private boolean isDismissed;
     private float outProgress;
 

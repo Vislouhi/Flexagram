@@ -7,6 +7,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.RectF;
 import android.opengl.GLSurfaceView;
@@ -36,8 +37,10 @@ import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SeekBarView;
+import org.telegram.ui.Components.ViewPagerFixed;
 import org.telegram.ui.Components.voip.HideEmojiTextView;
 import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
+import org.telegram.ui.LaunchActivity;
 
 import java.io.File;
 
@@ -207,230 +210,106 @@ public class FlexatarUI {
         return scrollView;
     }
 */
-    public static FlexatarPanelLayout makeFlexatarChoosePanel(Context context, VoIPBackgroundProvider backgroundProvider){
-//        FlexatarRenderer.isEffectsOn = false;
-//        FlexatarRenderer.effectID = 0;
-//        FlexatarRenderer.isMorphEffect = false;
-        FlexatarStorageManager.callFlexatarChooser.resetEffects();
-        FlexatarPanelLayout linearLayout = new FlexatarPanelLayout(context,backgroundProvider);
+    public static LinearLayout makeFlexatarChoosePanel(Context context, VoIPBackgroundProvider backgroundProvider){
+
+
+
+
+        FlexatarStorageManager.FlexatarChooser currentFlexatarChooser = FlexatarStorageManager.callFlexatarChooser;
+        currentFlexatarChooser.resetEffects();
+        RectF bgRect = new RectF();
+        Paint paint = new Paint();
+        paint.setARGB(200, 0, 0, 0);
+        LinearLayout linearLayout = new LinearLayout(context){
+            @Override
+            protected void dispatchDraw(Canvas canvas) {
+                bgRect.set(0, 0, getWidth(), getHeight());
+//        backgroundProvider.setDarkTranslation(getX(), getY());
+                canvas.drawRoundRect(bgRect, dp(20), dp(20), paint);
+                super.dispatchDraw(canvas);
+            }
+        };
+//        FlexatarPanelLayout linearLayout = new FlexatarPanelLayout(context,backgroundProvider);
+
+        ViewPagerFixed.TabsView tabsView = new ViewPagerFixed.TabsView(context, true, 3, LaunchActivity.getLastFragment().getResourceProvider()) {
+            @Override
+            public void selectTab(int currentPosition, int nextPosition, float progress) {
+                super.selectTab(currentPosition, nextPosition, progress);
+
+            }
+        };
+//        tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        tabsView.tabMarginDp = 16;
+        tabsView.addTab(0, LocaleController.getString("VideoTab",R.string.VideoTab));
+        tabsView.addTab(1, LocaleController.getString("PhotoTab",R.string.PhotoTab));
+        tabsView.selectTabWithId(currentFlexatarChooser.getFlxType(),1f);
+        tabsView.setPadding(0,6,0,6);
+        tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
+            @Override
+            public void onPageSelected(int page, boolean forward) {
+                currentFlexatarChooser.setFlxType(page);
+
+                FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,currentFlexatarChooser.getFlxType(), null);
+                ((FlexatarHorizontalRecycleView.Adapter)recyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
+                    if (tabsView.getCurrentTabId() == 1) {
+                        currentFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
+                    }else if (tabsView.getCurrentTabId() == 0){
+                        if (file.equals(currentFlexatarChooser.getChosenVideo()) ) return;
+                        currentFlexatarChooser.setChosenVideoFlexatar(file.getAbsolutePath());
+                    }
+                });
+                linearLayout.removeViewAt(1);
+                linearLayout.addView(recyclerView);
+//                flexatarRecyclerView
+//                imgPairLayout
+//                effectLayout
+//                seekBar
+            }
+
+            @Override
+            public void onPageScrolled(float progress) {
+
+            }
+
+            @Override
+            public void onSamePageSelected() {
+
+            }
+
+            @Override
+            public boolean canPerformActions() {
+                return true;
+            }
+
+            @Override
+            public void invalidateBlur() {
+
+            }
+        });
+
+        tabsView.finishAddingTabs();
+        tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,0,0,0,0));
+        linearLayout.addView(tabsView);
+        FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,currentFlexatarChooser.getFlxType(), null);
+        ((FlexatarHorizontalRecycleView.Adapter)recyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
+            if (tabsView.getCurrentTabId() == 1) {
+                currentFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
+            }else if (tabsView.getCurrentTabId() == 0){
+                if (file.equals(currentFlexatarChooser.getChosenVideo()) ) return;
+                currentFlexatarChooser.setChosenVideoFlexatar(file.getAbsolutePath());
+            }
+        });
         linearLayout.setGravity(Gravity.CENTER);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         int pad = AndroidUtilities.dp(12);
         linearLayout.setPadding(pad, pad, pad, pad);
 
-        FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,1, null);
-        ((FlexatarHorizontalRecycleView.Adapter)recyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
-            FlexatarStorageManager.callFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
-        });
+
         linearLayout.addView(recyclerView);
 //        linearLayout.addView(flexatarScrollView(context,null));
 
         return linearLayout;
     }
-   /* public static FlexatarPanelLayout makeFlexatarEffectsPanel(Context context, VoIPBackgroundProvider backgroundProvider){
-        ImageView icnFlx1= new ImageView(context);
-        ImageView icnFlx2 = new ImageView(context);
 
-        FlexatarPanelLayout linearLayout = new FlexatarPanelLayout(context,backgroundProvider);
-
-
-        linearLayout.setImg1(icnFlx1);
-        linearLayout.setImg2(icnFlx2);
-
-        linearLayout.setGravity(Gravity.CENTER);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        linearLayout.setPadding(0, 0, 0, AndroidUtilities.dp(0));
-
-
-        linearLayout.addView(new FlexatarHorizontalRecycleView(context,(icnFlx)->{
-            icnFlx2.setImageDrawable(icnFlx1.getDrawable());
-            icnFlx1.setImageDrawable(icnFlx.getDrawable());
-        }));
-//        linearLayout.addView(flexatarScrollView(context,(icnFlx)->{
-//            icnFlx2.setImageDrawable(icnFlx1.getDrawable());
-//            icnFlx1.setImageDrawable(icnFlx.getDrawable());
-//        }));
-//        linearLayout.addView(scrollView);
-//-------------------IMAGE PAIR LAYOUT-------------
-        LinearLayout imgPairLayout = new LinearLayout(context);
-        imgPairLayout.setOrientation(LinearLayout.HORIZONTAL);
-        linearLayout.addView(imgPairLayout,LayoutHelper.createLinear( LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT,Gravity.CENTER_HORIZONTAL));
-
-        {
-            ImageView icnFlx = icnFlx1;
-            icnFlx.setContentDescription("flexatar button");
-            icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
-            icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
-
-            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(FlexatarStorageManager.callFlexatarChooser.getChosenFirst(),true).previewImage;;
-            RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
-            dr.setCornerRadius(AndroidUtilities.dp(8));
-            icnFlx.setImageDrawable(dr);
-            float ratio = (float)iconBitmap.getHeight()/(float)iconBitmap.getWidth();
-            float imageWidth = 40;
-            icnFlx.setLayoutParams(new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth*ratio)));
-
-            imgPairLayout.addView(icnFlx);
-        }
-        {
-            ImageView icnFlx = icnFlx2;
-            icnFlx.setContentDescription("flexatar button");
-            icnFlx.setBackground(Theme.createSelectorDrawable(ColorUtils.setAlphaComponent(Color.WHITE, (int) (255 * 0.3f))));
-            icnFlx.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(0), AndroidUtilities.dp(0), AndroidUtilities.dp(0));
-            Bitmap iconBitmap = FlexatarStorageManager.getFlexatarMetaData(FlexatarStorageManager.callFlexatarChooser.getChosenSecond(),true).previewImage;
-            RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
-            dr.setCornerRadius(AndroidUtilities.dp(8));
-            icnFlx.setImageDrawable(dr);
-            float ratio = (float)iconBitmap.getHeight()/(float)iconBitmap.getWidth();
-            float imageWidth = 40;
-            icnFlx.setLayoutParams(new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth*ratio)));
-
-            imgPairLayout.addView(icnFlx);
-        }
-        //-------------------EFFECT BUTTONS LAYOUT-------------
-        LinearLayout effectLayout = new LinearLayout(context);
-        effectLayout.setOrientation(LinearLayout.HORIZONTAL);
-        effectLayout.setPadding(0, AndroidUtilities.dp(6), 0, 0);
-
-        linearLayout.addView(effectLayout);
-        String[] effectNames = {"No","Mix","Morph","Hybrid"};
-        String[] effectCaptions = {
-                LocaleController.getString("NoEffectButton", R.string.NoEffectButton),
-                LocaleController.getString("MixEffectButton", R.string.MixEffectButton),
-                LocaleController.getString("MorphEffectButton", R.string.MorphEffectButton),
-                LocaleController.getString("HybridEffectButton", R.string.HybridEffectButton),
-
-        };
-        LinearLayout.LayoutParams layoutParams1 = new LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1
-        );
-        layoutParams1.leftMargin = AndroidUtilities.dp(3);
-        layoutParams1.rightMargin = AndroidUtilities.dp(3);
-        TextView[] effectTextViews = new TextView[effectNames.length];
-        SeekBarView seekBar = new SeekBarView(context);
-        for (int i = 0; i < effectNames.length; i++) {
-
-            String name = effectNames[i];
-
-            TextView tv = new HideEmojiTextView(context, backgroundProvider);
-            effectTextViews[i] = tv;
-            if(name.equals(chosenEffect)) {
-                tv.setTextColor(Color.parseColor("#f7d26c"));
-            }
-
-            tv.setLayoutParams(layoutParams1);
-            tv.setText(effectCaptions[i]);
-            tv.setGravity(Gravity.CENTER);
-//            tv.setPadding(AndroidUtilities.dp(3), AndroidUtilities.dp(0), AndroidUtilities.dp(3), AndroidUtilities.dp(0));
-            int finalI = i;
-            tv.setOnClickListener((v) -> {
-
-                for (int j = 0; j < effectNames.length; j++) {
-                    effectTextViews[j].setTextColor(Color.WHITE);
-                }
-                effectTextViews[finalI].setTextColor(Color.parseColor("#f7d26c"));
-                chosenEffect = effectNames[finalI];
-
-                if (chosenEffect.equals("No")){
-                    FlexatarRenderer.isEffectsOn = false;
-                    FlexatarRenderer.isMorphEffect = false;
-
-                } else if (chosenEffect.equals("Mix")){
-                    FlexatarRenderer.isEffectsOn = true;
-                    FlexatarRenderer.effectID = 0;
-                    FlexatarRenderer.effectsMixWeight = FlexatarRenderer.chosenMixWeight;
-                    FlexatarRenderer.isMorphEffect = false;
-                }else if (chosenEffect.equals("Morph")){
-                    FlexatarRenderer.isEffectsOn = true;
-                    FlexatarRenderer.effectID = 0;
-                    FlexatarRenderer.isMorphEffect = true;
-                    FlexatarRenderer.effectsMixWeight = 0;
-
-                }else if (chosenEffect.equals("Hybrid")){
-                    FlexatarRenderer.isEffectsOn = true;
-                    FlexatarRenderer.effectID = 1;
-                    FlexatarRenderer.isMorphEffect = false;
-
-                }
-                if (chosenEffect.equals("Mix")){
-                    seekBar.setVisibility(View.VISIBLE);
-                }else{
-                    seekBar.setVisibility(View.GONE);
-                }
-            });
-            effectLayout.addView(tv);
-        }
-        linearLayout.setEffectTextViews(effectTextViews);
-
-//        SeekBarView seekBar = new SeekBarView(context);
-        seekBar.setReportChanges(true);
-        int stepCount = 30;
-        seekBar.setSeparatorsCount(stepCount);
-        seekBar.setDelegate(new SeekBarView.SeekBarViewDelegate() {
-            @Override
-            public void onSeekBarDrag(boolean stop, float progress) {
-                FlexatarRenderer.chosenMixWeight = 1-progress;
-                FlexatarRenderer.effectsMixWeight = FlexatarRenderer.chosenMixWeight;
-            }
-
-            @Override
-            public void onSeekBarPressed(boolean pressed) {
-            }
-
-            @Override
-            public CharSequence getContentDescription() {
-                return "No";
-            }
-
-            @Override
-            public int getStepsCount() {
-                return stepCount;
-            }
-        });
-
-        seekBar.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
-        seekBar.setProgress(1-FlexatarRenderer.chosenMixWeight);
-        if (!chosenEffect.equals("Mix")){
-            seekBar.setVisibility(View.GONE);
-        }
-        linearLayout.addView(seekBar,LayoutHelper.createFrame(200, 20,Gravity.CENTER,0,6,0,0));
-
-
-        FrameLayout bottomButtonsLayout = new FrameLayout(context);
-
-        linearLayout.addView(bottomButtonsLayout);
-
-
-
-
-        ImageView closePanelIcon = new ImageView(context);
-        closePanelIcon.setImageResource(R.drawable.cancel_big);
-        closePanelIcon.setOnClickListener((v) -> {
-            linearLayout.setVisibility(View.GONE);
-            linearLayout.fulfillClose();
-        });
-        bottomButtonsLayout.addView(closePanelIcon,LayoutHelper.createFrame(32, 32, Gravity.RIGHT, 0, 0, 12, 0));
-
-        bottomButtonsLayout.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6));
-
-
-
-
-        *//*TextView closePanelText = new HideEmojiTextView(context, backgroundProvider);
-        closePanelText.setLayoutParams(layoutParams1);
-        closePanelText.setText("Hide Panel");
-        closePanelText.setOnClickListener((v) -> {
-            linearLayout.setVisibility(View.GONE);
-            linearLayout.fulfillClose();
-        });
-        bottomButtonsLayout.addView(closePanelText,LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT, 0, 0, 12, 0));
-        bottomButtonsLayout.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6));
-*//*
-        linearLayout.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(6), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
-        return linearLayout;
-    }
-*/
 
 }
