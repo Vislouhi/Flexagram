@@ -106,8 +106,15 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
             }
         });
         File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context,FlexatarStorageManager.FLEXATAR_PREFIX);
+        File[] videoFlexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context,FlexatarStorageManager.FLEXATAR_PREFIX);
+//        File[] videoFlexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
+//        File[] flexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context,FlexatarStorageManager.FLEXATAR_PREFIX);
 
-        listAdapter = new ListAdapter(context,flexatarsInLocalStorage);
+        File[] result = new File[flexatarsInLocalStorage.length + videoFlexatarsInLocalStorage.length];
+        System.arraycopy(flexatarsInLocalStorage, 0, result, 0, flexatarsInLocalStorage.length);
+        System.arraycopy(videoFlexatarsInLocalStorage, 0, result, flexatarsInLocalStorage.length, videoFlexatarsInLocalStorage.length);
+
+        listAdapter = new ListAdapter(context,result);
         listView.setClipToPadding(false);
         listView.setAdapter(listAdapter);
         listView.setPadding(0, 0, 0, AndroidUtilities.dp(48));
@@ -120,11 +127,13 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
                 ArrayList<MessageObject> fmessages = new ArrayList<>();
 
                 ArrayList<String> files = new ArrayList<>();
-                files.add(FlexatarStorageManager.storePreviewImage(flexatarsInLocalStorage[position]).getAbsolutePath());
-                files.add(flexatarsInLocalStorage[position].getAbsolutePath());
-
-                Log.d("FLX_INJECT", "flexatar sent " + files.get(0) + " fmessages " + fmessages.size() + " scheduleDate " + 0 + " cap " + parentAlert.commentTextView.getText().toString());
-                Log.d("FLX_INJECT", "flexatar sent " + files.get(1) + " fmessages " + fmessages.size() + " scheduleDate " + 0 + " cap " + parentAlert.commentTextView.getText().toString());
+                String flxID = flexatarsInLocalStorage[position].getName().split("_")[1].replace(".flx", "");
+                files.add(flxID);
+//                files.add(FlexatarStorageManager.storePreviewImage(flexatarsInLocalStorage[position]).getAbsolutePath());
+//                files.add(flexatarsInLocalStorage[position].getAbsolutePath());
+//
+//                Log.d("FLX_INJECT", "flexatar sent " + files.get(0) + " fmessages " + fmessages.size() + " scheduleDate " + 0 + " cap " + parentAlert.commentTextView.getText().toString());
+//                Log.d("FLX_INJECT", "flexatar sent " + files.get(1) + " fmessages " + fmessages.size() + " scheduleDate " + 0 + " cap " + parentAlert.commentTextView.getText().toString());
 
                 delegate.didSelectFiles(files, "", fmessages, true, 0);
                 parentAlert.dismiss(true);
@@ -190,7 +199,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
         public int getItemCount() {
 
 //            return 3;
-            return flexatarFiles.length == 0 ? 1 : flexatarFiles.length;
+            return flexatarFiles.length == 0 ? 1 : (flexatarFiles.length+1);
         }
 
         /*public ChatAttachAlertDocumentLayout.ListItem getItem(int position) {
@@ -218,26 +227,41 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
                     return 0;
                 }
             }*/
-            return 1;
+            return position == flexatarFiles.length ? 2 : 1;
         }
 
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            if (flexatarFiles.length>0) {
-                return new RecyclerListView.Holder(new FlexatarCell(mContext));
+            if (viewType == 1) {
+                if (flexatarFiles.length > 0) {
+                    FlexatarCell cell = new FlexatarCell(mContext);
+//                cell.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, AndroidUtilities.dp(100)));
+                    return new RecyclerListView.Holder(cell);
+                } else {
+                    return new RecyclerListView.Holder(new TextCell(mContext));
+                }
             }else{
-                return new RecyclerListView.Holder( new TextCell(mContext));
+                return new RecyclerListView.Holder(new View(mContext));
             }
         }
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             if (flexatarFiles.length>0) {
-                FlexatarCell fCell = (FlexatarCell) holder.itemView;
-                fCell.loadFromFile(flexatarFiles[position]);
+                if (position == flexatarFiles.length) {
+                    View fCell = (View) holder.itemView;
+                fCell.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, AndroidUtilities.dp(100)));
+
+                }else{
+                    FlexatarCell fCell = (FlexatarCell) holder.itemView;
+//                fCell.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, AndroidUtilities.dp(100)));
+
+                    fCell.loadFromFile(flexatarFiles[position]);
+                }
             }else{
                 ((TextCell) holder.itemView).setTextAndIcon(LocaleController.getString("NoFlexatarsToShare", R.string.NoFlexatarsToShare), R.drawable.filled_unclaimed, false);
             }
+//            notifyItemChanged(position);
         }
 
         @Override

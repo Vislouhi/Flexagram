@@ -73,7 +73,7 @@ public class ServerDataProc {
         return rout;
     }
 
-    public static class FlexatarListResponse{
+    /*public static class FlexatarListResponse{
 
         private final String[] linksPublic;
         private final String[] idsPublic;
@@ -134,6 +134,6 @@ public class ServerDataProc {
         public boolean hasPublic(){
             return publicLinksToDownload.size()>0;
         }
-    }
+    }*/
 
 }

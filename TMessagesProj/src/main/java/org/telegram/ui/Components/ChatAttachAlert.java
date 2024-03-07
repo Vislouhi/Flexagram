@@ -71,6 +71,8 @@ import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.flexatar.FlexatarServerAccess;
+import org.flexatar.FlexatarServiceAuth;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ChatObject;
@@ -3292,69 +3294,40 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate) {
 //                    Log.d("FLX_INJECT","send files flexatarLayout.setDelegate head");
                     if (documentsDelegate != null) {
-//                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate documentsDelegate");
-                        documentsDelegate.didSelectFiles(files, caption, fmessages, notify, scheduleDate);
+                        Log.d("FLX_INJECT","send files  documentsDelegate");
+//                        documentsDelegate.didSelectFiles(files, caption, fmessages, notify, scheduleDate);
 
                     } else if (baseFragment instanceof ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate ) {
-//                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate instanceof");
-                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).didSelectFiles(files, caption, fmessages, notify, scheduleDate);
+                        Log.d("FLX_INJECT","send files DocumentSelectActivityDelegate "+files.get(0));
+                        long dialogId = ((ChatActivity) baseFragment).getDialogId();
+
+                        Log.d("FLX_INJECT","send files trg usr id "+dialogId);
+                        // TODO share flexatar
+
+                        String path = "share/1.00/tg/"+dialogId+"/"+files.get(0);
+                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), path, "GET", new FlexatarServerAccess.OnRequestJsonReady() {
+                            @Override
+                            public void onReady(FlexatarServerAccess.StdResponse response) {
+                                Log.d("FLX_INJECT","flexatar send success");
+                            }
+
+                            @Override
+                            public void onError() {
+                                Log.d("FLX_INJECT","flexatar send error");
+                            }
+                        });
+//                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).didSelectFiles(files, caption, fmessages, notify, scheduleDate);
 
                     } else if (baseFragment instanceof PassportActivity) {
-//                        Log.d("FLX_INJECT","send files flexatarLayout.setDelegate PassportActivity");
+                        Log.d("FLX_INJECT","send files PassportActivity");
 
-                        ((PassportActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate);
+//                        ((PassportActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate);
                     }
                 }
             });
-            /*flexatarLayout.setDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
-                @Override
-                public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate) {
-                    *//*if (documentsDelegate != null) {
-                        documentsDelegate.didSelectFiles(files, caption, fmessages, notify, scheduleDate);
-                    } else if (baseFragment instanceof ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) {
-                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).didSelectFiles(files, caption, fmessages, notify, scheduleDate);
-                    } else if (baseFragment instanceof PassportActivity) {
-                        ((PassportActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate);
-                    }*//*
-                }
 
-                @Override
-                public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate) {
-                    *//*if (documentsDelegate != null) {
-                        documentsDelegate.didSelectPhotos(photos, notify, scheduleDate);
-                    } else if (baseFragment instanceof ChatActivity) {
-                        ((ChatActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate);
-                    } else if (baseFragment instanceof PassportActivity) {
-                        ((PassportActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate);
-                    }*//*
-                }
-
-                @Override
-                public void startDocumentSelectActivity() {
-                    *//*if (documentsDelegate != null) {
-                        documentsDelegate.startDocumentSelectActivity();
-                    } else if (baseFragment instanceof ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) {
-                        ((ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate) baseFragment).startDocumentSelectActivity();
-                    } else if (baseFragment instanceof PassportActivity) {
-                        ((PassportActivity) baseFragment).startDocumentSelectActivity();
-                    }*//*
-                }
-
-                @Override
-                public void startMusicSelectActivity() {
-//                    openAudioLayout(true);
-                }
-            });*/
         }
-       /* if (baseFragment instanceof ChatActivity) {
-            ChatActivity chatActivity = (ChatActivity) baseFragment;
-            TLRPC.Chat currentChat = chatActivity.getCurrentChat();
-            documentLayout.setMaxSelectedFiles(currentChat != null && !ChatObject.hasAdminRights(currentChat) && currentChat.slowmode_enabled || editingMessageObject != null ? 1 : -1);
-        } else {
-            documentLayout.setMaxSelectedFiles(maxSelectedPhotos);
-            documentLayout.setCanSelectOnlyImageFiles(!isSoundPicker && !allowEnterCaption);
-        }
-        documentLayout.isSoundPicker = isSoundPicker;*/
+
         if (show) {
             showLayout(flexatarLayout);
         }

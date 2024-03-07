@@ -15,7 +15,7 @@ public class LengthBasedFlxUnpack {
     public List<String> hPacks = new ArrayList<>();
     public List<byte[]> hPacksByte = new ArrayList<>();
     public List<byte[]> bPacks = new ArrayList<>();
-    private final static int MAX_AVAILABLE_LENGTH = 10000000;
+    private final static int MAX_AVAILABLE_LENGTH = 50_000_000;
     public LengthBasedFlxUnpack(byte[] data){
         int offset = 0;
         int cntr = 0;

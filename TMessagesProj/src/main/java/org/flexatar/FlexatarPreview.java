@@ -374,7 +374,8 @@ public class FlexatarPreview extends FrameLayout {
         if (controlsScrollView == null) return;
         LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
         controlsScrollView.setLayoutParams(layoutParams);
-        tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
+        if (tabsView!=null)
+            tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
         recyclerView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT,isPortrait ? 0 : 24,0,0,0));
 
 
@@ -391,60 +392,62 @@ public class FlexatarPreview extends FrameLayout {
         if (flexatarCell.isBuiltin() || flexatarCell.isPublic()) return;
         LinearLayout editContentLayout = new LinearLayout(getContext());
         editContentLayout.setOrientation(LinearLayout.VERTICAL);
-        tabsView = new ViewPagerFixed.TabsView(getContext(), true, 3, resourcesProvider) {
-            @Override
-            public void selectTab(int currentPosition, int nextPosition, float progress) {
-                super.selectTab(currentPosition, nextPosition, progress);
-
-            }
-        };
-        tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-        tabsView.tabMarginDp = 16;
-        tabsView.addTab(0, LocaleController.getString("SettingsFlexatar",R.string.SettingsFlexatar));
-        tabsView.addTab(1, LocaleController.getString("AttachmentFlexatar",R.string.AttachmentFlexatar));
-        tabsView.setPadding(0,6,0,6);
-        tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
-            @Override
-            public void onPageSelected(int page, boolean forward) {
-                int currentOrientation = getResources().getConfiguration().orientation;
-                boolean isPortrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
-                LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
-
-                if (page == 0){
-                    editContentLayout.removeView(recyclerView);
-                    editContentLayout.addView(controlsScrollView,layoutParams);
-                    stopGroupAnimation();
-
-                } else if (page == 1) {
-                    editContentLayout.removeView(controlsScrollView);
-                    editContentLayout.addView(recyclerView,layoutParams);
-                    startGroupAnimation();
-
+        if (flexatarData.flxDataType == FlexatarData.FlxDataType.PHOTO) {
+            tabsView = new ViewPagerFixed.TabsView(getContext(), true, 3, resourcesProvider) {
+                @Override
+                public void selectTab(int currentPosition, int nextPosition, float progress) {
+                    super.selectTab(currentPosition, nextPosition, progress);
 
                 }
-            }
+            };
+            tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+            tabsView.tabMarginDp = 16;
+            tabsView.addTab(0, LocaleController.getString("SettingsFlexatar", R.string.SettingsFlexatar));
+            tabsView.addTab(1, LocaleController.getString("AttachmentFlexatar", R.string.AttachmentFlexatar));
+            tabsView.setPadding(0, 6, 0, 6);
+            tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
+                @Override
+                public void onPageSelected(int page, boolean forward) {
+                    int currentOrientation = getResources().getConfiguration().orientation;
+                    boolean isPortrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
+                    LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
 
-            @Override
-            public void onPageScrolled(float progress) {
+                    if (page == 0) {
+                        editContentLayout.removeView(recyclerView);
+                        editContentLayout.addView(controlsScrollView, layoutParams);
+                        stopGroupAnimation();
 
-            }
+                    } else if (page == 1) {
+                        editContentLayout.removeView(controlsScrollView);
+                        editContentLayout.addView(recyclerView, layoutParams);
+                        startGroupAnimation();
 
-            @Override
-            public void onSamePageSelected() {
 
-            }
+                    }
+                }
 
-            @Override
-            public boolean canPerformActions() {
-                return true;
-            }
+                @Override
+                public void onPageScrolled(float progress) {
 
-            @Override
-            public void invalidateBlur() {
+                }
 
-            }
-        });
-        tabsView.finishAddingTabs();
+                @Override
+                public void onSamePageSelected() {
+
+                }
+
+                @Override
+                public boolean canPerformActions() {
+                    return true;
+                }
+
+                @Override
+                public void invalidateBlur() {
+
+                }
+            });
+            tabsView.finishAddingTabs();
+        }
 //        layout.addView(tabsView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,24));
 
 
@@ -456,7 +459,9 @@ public class FlexatarPreview extends FrameLayout {
         controlsLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         controlsScrollView.addView(controlsLayout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
 
-        editContentLayout.addView(tabsView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
+        if (tabsView!=null)
+            editContentLayout.addView(tabsView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,isPortrait ? 0 : 24,isPortrait ? 12 : 0,0,0));
+
         editContentLayout.addView(controlsScrollView,layoutParams);
         layout.addView(editContentLayout,layoutParams);
 
@@ -495,20 +500,21 @@ public class FlexatarPreview extends FrameLayout {
                 parentFragment.showDialog(AlertDialogs.askToCompleteInstructions(getContext()));
             }
         });
+        if (flexatarData.flxDataType == FlexatarData.FlxDataType.PHOTO) {
+            FlexatarCalibrationCell headAmplitudeCell = new FlexatarCalibrationCell(getContext(), LocaleController.getString("HeadRotationAmp", R.string.HeadRotationAmp));
+            controlsLayout.addView(headAmplitudeCell.getHeaderCell(), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, Gravity.TOP, 0, 0, 0, 0));
+            controlsLayout.addView(headAmplitudeCell.getSeekBar(), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 38, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 54, 12, 54, 0));
+            headAmplitudeCell.setProgress(1f);
+            if (flexatarData.getMetaData().amplitude != null) {
+                headAmplitudeCell.setProgress((-flexatarData.getMetaData().amplitude + 3) / 2);
+            }
 
-        FlexatarCalibrationCell headAmplitudeCell = new FlexatarCalibrationCell(getContext(), LocaleController.getString("HeadRotationAmp", R.string.HeadRotationAmp));
-        controlsLayout.addView(headAmplitudeCell.getHeaderCell(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
-        controlsLayout.addView(headAmplitudeCell.getSeekBar(),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,38,Gravity.TOP|Gravity.CENTER_HORIZONTAL,54,12,54,0));
-        headAmplitudeCell.setProgress(1f);
-        if (flexatarData.getMetaData().amplitude!=null) {
-            headAmplitudeCell.setProgress((-flexatarData.getMetaData().amplitude + 3)/2);
+            headAmplitudeCell.setOnDragListener((progress) -> {
+                Log.d("FLX_INJECT", "head amp progress" + (progress));
+                isHeadAmplitudeChanged = true;
+                drawer.setHeadRotationAmplitude((3f - 2f * progress));
+            });
         }
-
-        headAmplitudeCell.setOnDragListener((progress) -> {
-            Log.d("FLX_INJECT", "head amp progress" + (progress ));
-            isHeadAmplitudeChanged = true;
-            drawer.setHeadRotationAmplitude((3f -  2f * progress));
-        });
 
         List<View> mouthCalibrationViews = new ArrayList<>();
         TextCheckCell isMouthCalibrationOnCell = new TextCheckCell(getContext());

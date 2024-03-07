@@ -937,9 +937,14 @@ public class FlexatarStorageManager {
         String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
+        String flexatarVideoFilesString = sharedPreferences.getString(FLEXATAR_VIDEO_FILES, "[]");
+        flexatarFilesString = (flexatarFilesString+flexatarVideoFilesString).replace("][",",");
+//        Log.d("FLX_INJECT","flexatarFilesString "+flexatarFilesString);
         try {
             JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+
             List<String> result = new ArrayList<>();
+
             for (int i = 0; i < jsonArray.length(); i++) {
                 String fid = jsonArray.getString(jsonArray.length() - i - 1);
                 if (prefix == null){
@@ -1354,19 +1359,14 @@ public class FlexatarStorageManager {
     public static File[] getVideoFlexatarFileList(Context context){
         File flexatarStorageFolder = getFlexatarStorage(context);
         String[] fids = getVideoRecords(context);
-//        addDefaultVideoFlexatars();
         if (fids.length == 0){
             addDefaultVideoFlexatars();
             fids = getVideoRecords(context);
         }
-        Log.d("FLX_INJECT", "video flx list" + Arrays.toString(fids));
         File[] files = new File[fids.length];
-//        Log.d("FLX_INJECT", "length files "+files.length);
         for (int i = 0; i < fids.length; i++) {
             files[i] = new File(flexatarStorageFolder,ServerDataProc.routToFileName(fids[i],""));
 
-//            Log.d("FLX_INJECT", files[i].getAbsolutePath());
-//            Log.d("FLX_INJECT", "lastModified "+files[i].lastModified());
         }
 
 
@@ -1404,6 +1404,22 @@ public class FlexatarStorageManager {
         }
 
 
+        return files.toArray(new File[0]);
+    }
+
+    public static File[] getVideoFlexatarFileList(Context context,String prefix){
+        File flexatarStorageFolder = getFlexatarStorage(context);
+        String[] fids = getVideoRecords(context);
+
+        if (fids.length == 0){
+            addDefaultVideoFlexatars();
+            fids = getVideoRecords(context);
+        }
+        List<File> files = new ArrayList<>();
+        for (int i = 0; i < fids.length; i++) {
+            if (fids[i].startsWith(prefix))
+                files.add(new File(flexatarStorageFolder,ServerDataProc.routToFileName(fids[i],"")));
+        }
         return files.toArray(new File[0]);
     }
     /*public static String getFlexatarNameByPreviewFileName(String fileName){
