@@ -307,11 +307,13 @@ public class SurfaceTextureHelper {
     handler.post(() -> {
       if (flxDrawer == null) {
         flxDrawer = new FlxDrawer();
+
         flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser);
         flxDrawer.setIsStaticControlBind(true);
         flxDrawer.setFrame();
-        flxDrawer.screenRatio = (float)textureHeight/textureWidth;
+
       }
+      flxDrawer.screenRatio = (float)textureHeight/textureWidth;
       flxDrawer.drawToFrameBuffer();
       hasPendingTexture = true;
       tryDeliverTextureFrame();

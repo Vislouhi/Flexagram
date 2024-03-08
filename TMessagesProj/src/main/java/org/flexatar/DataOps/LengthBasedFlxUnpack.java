@@ -65,7 +65,14 @@ public class LengthBasedFlxUnpack {
             isValid = isValid && hPacks.contains(key);
         }
         Log.d("FLX_INJECT","flexatar file validation: "+isValid);
+
         return isValid;
+    }
+    public int detectFlxType(){
+        if (validate(0))return 0;
+        if (validate(1))return 1;
+        return -1;
+
     }
     public boolean validateVideo(){
         String[] keysMustBe = {

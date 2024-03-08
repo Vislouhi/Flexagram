@@ -577,7 +577,7 @@ public class FlexatarData {
         }
         float mScale =  -(ret.get(5)[0] - ret.get(4)[0]);
         for (int j = 0; j < 5; j++) {
-            ret.get(2)[1] += -ratio*speechState[j] * FlexatarCommon.speechBspKeyBshp[j] * mScale / 0.3f * 0.3f;
+            ret.get(2)[1] += -ratio*speechState[j] * FlexatarCommon.speechBspKeyBshp[j] * mScale / 0.2f * 0.3f;
         }
         return ret;
     }

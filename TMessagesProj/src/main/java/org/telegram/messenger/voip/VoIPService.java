@@ -1176,8 +1176,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 
 
 
-		if (FlexatarRenderer.isFlexatarCamera) VoIPService.getSharedInstance().setAudioListener(true);
-		VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
+
 //			Log.d("FLX_INJECT","setAudioListener flexatar");
 
 
@@ -1228,6 +1227,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 
 			captureDevice[index] = NativeInstance.createVideoCapturer(localSink[index], deviceType);
 		}
+		if (FlexatarRenderer.isFlexatarCamera) VoIPService.getSharedInstance().setAudioListener(true);
+		VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
 	}
 
 	public void setupCaptureDevice(boolean screencast, boolean micEnabled) {
@@ -1239,6 +1240,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			tgVoip[index].setupOutgoingVideoCreated(captureDevice[index]);
 			destroyCaptureDevice[index] = false;
 			videoState[index] = Instance.VIDEO_STATE_ACTIVE;
+			if (FlexatarRenderer.isFlexatarCamera) VoIPService.getSharedInstance().setAudioListener(true);
+			VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
 		}
 		if (micMute == micEnabled) {
 			setMicMute(!micEnabled, false, false);

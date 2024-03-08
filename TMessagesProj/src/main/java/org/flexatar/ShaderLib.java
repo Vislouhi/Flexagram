@@ -101,7 +101,7 @@ public class ShaderLib {
 //                    "UV.x += 0.003;" +
                     "vec2 result = uv*vec2(2.0,2.0)-vec2(1.0,1.0);" +
                     "for (int i = 0; i < 5; i++) {" +
-                    "   result.xy += speechWeights[i]*speechBshp[i] * mScale / 0.3;" +
+                    "   result.xy += speechWeights[i]*speechBshp[i] * mScale / 0.2;" +
                     "}" +
 //                    "result -= speechBshp[2];" +
                     "result.xy *= vec2(1.0,-ratio);" +

@@ -169,11 +169,14 @@ public class FlxDrawer {
 
         public void destroy() {
             for (int i = 0; i < 5; i++) {
-                headBuffers[i].destroy();
+                if (headBuffers[i]!=null)
+                    headBuffers[i].destroy();
                 mouthBuffers[i].destroy();
             }
-            eyelidVbo.destroy();
-            headTexture.release();
+            if (eyelidVbo!=null)
+                eyelidVbo.destroy();
+            if (headTexture!=null)
+                headTexture.release();
             mouthUvVbo.destroy();
             mouthIdxVbo.destroy();
             mouthTexture.release();
@@ -540,6 +543,8 @@ public class FlxDrawer {
             if (flxvData != renderParams.flexatarDataVideo){
                 if (videoToTextureArray!=null) videoToTextureArray.release();
                 videoToTextureArray=null;
+                if (buffersVideo!=null)buffersVideo.destroy();
+                buffersVideo = null;
             }
             flxvData = renderParams.flexatarDataVideo;
 
@@ -897,7 +902,7 @@ public class FlxDrawer {
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
             commonBuffers.idxVBO.unbind();
             videoProgram.unbind();
-//            drawMouthV(mouthProgram,flxvData,mouthPivots,hw5,keyVtxList,zRotMatrixInv,1f);
+//            drawMouthV(mouthVideoProgram,flxvData,mouthPivots,hw5,keyVtxList,zRotMatrixInv,1f);
             if (isFrame) {
                 frameProgram.use();
                 frameProgram.bind();
