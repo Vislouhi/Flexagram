@@ -29,6 +29,7 @@ import android.text.Layout;
 import android.text.SpannableStringBuilder;
 import android.text.StaticLayout;
 import android.text.TextPaint;
+import android.util.Log;
 import android.util.SparseIntArray;
 import android.util.StateSet;
 import android.view.HapticFeedbackConstants;
@@ -137,7 +138,7 @@ public class RecyclerListView extends RecyclerView {
     protected View selectorView;
     protected android.graphics.Rect selectorRect = new android.graphics.Rect();
     private boolean isChildViewEnabled;
-    private boolean translateSelector;
+    private int translateSelector = -1;
 
     private boolean selfOnLayout;
 
@@ -1463,6 +1464,9 @@ public class RecyclerListView extends RecyclerView {
                 if (dy != 0 && fastScroll != null) {
                     fastScroll.showFloatingDate();
                 }
+                if (pendingHighlightPosition != null) {
+                    highlightRowInternal(pendingHighlightPosition, 700, false);
+                }
             }
         });
         addOnItemTouchListener(new RecyclerListViewItemClickListener(context));
@@ -1483,9 +1487,10 @@ public class RecyclerListView extends RecyclerView {
                 continue;
             }
             int position = getChildAdapterPosition(child);
+            int y = (int) child.getTop();
             if (position >= fromAdapterPosition && position <= toAdapterPosition) {
-                top = Math.min((int) child.getY(), top);
-                bottom = Math.max((int) child.getY() + child.getHeight(), bottom);
+                top = Math.min(y, top);
+                bottom = Math.max((int) (y + child.getHeight() * child.getAlpha()), bottom);
             }
         }
 
@@ -2038,7 +2043,7 @@ public class RecyclerListView extends RecyclerView {
         }
         RecyclerView.ViewHolder holder = findViewHolderForAdapterPosition(callback.run());
         if (holder != null) {
-            positionSelector(highlightPosition = holder.getLayoutPosition(), holder.itemView);
+            positionSelector(highlightPosition = holder.getLayoutPosition(), holder.itemView, false, -1, -1, true);
             if (selectorDrawable != null) {
                 final Drawable d = selectorDrawable.getCurrent();
                 if (d instanceof TransitionDrawable) {
@@ -2058,6 +2063,7 @@ public class RecyclerListView extends RecyclerView {
                 }
             }
             if (removeAfter > 0) {
+                pendingHighlightPosition = null;
                 AndroidUtilities.runOnUIThread(removeHighlighSelectionRunnable = () -> {
                     removeHighlighSelectionRunnable = null;
                     pendingHighlightPosition = null;
@@ -2083,7 +2089,7 @@ public class RecyclerListView extends RecyclerView {
             return false;
         }
         if (disallowInterceptTouchEvents) {
-            requestDisallowInterceptTouchEvent(true);
+            requestDisallowInterceptTouchEvent(this, true);
         }
         return onInterceptTouchListener != null && onInterceptTouchListener.onInterceptTouchEvent(e) || super.onInterceptTouchEvent(e);
     }
@@ -2122,6 +2128,7 @@ public class RecyclerListView extends RecyclerView {
         if (!animateEmptyView || !SharedConfig.animationsEnabled()) {
             animated = false;
         }
+        emptyViewUpdated(emptyViewVisible, animated);
         if (animated) {
             if (emptyViewAnimateToVisibility != newVisibility) {
                 emptyViewAnimateToVisibility = newVisibility;
@@ -2165,6 +2172,10 @@ public class RecyclerListView extends RecyclerView {
             }
             hiddenByEmptyView = true;
         }
+    }
+
+    protected void emptyViewUpdated(boolean shown, boolean animated) {
+
     }
 
     public boolean emptyViewIsVisible() {
@@ -2257,7 +2268,7 @@ public class RecyclerListView extends RecyclerView {
     }
 
     private void positionSelector(int position, View sel) {
-        positionSelector(position, sel, false, -1, -1);
+        positionSelector(position, sel, false, -1, -1, false);
     }
 
     public void updateSelector() {
@@ -2267,7 +2278,7 @@ public class RecyclerListView extends RecyclerView {
         }
     }
 
-    private void positionSelector(int position, View sel, boolean manageHotspot, float x, float y) {
+    private void positionSelector(int position, View sel, boolean manageHotspot, float x, float y, boolean highlight) {
         if (removeHighlighSelectionRunnable != null) {
             AndroidUtilities.cancelRunOnUIThread(removeHighlighSelectionRunnable);
             removeHighlighSelectionRunnable = null;
@@ -2519,7 +2530,11 @@ public class RecyclerListView extends RecyclerView {
     }
 
     public void setTranslateSelector(boolean value) {
-        translateSelector = value;
+        translateSelector = value ? -2 : -1;
+    }
+
+    public void setTranslateSelectorPosition(int position) {
+        translateSelector = position <= 0 ? -1 : position;
     }
 
     @Override
@@ -2529,26 +2544,48 @@ public class RecyclerListView extends RecyclerView {
         }
 
         if (drawSelection && drawSelectorBehind && !selectorRect.isEmpty()) {
-            selectorDrawable.setBounds(selectorRect);
+            if ((translateSelector == -2 || translateSelector == selectorPosition) && selectorView != null) {
+                int bottomPadding;
+                if (getAdapter() instanceof SelectionAdapter) {
+                    bottomPadding = ((SelectionAdapter) getAdapter()).getSelectionBottomPadding(selectorView);
+                } else {
+                    bottomPadding = 0;
+                }
+                selectorDrawable.setBounds(selectorView.getLeft(), selectorView.getTop(), selectorView.getRight(), selectorView.getBottom() - bottomPadding);
+            } else {
+                selectorDrawable.setBounds(selectorRect);
+            }
             canvas.save();
-            if (translateSelector && selectorTransformer != null) {
+            if ((translateSelector == -2 || translateSelector == selectorPosition) && selectorTransformer != null) {
                 selectorTransformer.accept(canvas);
             }
-            if (translateSelector && selectorView != null) {
+            if ((translateSelector == -2 || translateSelector == selectorPosition) && selectorView != null) {
                 canvas.translate(selectorView.getX() - selectorRect.left, selectorView.getY() - selectorRect.top);
+                selectorDrawable.setAlpha((int) (0xFF * selectorView.getAlpha()));
             }
             selectorDrawable.draw(canvas);
             canvas.restore();
         }
         super.dispatchDraw(canvas);
         if (drawSelection && !drawSelectorBehind && !selectorRect.isEmpty()) {
-            selectorDrawable.setBounds(selectorRect);
+            if ((translateSelector == -2 || translateSelector == selectorPosition) && selectorView != null) {
+                int bottomPadding;
+                if (getAdapter() instanceof SelectionAdapter) {
+                    bottomPadding = ((SelectionAdapter) getAdapter()).getSelectionBottomPadding(selectorView);
+                } else {
+                    bottomPadding = 0;
+                }
+                selectorDrawable.setBounds(selectorView.getLeft(), selectorView.getTop(), selectorView.getRight(), selectorView.getBottom() - bottomPadding);
+            } else {
+                selectorDrawable.setBounds(selectorRect);
+            }
             canvas.save();
-            if (translateSelector && selectorTransformer != null) {
+            if ((translateSelector == -2 || translateSelector == selectorPosition) && selectorTransformer != null) {
                 selectorTransformer.accept(canvas);
             }
-            if (translateSelector && selectorView != null) {
+            if ((translateSelector == -2 || translateSelector == selectorPosition) && selectorView != null) {
                 canvas.translate(selectorView.getX() - selectorRect.left, selectorView.getY() - selectorRect.top);
+                selectorDrawable.setAlpha((int) (0xFF * selectorView.getAlpha()));
             }
             selectorDrawable.draw(canvas);
             canvas.restore();
@@ -2675,6 +2712,19 @@ public class RecyclerListView extends RecyclerView {
         super.requestLayout();
     }
 
+    public ViewParent getTouchParent() {
+        return null;
+    }
+    private void requestDisallowInterceptTouchEvent(View view, boolean disallow) {
+        if (view == null) return;
+        ViewParent parent = view.getParent();
+        if (parent == null) return;
+        parent.requestDisallowInterceptTouchEvent(disallow);
+        parent = getTouchParent();
+        if (parent == null) return;
+        parent.requestDisallowInterceptTouchEvent(disallow);
+    }
+
     public void setAnimateEmptyView(boolean animate, int emptyViewAnimationType) {
         animateEmptyView = animate;
         this.emptyViewAnimationType = emptyViewAnimationType;
@@ -2726,7 +2776,7 @@ public class RecyclerListView extends RecyclerView {
             listPaddings = new int[2];
             selectedPositions = new HashSet<>();
 
-            getParent().requestDisallowInterceptTouchEvent(true);
+            requestDisallowInterceptTouchEvent(this, true);
 
             this.multiSelectionListener = multiSelectionListener;
             multiSelectionGesture = true;
@@ -2748,7 +2798,7 @@ public class RecyclerListView extends RecyclerView {
             }
             if (!multiSelectionGestureStarted && Math.abs(e.getY() - lastY) > touchSlop) {
                 multiSelectionGestureStarted = true;
-                getParent().requestDisallowInterceptTouchEvent(true);
+                requestDisallowInterceptTouchEvent(this, true);
             }
             if (multiSelectionGestureStarted) {
                 chekMultiselect(e.getX(), e.getY());
@@ -2767,7 +2817,7 @@ public class RecyclerListView extends RecyclerView {
         lastY = Float.MAX_VALUE;
         multiSelectionGesture = false;
         multiSelectionGestureStarted = false;
-        getParent().requestDisallowInterceptTouchEvent(false);
+        requestDisallowInterceptTouchEvent(this, false);
         cancelMultiselectScroll();
         return super.onTouchEvent(e);
     }

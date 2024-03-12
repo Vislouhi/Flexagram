@@ -62,12 +62,12 @@ import java.util.ArrayList;
 
 public abstract class BaseFragment {
 
-    private boolean isFinished;
+    protected boolean isFinished;
     protected boolean finishing;
     protected Dialog visibleDialog;
     protected int currentAccount = UserConfig.selectedAccount;
 
-    protected View fragmentView;
+    public View fragmentView;
     protected INavigationLayout parentLayout;
     protected ActionBar actionBar;
     protected boolean inPreviewMode;
