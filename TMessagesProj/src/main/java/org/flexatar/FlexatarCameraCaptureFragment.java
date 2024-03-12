@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputType;
 import android.util.Log;
 import android.util.Size;
 import android.view.Gravity;
@@ -641,6 +642,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         linearLayout.setOrientation(LinearLayout.VERTICAL);
 
         final EditText editText = new EditText(getContext());
+        editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         editText.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));

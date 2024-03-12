@@ -6,6 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
@@ -28,6 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 
 import org.telegram.messenger.R;
@@ -83,7 +85,26 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     private TLRPC.User currentUser;
     private LinearLayout mainLayout;
     private ViewPagerFixed.TabsView tabsView;
+    private static int currentTabId = -1;
 
+    private static int getCurrentTabId(){
+        if (currentTabId!=-1) return currentTabId;
+        String storageName = "flexatar_type_selected_cabintet";
+        Context context = ApplicationLoader.applicationContext;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        int currentTabId = sharedPreferences.getInt("current_tab", 0);
+        return currentTabId;
+    }
+    private static void setCurrentTabId(int tabId){
+        currentTabId = tabId;
+        String storageName = "flexatar_type_selected_cabintet";
+        Context context = ApplicationLoader.applicationContext;
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("current_tab", tabId);
+        editor.apply();
+
+    }
     @Override
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
@@ -117,7 +138,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         tabsView.tabMarginDp = 16;
         tabsView.addTab(0, LocaleController.getString("VideoTab",R.string.VideoTab));
         tabsView.addTab(1, LocaleController.getString("PhotoTab",R.string.PhotoTab));
-        tabsView.selectTabWithId(0,1f);
+        tabsView.selectTabWithId(getCurrentTabId(),1f);
         tabsView.setPadding(0,6,0,6);
         tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
             @Override
@@ -129,6 +150,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
                 }
                 itemAdapter.setUpFlexatarList(page);
+                setCurrentTabId(page);
 
             }
 
@@ -678,8 +700,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
 
-            builder.setTitle("Delete flexatars.");
-            builder.setMessage("Do you want to delete selected flexatars from local storage?");
+            builder.setTitle(LocaleController.getString("DeleteFlexatar",R.string.DeleteFlexatar));
+            builder.setMessage(LocaleController.getString("DeleteFlexatarMsg",R.string.DeleteFlexatarMsg));
 
         builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialogInterface, i) -> {
 

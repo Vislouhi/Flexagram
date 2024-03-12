@@ -74,6 +74,8 @@
     <string name="UseVideoForFlexatar">Make flexatar with this video?</string>
     <string name="VideoTab">Video</string>
     <string name="PhotoTab">Photo</string>
+    <string name="DeleteFlexatar">Delete flexatars</string>
+    <string name="DeleteFlexatarMsg">Do you want to delete selected flexatars from local storage?</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

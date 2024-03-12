@@ -31760,6 +31760,26 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 alert.setCalcMandatoryInsets(isKeyboardVisible());
                 showDialog(alert);
             } else if (message.isVideo() || message.type == MessageObject.TYPE_PHOTO || message.type == MessageObject.TYPE_TEXT && !message.isWebpageDocument() || message.isGif()) {
+//                message.getDocumentName()
+                Log.d("FLX_INJECT","photo messageText "+ message.messageText);
+//                Log.d("FLX_INJECT","photo getDocumentName "+ message.getDocumentName());
+//                Log.d("FLX_INJECT","photo hideSendersName "+ message.hideSendersName);
+//                Log.d("FLX_INJECT","photo localName "+ message.localName);
+//                Log.d("FLX_INJECT","photo customName "+ message.customName);
+//                Log.d("FLX_INJECT","photo messageText "+ message.messageText);
+//                Log.d("FLX_INJECT","photo via_bot_name "+ message.messageOwner.via_bot_name);
+//                Log.d("FLX_INJECT","photo message "+ message.messageOwner.message);
+//                Log.d("FLX_INJECT","photo attachPath "+ message.messageOwner.attachPath);
+                for (int i = 0; i < message.messageOwner.entities.size(); i++) {
+                    /*for (Map.Entry<String, String> entry : message.messageOwner.params.entrySet()) {
+                        Log.d("FLX_INJECT","Key: " + entry.getKey() + ", Value: " + entry.getValue());
+                    }*/
+                    Log.d("FLX_INJECT","photo attachPath"+ message.messageOwner.entities.get(i).url);
+                    Log.d("FLX_INJECT","entity instance"+ message.messageOwner.entities.get(i));
+                }
+//                Log.d("FLX_INJECT","photo attachPath "+ message.messageOwner.entities.size());
+//                Log.d("FLX_INJECT","photo via_bot_name "+ message.messageOwner.na);
+//                Log.d("FLX_INJECT","photo customName "+ message.);
                 openPhotoViewerForMessage(cell, message);
             } else if (message.type == MessageObject.TYPE_VIDEO) {
                 sendSecretMessageRead(message, true);

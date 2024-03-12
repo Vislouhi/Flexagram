@@ -47,7 +47,7 @@ public class AlertDialogs {
     public static interface OnNameReady{
         void onNameReady(String name);
     }
-    public static AlertDialog askFlexatarNameDialog(Context context,String initialName,OnNameReady listener){
+    public static Dialog askFlexatarNameDialog(Context context,String initialName,OnNameReady listener){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
 
         builder.setTitle(LocaleController.getString("FlexatarName", R.string.FlexatarName));
@@ -67,10 +67,10 @@ public class AlertDialogs {
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
             listener.onNameReady(editText.getText().toString());
         });
-        AlertDialog alertDialog = builder.create();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-        }
+        Dialog alertDialog = builder.create();
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG);
+//        }
 
         return alertDialog;
 
