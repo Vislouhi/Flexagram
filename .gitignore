@@ -4,3 +4,16 @@ build/
 obj/
 *.iml
 local.properties
+google-services.json
+TMessagesProj/.cxx/
+TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
+TMessagesProj/src/main/assets/flexatar/
+TMessagesProj_AppStandalone/google-services.json
+TMessagesProj_App/bundleAfat/
+TMessagesProj_AppStandalone/afat/
+TMessagesProj_AppHuawei/google-services.json
+TMessagesProj_AppHockeyApp/google-services.json
+TMessagesProj_App/google-services.json
+TMessagesProj/config/release.keystore
+gradle.properties
+TMessagesProj_App/afat/
