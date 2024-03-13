@@ -2336,6 +2336,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 //                    }
                 }
             } else if (event.getAction() == MotionEvent.ACTION_UP) {
+
                 if (instantPressed) {
                     if (documentAttachType == DOCUMENT_ATTACH_TYPE_ROUND) {
                         if (!MediaController.getInstance().isPlayingMessage(currentMessageObject) || MediaController.getInstance().isMessagePaused()) {

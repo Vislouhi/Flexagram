@@ -450,14 +450,14 @@ public class FlexatarStorageManager {
             setFlexatarGroup();
             newFlexatarLoaded = true;
             drawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
-                mixWeight = getAnimatedMixWeight();
-                effectID = getEffectID();
-                isEffectsOn = isEffectOn();
                 flexatarType = getFlxType();
 //                Log.d("FLX_INJECT","flxTyrp: "+flexatarType);
                 if (flexatarType == 0){
                     flexatarDataVideo = getVideoFlxData();
                 }else {
+                    mixWeight = getAnimatedMixWeight();
+                    effectID = getEffectID();
+                    isEffectsOn = isEffectOn();
 
                     if (!isEffectsOn) {
                         if (groupFiles.size() > 0) {

@@ -783,8 +783,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertFlexatarLayout flexatarLayout;
     private ChatAttachAlertPhotoLayoutPreview photoPreviewLayout;
     public ChatAttachAlertColorsLayout colorsLayout;
-// TODO flexatar layouts[7] change to layouts[8]
-    private AttachAlertLayout[] layouts = new AttachAlertLayout[9];
+    private ChatAttachAlertQuickRepliesLayout quickRepliesLayout;
+    private AttachAlertLayout[] layouts = new AttachAlertLayout[8];
     private LongSparseArray<ChatAttachAlertBotWebViewLayout> botAttachLayouts = new LongSparseArray<>();
     private AttachAlertLayout currentAttachLayout;
     private AttachAlertLayout nextAttachLayout;

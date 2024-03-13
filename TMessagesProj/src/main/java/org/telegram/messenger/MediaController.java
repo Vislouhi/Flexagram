@@ -4165,7 +4165,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     FileLog.d("stop recording internal in queue " + recordingAudioFileToSend.exists() + " " + recordingAudioFileToSend.length());
                 }
                 if (recordTimeCount <= 700) {
-                    AndroidUtilities.runOnUIThread(()->{
+                    AndroidUtilities.runOnUIThread(() -> {
                         NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.audioRecordTooShort, recordingGuid, false, (int) recordTimeCount);
                         AutoDeleteMediaTask.unlockFile(recordingAudioFileToSend);
                         recordingAudioFileToSend.delete();
@@ -4174,7 +4174,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     return;
                 }
                 String absPath = recordingAudioFileToSend.getAbsolutePath();
-                String audioAacPath = absPath.substring(0,absPath.lastIndexOf('.')) + ".aac";
+                String audioAacPath = absPath.substring(0, absPath.lastIndexOf('.')) + ".aac";
 
                 Config.stopRecordingAudioSemaphore = new CountDownLatch(1);
                 Config.runAudioCallback();
@@ -4184,7 +4184,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
 
                 FlexatarNotificator.isMakingFlexatarRoundVideo = true;
                 OpusToAacConverter converter = new OpusToAacConverter();
-                converter.convertOpusToAac(new File(absPath),new File(audioAacPath),()->{
+                converter.convertOpusToAac(new File(absPath), new File(audioAacPath), () -> {
                     FlexatarNotificator.isMakingFlexatarRoundVideo = false;
                     SpeechAnimation.dropModels();
                     try {
@@ -4192,7 +4192,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    Log.d("FLX_INJECT"," sending thread unblocked");
+                    Log.d("FLX_INJECT", " sending thread unblocked");
                     if (Config.chosenAudioWithFlexatar) {
 
 //                        Config.runChooseFlexatarForAudioCallback();
@@ -4233,15 +4233,15 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                     videoEditedInfo.estimatedDuration = 3L * 1000000L;
 
                                     AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
-                                    SendMessagesHelper.prepareSendingVideo(accountInstance, videoFile.getAbsolutePath(), videoEditedInfo, recordDialogId, null, null, null, null, null, 0, null, true, 0, true, false, "");
+                                    SendMessagesHelper.prepareSendingVideo(accountInstance, videoFile.getAbsolutePath(), videoEditedInfo, recordDialogId, null, null, null, null, null, 0, null, true, 0, true, false, "",null,0);
 //                                    videoFile.delete();
                                     requestAudioFocus(false);
                                     Log.d("FLX_INJECT", " flexatar round video was sent");
                                 });
                             });
-                        }else{
+                        } else {
                             AndroidUtilities.runOnUIThread(() -> {
-                                Log.d("FLX_INJECT","flexatar round video send canceled");
+                                Log.d("FLX_INJECT", "flexatar round video send canceled");
                                 new File(audioAacPath).delete();
                                 AutoDeleteMediaTask.unlockFile(recordingAudioFileToSend);
 
@@ -4249,7 +4249,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                 requestAudioFocus(false);
                             });
                         }
-                    }else {
+                    } else {
                         new File(audioAacPath).delete();
                         Log.d("FLX_INJECT", " send sound option chosen");
                         AndroidUtilities.runOnUIThread(() -> {
@@ -4292,6 +4292,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     }
 
 
+                });
             });
         } else {
             AutoDeleteMediaTask.unlockFile(recordingAudioFile);

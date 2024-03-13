@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 
 public class FlexatarVideoEncoder {
@@ -51,13 +52,30 @@ public class FlexatarVideoEncoder {
         this.completion=completion;
 
         FlexatarStorageManager.FlexatarChooser chooser = FlexatarStorageManager.roundFlexatarChooser;
+        int flxType = chooser.getFlxType();
         FlxDrawer flxDrawer;
         flxDrawer = new FlxDrawer();
+        flxDrawer.setSize(mWidth,mHeight);
         flxDrawer.setPromo();
         flxDrawer.setRealtimeAnimation(false);
         flxDrawer.setTgRoundVideo();
-        FlexatarData firstFlx = FlexatarData.factory(chooser.getChosenFirst());
-        FlexatarData secondFlx = chooser.getEffectIndex() == NO ? null : FlexatarData.factory(chooser.getChosenSecond());
+
+        FlexatarData firstFlx;
+        FlexatarData secondFlx;
+        FlexatarData videoFlx;
+        if (flxType==1){
+            firstFlx = FlexatarData.factory(chooser.getChosenFirst());
+            secondFlx = chooser.getEffectIndex() == NO ? null : FlexatarData.factory(chooser.getChosenSecond());
+            videoFlx = null;
+        }else if (flxType==0){
+            firstFlx = null;
+            secondFlx = null;
+            videoFlx = FlexatarData.factory(chooser.getChosenVideo());
+        }else{
+            firstFlx = null;
+            secondFlx = null;
+            videoFlx = null;
+        }
         /*flxDrawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
             mixWeight = 1f;
             effectID = 0;
@@ -188,44 +206,61 @@ public class FlexatarVideoEncoder {
 
             mInputSurface.makeCurrent();
             long presentationTime = 0;
+            Log.d("FLX_INJECT","flxType "+flxType);
+            Log.d("FLX_INJECT","videoFlx "+videoFlx);
+            if (flxType == 0) {
+                flxDrawer.flxvData = videoFlx;
+                CountDownLatch latch = new CountDownLatch(1);
+                flxDrawer.onVideoFrameAvailableListener = ()->{
+                    latch.countDown();
+                    Log.d("FLX_INJECT","texture obtained");
+                };
+                Log.d("FLX_INJECT","request texture");
+                flxDrawer.prepareVideoTextures();
+                flxDrawer.videoToTextureArray.getNextFrame();
+                flxDrawer.videoToTextureArray.getNextFrame();
+                flxDrawer.videoToTextureArray.updateTexture();
 
-
+                latch.await();
+            }
             for (int i = 0; i < animationPattern.size(); i++) {
                 drainEncoder(false);
 
                 int finalI = i;
                 flxDrawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
-
+                    flexatarType=flxType;
                     flexatarData = firstFlx;
                     flexatarDataAlt = secondFlx;
+                    flexatarDataVideo = videoFlx;
+                    if (flxType == 1) {
+                        if (chooser.getEffectIndex() == NO) {
+                            mixWeight = 1f;
+                            effectID = 0;
+                            isEffectsOn = false;
+                            if (groupFiles.size() > 0) {
+                                mState = onTimerListener.onTic(mState);
+                                mixWeight = mState.mixWeight;
+                                effectID = mState.effectID;
+                                isEffectsOn = mState.isEffectsOn;
+                                flexatarData = mState.flexatarData;
+                                flexatarDataAlt = mState.flexatarDataAlt;
+                            }
+                        } else if (chooser.getEffectIndex() == MIX) {
+                            mixWeight = chooser.getMixWeight();
+                            effectID = 0;
+                            isEffectsOn = true;
 
-                    if (chooser.getEffectIndex() == NO){
-                        mixWeight=1f;
-                        effectID = 0;
-                        isEffectsOn = false;
-                        if (groupFiles.size()>0){
-                            mState = onTimerListener.onTic(mState);
-                            mixWeight = mState.mixWeight;
-                            effectID = mState.effectID;
-                            isEffectsOn = mState.isEffectsOn;
-                            flexatarData = mState.flexatarData;
-                            flexatarDataAlt = mState.flexatarDataAlt;
+                        } else if (chooser.getEffectIndex() == MORPH) {
+
+                            mixWeight = 1f - (float) finalI / (float) animationPattern.size();
+                            effectID = 0;
+                            isEffectsOn = true;
+
+                        } else if (chooser.getEffectIndex() == HYBRID) {
+                            mixWeight = (float) finalI * 0.005f;
+                            effectID = 1;
+                            isEffectsOn = true;
                         }
-                    } else if (chooser.getEffectIndex() == MIX) {
-                        mixWeight = chooser.getMixWeight();
-                        effectID = 0;
-                        isEffectsOn = true;
-
-                    }else if (chooser.getEffectIndex() == MORPH) {
-
-                        mixWeight = 1f - (float) finalI / (float) animationPattern.size();
-                        effectID = 0;
-                        isEffectsOn = true;
-
-                    }else if (chooser.getEffectIndex() == HYBRID) {
-                        mixWeight = (float) finalI * 0.005f;
-                        effectID = 1;
-                        isEffectsOn = true;
                     }
 
 
@@ -245,10 +280,18 @@ public class FlexatarVideoEncoder {
                 if (i == animationPattern.size()/2)
                     flxDrawer.builtinAnimator.reverse();
 
+
                 GLES20.glClearColor(0f,0f,0f,0f);
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
                 flxDrawer.setSpeechState(animationPattern.get(i));
+
+
+
                 flxDrawer.draw();
+                int error = GLES20.glGetError();
+                if (error != GLES20.GL_NO_ERROR) {
+                    Log.e("FLX_INJECT", "Error openg: " + error);
+                }
                 // Generate a new frame of input.
 //                generateSurfaceFrame(i);
                 mInputSurface.setPresentationTime(presentationTime);
@@ -265,13 +308,17 @@ public class FlexatarVideoEncoder {
 
             // send end-of-stream to encoder, and drain remaining output
             drainEncoder(true);
-        } finally {
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        releaseEncoder();
+        /*finally {
             // release encoder, muxer, and input Surface
 
             releaseEncoder();
 
 
-        }
+        }*/
     }
     public void addAudioTrack(){
         extractor = new MediaExtractor();

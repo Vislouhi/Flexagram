@@ -28,6 +28,7 @@ public class FlxDrawer {
     private final String PARAMETER_SET_3 = "parSet3";
     private final String HEAD_TEXTURE_SAMPLER = "uSampler";
     private final String HEAD_TEXTURE_SAMPLER_ALT = "uSampler1";
+    public Runnable onVideoFrameAvailableListener;
     private FlexatarCommon.GlBuffers commonBuffers;
     private float[] viewModelMatrix;
     private ShaderProgram headProgram;
@@ -60,7 +61,7 @@ public class FlxDrawer {
     private boolean isTgRoundVideo = false;
     private ShaderProgram videoProgram;
     private SurfaceTexture surfaceTexture;
-    private FlexatarData flxvData;
+    public FlexatarData flxvData;
     private int vidoeoOesTextureid;
     private Surface surface;
     private MediaPlayer mediaPlayer;
@@ -423,8 +424,11 @@ public class FlxDrawer {
     public void prepareVideoTextures(){
         initCommonBuffers();
         initVideoTexture();
-        if (videoToTextureArray != null)
+
+        if (videoToTextureArray != null) {
+
             videoToTextureArray.draw();
+        }
 //        checkMemoryAvailable();
     }
     public int drawToFrameBuffer(){
@@ -556,7 +560,7 @@ public class FlxDrawer {
             drawVideo();
         }else if (flexatarType == 1) {
 
-//        Log.d("FLX_INJECT","flexatarData "+flexatarData);
+//        Log.d("FLX_INJECT","screen ratio "+screenRatio);
             if (flexatarData == null) return;
 //        Log.d("FLX_INJECT", "mixWeight "+mixWeight);
             synchronized (loadBufferMutex) {
@@ -799,7 +803,9 @@ public class FlxDrawer {
     private float videoScreenRatio = 1f;
     private void initVideoTexture(){
         if (videoToTextureArray!=null || flxvData == null ) return;
+//        Log.d("FLX_INJECT","initVideoTexture");
         videoToTextureArray = new VideoToTextureArray(commonBuffers,flxvData.getVideo());
+        videoToTextureArray.onFrameAvailableListener = onVideoFrameAvailableListener;
         videoToTextureArray.getNextFrame();
         videoScreenRatio = screenRatio/((float)videoToTextureArray.saveWidth/videoToTextureArray.saveHeight);
 //        videoScreenRatio = (400f/600f)/((float)videoToTextureArray.saveWidth/videoToTextureArray.saveHeight);
@@ -826,7 +832,7 @@ public class FlxDrawer {
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-
+        Log.d("FLX_INJECT","draw video frame"+videoTextureId);
         if (videoTextureId>=0) {
 
             if (isStaticControlBind) {
@@ -900,6 +906,7 @@ public class FlxDrawer {
             GLES20.glUniform1i(videoTextureHandle, 0);
             commonBuffers.idxVBO.bind();
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, commonBuffers.idxCount, GLES20.GL_UNSIGNED_SHORT, 0);
+
             commonBuffers.idxVBO.unbind();
             videoProgram.unbind();
 //            drawMouthV(mouthVideoProgram,flxvData,mouthPivots,hw5,keyVtxList,zRotMatrixInv,1f);

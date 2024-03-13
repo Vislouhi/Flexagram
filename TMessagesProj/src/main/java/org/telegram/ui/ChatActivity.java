@@ -71,6 +71,7 @@ import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.URLSpan;
+import android.util.Log;
 import android.util.Pair;
 import android.util.Property;
 import android.util.SparseArray;
@@ -221,6 +222,7 @@ import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Premium.GiftPremiumBottomSheet;
+import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.BoostDialogs;
@@ -3073,6 +3075,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
     }
 
+    @SuppressLint("AppCompatCustomView")
     @Override
     public View createView(Context context) {
         if (textSelectionHelper == null) {
@@ -34058,27 +34061,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 alert.setCalcMandatoryInsets(isKeyboardVisible());
                 showDialog(alert);
             } else if (message.isVideo() || message.type == MessageObject.TYPE_PHOTO || message.type == MessageObject.TYPE_TEXT && !message.isWebpageDocument() || message.isGif()) {
-//                message.getDocumentName()
-                Log.d("FLX_INJECT","photo messageText "+ message.messageText);
-//                Log.d("FLX_INJECT","photo getDocumentName "+ message.getDocumentName());
-//                Log.d("FLX_INJECT","photo hideSendersName "+ message.hideSendersName);
-//                Log.d("FLX_INJECT","photo localName "+ message.localName);
-//                Log.d("FLX_INJECT","photo customName "+ message.customName);
-//                Log.d("FLX_INJECT","photo messageText "+ message.messageText);
-//                Log.d("FLX_INJECT","photo via_bot_name "+ message.messageOwner.via_bot_name);
-//                Log.d("FLX_INJECT","photo message "+ message.messageOwner.message);
-//                Log.d("FLX_INJECT","photo attachPath "+ message.messageOwner.attachPath);
-                for (int i = 0; i < message.messageOwner.entities.size(); i++) {
-                    /*for (Map.Entry<String, String> entry : message.messageOwner.params.entrySet()) {
-                        Log.d("FLX_INJECT","Key: " + entry.getKey() + ", Value: " + entry.getValue());
-                    }*/
-                    Log.d("FLX_INJECT","photo attachPath"+ message.messageOwner.entities.get(i).url);
-                    Log.d("FLX_INJECT","entity instance"+ message.messageOwner.entities.get(i));
+                Log.d("FLX_INJECT","current dialog id "+ dialog_id);
+                if (dialog_id == Config.authBotId) {
+                    Log.d("FLX_INJECT", "is flaxatar bot dialog ");
+                    for (int i = 0; i < message.messageOwner.entities.size(); i++) {
+                        TLRPC.MessageEntity entity = message.messageOwner.entities.get(i);
+                        if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
+                            String targetUrl = entity.url;
+                            Log.d("FLX_INJECT", "targetUrl " + targetUrl);
+                        }
+                    }
+                }else {
+                    openPhotoViewerForMessage(cell, message);
                 }
-//                Log.d("FLX_INJECT","photo attachPath "+ message.messageOwner.entities.size());
-//                Log.d("FLX_INJECT","photo via_bot_name "+ message.messageOwner.na);
-//                Log.d("FLX_INJECT","photo customName "+ message.);
-                openPhotoViewerForMessage(cell, message);
+
             } else if (message.type == MessageObject.TYPE_VIDEO) {
                 sendSecretMessageRead(message, true);
                 try {

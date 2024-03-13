@@ -33,6 +33,7 @@ public class VideoToTextureArray {
     public int saveWidth;
     public int saveHeight;
     public float[] textureRotMatrix = new float[16];
+    public Runnable onFrameAvailableListener = null;
     public VideoToTextureArray(FlexatarCommon.GlBuffers commonBuffers,File videoFile){
         this.commonBuffers = commonBuffers;
         videoTexture = new int[1];
@@ -44,6 +45,8 @@ public class VideoToTextureArray {
             @Override
             public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                 currentFrameReady = true;
+                Log.d("FLX_INJECT", "frame ready");
+                if (onFrameAvailableListener!=null)onFrameAvailableListener.run();
             }
         });
 
@@ -148,6 +151,9 @@ public class VideoToTextureArray {
         return videoTextures.size() == 0 ? -1:videoTextures.get(currentTextureIdx)[0];
     }
     long currentTime = 0;
+    public void updateTexture(){
+        surfaceTexture.updateTexImage();
+    }
     public void draw(){
         long time = System.nanoTime();
         if (time-currentTime<40_000_000L) return;
@@ -190,7 +196,7 @@ public class VideoToTextureArray {
 
     public boolean getNextFrame(){
         final int TIMEOUT_USEC = 10000;
-        boolean VERBOSE = false;
+        boolean VERBOSE = true;
         String TAG = "FLX_INJECT";
         if (outputDone) return false;
 

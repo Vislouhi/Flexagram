@@ -271,12 +271,12 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
         }
     }
     @Override
-    int needsActionBar() {
+    public int needsActionBar() {
         return 1;
     }
 
     @Override
-    int getCurrentItemTop() {
+    public int getCurrentItemTop() {
         if (listView.getChildCount() <= 0) {
             return Integer.MAX_VALUE;
         }
@@ -297,17 +297,17 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
-    int getListTopPadding() {
+    public int getListTopPadding() {
         return listView.getPaddingTop();
     }
 
     @Override
-    int getFirstOffset() {
+    public int getFirstOffset() {
         return getListTopPadding() + AndroidUtilities.dp(5);
     }
 
     @Override
-    void onPreMeasure(int availableWidth, int availableHeight) {
+    public void onPreMeasure(int availableWidth, int availableHeight) {
         int padding;
         if (parentAlert.actionBar.isSearchFieldVisible() || parentAlert.sizeNotifierFrameLayout.measureKeyboardHeight() > AndroidUtilities.dp(20)) {
             padding = AndroidUtilities.dp(56);
@@ -334,7 +334,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
-    int getButtonsHideOffset() {
+    public int getButtonsHideOffset() {
         return AndroidUtilities.dp(62);
     }
 
@@ -347,7 +347,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
-    void scrollToTop() {
+    public void scrollToTop() {
         listView.smoothScrollToPosition(0);
     }
 
@@ -360,7 +360,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
 
     }
     @Override
-    void onShow(ChatAttachAlert.AttachAlertLayout previousLayout) {
+    public void onShow(ChatAttachAlert.AttachAlertLayout previousLayout) {
 
         parentAlert.actionBar.setTitle(LocaleController.getString("SelectFile", R.string.SelectFile));
 

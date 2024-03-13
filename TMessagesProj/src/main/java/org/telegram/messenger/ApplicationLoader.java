@@ -37,6 +37,7 @@ import androidx.multidex.MultiDex;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
+import org.flexatar.FlexatarMessageController;
 import org.json.JSONObject;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
@@ -245,6 +246,7 @@ public class ApplicationLoader extends Application {
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) { //TODO improve account
             ContactsController.getInstance(a).checkAppAccount();
             DownloadController.getInstance(a);
+            FlexatarMessageController.getInstance(a);
         }
         BillingController.getInstance().startConnection();
     }
