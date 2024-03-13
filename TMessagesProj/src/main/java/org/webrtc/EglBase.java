@@ -154,7 +154,7 @@ public interface EglBase {
    * If |sharedContext| is null, a root context is created. This function will try to create an EGL
    * 1.4 context if possible, and an EGL 1.0 context otherwise.
    */
-  public static EglBase create(@Nullable Context sharedContext, int[] configAttributes) {
+  static EglBase create(@Nullable Context sharedContext, int[] configAttributes) {
     Log.d("FLX_INJECT","sharedContext " + sharedContext);
     if (sharedContext == null) {
       return EglBase14Impl.isEGL14Supported() ? createEgl14(configAttributes)

@@ -17,11 +17,16 @@ import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.opengl.GLES20;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Surface;
 
 import org.flexatar.DataOps.FlexatarData;
 import org.telegram.messenger.ApplicationLoader;
+import org.webrtc.EglBase;
+import org.webrtc.EglBase14;
+import org.webrtc.EglBase14Impl;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +42,7 @@ public class FlexatarVideoEncoder {
     private final String outputPath;
     private final File aacFile;
     private final Runnable completion;
+    private EglBase eglBase = null;
     private FlxDrawer.GroupMorphState mState;
     private MediaMuxer mMuxer;
     private FlexatarVideoEncoder.CodecInputSurface mInputSurface;
@@ -84,7 +90,57 @@ public class FlexatarVideoEncoder {
         }});*/
 
 //        flxDrawer.setFlexatarData(FlexatarData.factory(chooser.getChosenFirst()));
+        final HandlerThread thread = new HandlerThread("video_flexatar_textures_thread");
+        thread.start();
+        final Handler handler = new Handler(thread.getLooper());
+        CountDownLatch latch = new CountDownLatch(1);
 
+        handler.post(()->{
+            synchronized (EglBase.lock) {
+                eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
+                try {
+                    // Both these statements have been observed to fail on rare occasions, see BUG=webrtc:5682.
+                    eglBase.createDummyPbufferSurface();
+                    eglBase.makeCurrent();
+                } catch (RuntimeException e) {
+                    // Clean up before rethrowing the exception.
+                    eglBase.release();
+                    handler.getLooper().quit();
+                    throw e;
+                }
+            }
+            if (flxType == 0) {
+                flxDrawer.flxvData = videoFlx;
+
+                flxDrawer.onVideoFrameAvailableListener = new Runnable() {
+                    private int counter = 0;
+                    @Override
+                    public void run() {
+                        flxDrawer.videoToTextureArray.draw(false);
+//                        if (flxDrawer.videoToTextureArray.alFramesLoaded() )
+                        if (flxDrawer.videoToTextureArray.alFramesLoaded() || counter >= animationPattern.size()) {
+                            flxDrawer.videoToTextureArray.destroy();
+                            latch.countDown();
+                            Log.d("FLX_INJECT", "texture obtained");
+                        }
+
+                        counter+=1;
+                    }
+                };
+
+
+
+                Log.d("FLX_INJECT","request texture");
+                flxDrawer.prepareVideoTextures();
+
+            }
+        });
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         flxDrawer.screenRatio = (float) mWidth / (float) mHeight;
        /* if (chooser.getEffectIndex() == MIX){
 //            flxDrawer.setFlexatarDataAlt(FlexatarData.factory(chooser.getChosenSecond()));
@@ -192,7 +248,7 @@ public class FlexatarVideoEncoder {
                 throw new RuntimeException(e);
             }
             mEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            mInputSurface = new FlexatarVideoEncoder.CodecInputSurface(mEncoder.createInputSurface());
+            mInputSurface = new FlexatarVideoEncoder.CodecInputSurface(mEncoder.createInputSurface(),eglBase);
             mEncoder.start();
             mTrackIndex = -1;
             mMuxerStarted = false;
@@ -206,23 +262,9 @@ public class FlexatarVideoEncoder {
 
             mInputSurface.makeCurrent();
             long presentationTime = 0;
-            Log.d("FLX_INJECT","flxType "+flxType);
-            Log.d("FLX_INJECT","videoFlx "+videoFlx);
-            if (flxType == 0) {
-                flxDrawer.flxvData = videoFlx;
-                CountDownLatch latch = new CountDownLatch(1);
-                flxDrawer.onVideoFrameAvailableListener = ()->{
-                    latch.countDown();
-                    Log.d("FLX_INJECT","texture obtained");
-                };
-                Log.d("FLX_INJECT","request texture");
-                flxDrawer.prepareVideoTextures();
-                flxDrawer.videoToTextureArray.getNextFrame();
-                flxDrawer.videoToTextureArray.getNextFrame();
-                flxDrawer.videoToTextureArray.updateTexture();
+//            Log.d("FLX_INJECT","flxType "+flxType);
+//            Log.d("FLX_INJECT","videoFlx "+videoFlx);
 
-                latch.await();
-            }
             for (int i = 0; i < animationPattern.size(); i++) {
                 drainEncoder(false);
 
@@ -285,7 +327,9 @@ public class FlexatarVideoEncoder {
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
                 flxDrawer.setSpeechState(animationPattern.get(i));
 
-
+                if (flxType == 0) {
+                    flxDrawer.videoToTextureArray.draw(false);
+                }
 
                 flxDrawer.draw();
                 int error = GLES20.glGetError();
@@ -308,17 +352,15 @@ public class FlexatarVideoEncoder {
 
             // send end-of-stream to encoder, and drain remaining output
             drainEncoder(true);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
-        releaseEncoder();
-        /*finally {
+        finally {
             // release encoder, muxer, and input Surface
-
             releaseEncoder();
+            handler.post(()-> {
+                eglBase.release();
+            });
 
-
-        }*/
+        }
     }
     public void addAudioTrack(){
         extractor = new MediaExtractor();
@@ -459,6 +501,7 @@ public class FlexatarVideoEncoder {
     }
     private static class CodecInputSurface {
         private static final int EGL_RECORDABLE_ANDROID = 0x3142;
+        private final EglBase sharedContext;
 
         private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
         private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
@@ -469,11 +512,12 @@ public class FlexatarVideoEncoder {
         /**
          * Creates a CodecInputSurface from a Surface.
          */
-        public CodecInputSurface(Surface surface) {
+        public CodecInputSurface(Surface surface,EglBase sharedContext) {
             if (surface == null) {
                 throw new NullPointerException();
             }
             mSurface = surface;
+            this.sharedContext = sharedContext;
 
             eglSetup();
         }
@@ -482,47 +526,54 @@ public class FlexatarVideoEncoder {
          * Prepares EGL.  We want a GLES 2.0 context and a surface that supports recording.
          */
         private void eglSetup() {
-            mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-            if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
-                throw new RuntimeException("unable to get EGL14 display");
+            synchronized (EglBase.lock) {
+                mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+                if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
+                    throw new RuntimeException("unable to get EGL14 display");
+                }
+                int[] version = new int[2];
+                if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
+                    throw new RuntimeException("unable to initialize EGL14");
+                }
+
+                // Configure EGL for recording and OpenGL ES 2.0.
+                int[] attribList = {
+                        EGL14.EGL_RED_SIZE, 8,
+                        EGL14.EGL_GREEN_SIZE, 8,
+                        EGL14.EGL_BLUE_SIZE, 8,
+                        EGL14.EGL_ALPHA_SIZE, 8,
+                        EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+                        EGL_RECORDABLE_ANDROID, 1,
+                        EGL14.EGL_NONE
+                };
+                EGLConfig[] configs = new EGLConfig[1];
+                int[] numConfigs = new int[1];
+                EGL14.eglChooseConfig(mEGLDisplay, attribList, 0, configs, 0, configs.length,
+                        numConfigs, 0);
+                checkEglError("eglCreateContext RGB888+recordable ES2");
+
+                // Configure context for OpenGL ES 2.0.
+                int[] attrib_list = {
+                        EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
+                        EGL14.EGL_NONE
+                };
+                EGLContext shared = EGL14.EGL_NO_CONTEXT;
+                if (sharedContext != null) {
+
+                    shared = ((EglBase14.Context) sharedContext.getEglBaseContext()).getRawContext();
+                }
+                mEGLContext = EGL14.eglCreateContext(mEGLDisplay, configs[0], shared,
+                        attrib_list, 0);
+                checkEglError("eglCreateContext");
+
+                // Create a window surface, and attach it to the Surface we received.
+                int[] surfaceAttribs = {
+                        EGL14.EGL_NONE
+                };
+                mEGLSurface = EGL14.eglCreateWindowSurface(mEGLDisplay, configs[0], mSurface,
+                        surfaceAttribs, 0);
+                checkEglError("eglCreateWindowSurface");
             }
-            int[] version = new int[2];
-            if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
-                throw new RuntimeException("unable to initialize EGL14");
-            }
-
-            // Configure EGL for recording and OpenGL ES 2.0.
-            int[] attribList = {
-                    EGL14.EGL_RED_SIZE, 8,
-                    EGL14.EGL_GREEN_SIZE, 8,
-                    EGL14.EGL_BLUE_SIZE, 8,
-                    EGL14.EGL_ALPHA_SIZE, 8,
-                    EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-                    EGL_RECORDABLE_ANDROID, 1,
-                    EGL14.EGL_NONE
-            };
-            EGLConfig[] configs = new EGLConfig[1];
-            int[] numConfigs = new int[1];
-            EGL14.eglChooseConfig(mEGLDisplay, attribList, 0, configs, 0, configs.length,
-                    numConfigs, 0);
-            checkEglError("eglCreateContext RGB888+recordable ES2");
-
-            // Configure context for OpenGL ES 2.0.
-            int[] attrib_list = {
-                    EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
-                    EGL14.EGL_NONE
-            };
-            mEGLContext = EGL14.eglCreateContext(mEGLDisplay, configs[0], EGL14.EGL_NO_CONTEXT,
-                    attrib_list, 0);
-            checkEglError("eglCreateContext");
-
-            // Create a window surface, and attach it to the Surface we received.
-            int[] surfaceAttribs = {
-                    EGL14.EGL_NONE
-            };
-            mEGLSurface = EGL14.eglCreateWindowSurface(mEGLDisplay, configs[0], mSurface,
-                    surfaceAttribs, 0);
-            checkEglError("eglCreateWindowSurface");
         }
 
         /**

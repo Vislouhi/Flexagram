@@ -448,7 +448,7 @@ public class FlxDrawer {
 
         GLES20.glViewport(0, 0, 400, 600);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        draw();
+        draw(true);
 //        drawVideo();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         int error = GLES20.glGetError();
@@ -510,7 +510,10 @@ public class FlxDrawer {
         RenderParams onFrameStart();
     }
     public AtomicReference<OnFrameStart> onFrameStartListener = new AtomicReference<>();
-    public void draw() {
+    public void draw(){
+        draw(false);
+    }
+    public void draw(boolean isFromFb) {
 
 //        GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -555,7 +558,10 @@ public class FlxDrawer {
 
         }else {return;}
 //        if (true) return;
-        GLES20.glViewport(0, 0, width, height);
+        if (isFromFb)
+            GLES20.glViewport(0, 0, 400, 600);
+        else
+            GLES20.glViewport(0, 0, width, height);
         if (flexatarType == 0) {
             drawVideo();
         }else if (flexatarType == 1) {
@@ -832,7 +838,7 @@ public class FlxDrawer {
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-        Log.d("FLX_INJECT","draw video frame"+videoTextureId);
+//        Log.d("FLX_INJECT","draw video frame"+videoTextureId);
         if (videoTextureId>=0) {
 
             if (isStaticControlBind) {

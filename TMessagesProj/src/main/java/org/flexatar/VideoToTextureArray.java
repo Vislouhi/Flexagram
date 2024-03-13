@@ -155,10 +155,18 @@ public class VideoToTextureArray {
         surfaceTexture.updateTexImage();
     }
     public void draw(){
-        long time = System.nanoTime();
-        if (time-currentTime<40_000_000L) return;
-//        Log.d("FLX_INJECT","time " +(time/1_000_000));
-        currentTime = time;
+        draw(true);
+    }
+    public boolean alFramesLoaded(){
+        return isAllFramesReady;
+    }
+    public void draw(boolean byTimeStep) {
+        if (byTimeStep){
+            long time = System.nanoTime();
+            if (time - currentTime < 40_000_000L) return;
+    //        Log.d("FLX_INJECT","time " +(time/1_000_000));
+            currentTime = time;
+        }
         if (isAllFramesReady){
             currentTextureIdx+=1;
             if (currentTextureIdx>=videoTextures.size()) currentTextureIdx = 0;
@@ -196,7 +204,7 @@ public class VideoToTextureArray {
 
     public boolean getNextFrame(){
         final int TIMEOUT_USEC = 10000;
-        boolean VERBOSE = true;
+        boolean VERBOSE = false;
         String TAG = "FLX_INJECT";
         if (outputDone) return false;
 
@@ -273,6 +281,19 @@ public class VideoToTextureArray {
             }
         }
         return outputDone;
+    }
+    public void destroy(){
+        if (extractor!=null) extractor.release();
+        if (decoder!=null)decoder.release();
+        if (surfaceTexture!=null)surfaceTexture.release();
+        if (outputSurface!=null)outputSurface.release();
+        extractor = null;
+        decoder = null;
+        surfaceTexture = null;
+        outputSurface = null;
+        isAllFramesReady = true;
+        currentTextureIdx = 0;
+
     }
     private static int selectTrack(MediaExtractor extractor) {
 

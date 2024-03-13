@@ -32,7 +32,7 @@ import org.webrtc.EglBase;
  */
 @SuppressWarnings("ReferenceEquality") // We want to compare to EGL14 constants.
 @TargetApi(18)
-class EglBase14Impl implements EglBase14 {
+public class EglBase14Impl implements EglBase14 {
   private static final String TAG = "EglBase14Impl";
   private static final int EGLExt_SDK_VERSION = Build.VERSION_CODES.JELLY_BEAN_MR2;
   private static final int CURRENT_SDK_VERSION = Build.VERSION.SDK_INT;

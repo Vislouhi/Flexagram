@@ -784,7 +784,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertPhotoLayoutPreview photoPreviewLayout;
     public ChatAttachAlertColorsLayout colorsLayout;
     private ChatAttachAlertQuickRepliesLayout quickRepliesLayout;
-    private AttachAlertLayout[] layouts = new AttachAlertLayout[8];
+    private AttachAlertLayout[] layouts = new AttachAlertLayout[9];
     private LongSparseArray<ChatAttachAlertBotWebViewLayout> botAttachLayouts = new LongSparseArray<>();
     private AttachAlertLayout currentAttachLayout;
     private AttachAlertLayout nextAttachLayout;
@@ -3357,7 +3357,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }*/
         if (flexatarLayout == null) {
             int type = isSoundPicker ? ChatAttachAlertDocumentLayout.TYPE_RINGTONE : ChatAttachAlertDocumentLayout.TYPE_DEFAULT;
-            layouts[7] = flexatarLayout = new ChatAttachAlertFlexatarLayout(this, getContext(), type, resourcesProvider);
+            layouts[8] = flexatarLayout = new ChatAttachAlertFlexatarLayout(this, getContext(), type, resourcesProvider);
             flexatarLayout.setDelegate(new ChatAttachAlertFlexatarLayout.FlexatarSelectActivityDelegate() {
                 @Override
                 public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate) {
