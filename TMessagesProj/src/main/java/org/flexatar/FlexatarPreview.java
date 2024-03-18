@@ -87,7 +87,7 @@ public class FlexatarPreview extends FrameLayout {
 //        FlexatarStorageManager.clearHiddenRecord(context);
         this.flexatarCell=flexatarCell;
         groupId = flexatarCell.getFlexatarFile().getName().replace(".flx","");
-
+        Log.d("FLX_INJECT","preview flexatar "+groupId);
         this.parentFragment = parentFragment;
         int currentOrientation = getResources().getConfiguration().orientation;
 

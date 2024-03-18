@@ -129,6 +129,7 @@ import org.flexatar.Config;
 import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarControlPanelLayout;
 import org.flexatar.FlexatarStorageManager;
+import org.flexatar.ServerDataProc;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -2812,6 +2813,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
+        if (flexatarPopUp!=null){
+            flexatarPopUp.dismiss();
+        }
         if (flexatarControlPanelLayout !=null){
             flexatarControlPanelLayout.cancel();
             flexatarControlPanelLayout = null;
@@ -34061,19 +34065,49 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 alert.setCalcMandatoryInsets(isKeyboardVisible());
                 showDialog(alert);
             } else if (message.isVideo() || message.type == MessageObject.TYPE_PHOTO || message.type == MessageObject.TYPE_TEXT && !message.isWebpageDocument() || message.isGif()) {
-                Log.d("FLX_INJECT","current dialog id "+ dialog_id);
+//                Log.d("FLX_INJECT","current dialog id "+ dialog_id);
+                boolean isFlexatarCell = false;
+//                AndroidUtilities.runOnUIThread(()->{
+//                        showDialog(AlertDialogs.askToPutFlexatarToGallery(getContext()),true,true,null);
+//
+//                });
                 if (dialog_id == Config.authBotId) {
-                    Log.d("FLX_INJECT", "is flaxatar bot dialog ");
+//                    Log.d("FLX_INJECT", "is flaxatar bot dialog ");
                     for (int i = 0; i < message.messageOwner.entities.size(); i++) {
                         TLRPC.MessageEntity entity = message.messageOwner.entities.get(i);
                         if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
+//                            String stubUrl = "flexatar.com?ftar=private/1.00/tg/6350413711/c04ae8ff-9a3b-4296-be13-16da8ffd3137/c04ae8ff-9a3b-4296-be13-16da8ffd3137.p";
+//                            String stubUrl = "flexatar.com?ftar=private/1.00/tg/6350413711/2bca0bc5-424b-42e7-b825-9ab8297f5d47/2bca0bc5-424b-42e7-b825-9ab8297f5d47.p";
+//                            String stubUrl = "flexatar.com?ftar=public/1.00/char3t/char3t.p";
+//                            String stubUrl = "flexatar.com?ftar=private/1.00/tg/6350413711/51b0c34a-5c69-4aaf-8684-d96e50a01bff/51b0c34a-5c69-4aaf-8684-d96e50a01bff.p";
+//                            String stubUrl = "flexatar.com?ftar=public/1.00/char4t/char4t.p&download";
                             String targetUrl = entity.url;
-                            Log.d("FLX_INJECT", "targetUrl " + targetUrl);
+//                            String targetUrl = stubUrl;
+                            ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);
+
+                            if (ftarInfo!=null&&ftarInfo.ftar!=null){
+                                isFlexatarCell = true;
+                                if (flexatarPopUp == null) {
+
+                                    flexatarPopUp = AlertDialogs.importFlexatarPopup(getContext(), ChatActivity.this.fragmentLocationContextView, getResourceProvider(), ftarInfo,
+                                            ()->{
+                                                flexatarPopUp = null;
+                                            },flexatarFile->{
+                                                Log.d("FLX_INJECT","add to gal pressed");
+                                                showDialog(AlertDialogs.askToPutFlexatarToGallery(getContext(),flexatarFile));
+                                            },()->{
+                                                showDialog(AlertDialogs.sayAlreadyInGallery(getContext()));
+                                            });
+                                }
+                                Log.d("FLX_INJECT", "need to process ftar " + ftarInfo.ftar);
+                            }
                         }
                     }
-                }else {
-                    openPhotoViewerForMessage(cell, message);
                 }
+                if (!isFlexatarCell)
+                    openPhotoViewerForMessage(cell, message);
+
+
 
             } else if (message.type == MessageObject.TYPE_VIDEO) {
                 sendSecretMessageRead(message, true);

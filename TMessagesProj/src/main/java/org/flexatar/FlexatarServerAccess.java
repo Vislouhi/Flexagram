@@ -1,6 +1,7 @@
 package org.flexatar;
 
-import com.google.android.exoplayer2.util.Log;
+
+import android.util.Log;
 
 import org.flexatar.DataOps.Data;
 import org.flexatar.DataOps.FlexatarData;
@@ -9,10 +10,12 @@ import org.flexatar.DataOps.LengthBasedUnpack;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.GcmPushListenerService;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.ui.Components.LayoutHelper;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -27,14 +30,18 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class FlexatarServerAccess {
 
@@ -286,20 +293,32 @@ public class FlexatarServerAccess {
                     connection.disconnect();
                     if (completion!=null)
                         completion.onReady(responseCode == HttpURLConnection.HTTP_OK,byteArrayOutputStream);
+                    else{
+                        if (byteArrayOutputStream!=null)byteArrayOutputStream.close();
 
+                    }
 
 
                 }else if(responseCode == HttpURLConnection.HTTP_UNAUTHORIZED){
+                    if (byteArrayOutputStream!=null)byteArrayOutputStream.close();
                     completion.onUnauthorized();
                 }else if (responseCode == HttpURLConnection.HTTP_NOT_FOUND){
+                    if (byteArrayOutputStream!=null)byteArrayOutputStream.close();
                     if (completion!=null) completion.onNotFoundError();
                 }else{
                     Log.d("FLX_INJECT","Server responce error :"+responseCode );
-
+                    if (byteArrayOutputStream!=null)byteArrayOutputStream.close();
                     if (completion!=null)
                         completion.onError();
                 }
             } catch (IOException e) {
+                if (byteArrayOutputStream!=null) {
+                    try {
+                        byteArrayOutputStream.close();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
                 if (completion!=null) completion.onError();
                 Log.d("FLX_INJECT","connection failed by exception");
             }
@@ -343,9 +362,9 @@ public class FlexatarServerAccess {
                             }
                         }
                         Log.d("FLX_INJECT","linksToDownload " + linksToDownload.size());
-                        if (linksToDownload.size()>0)
-                            downloadFlexatarListRecursive1(linksToDownload,0,onFinish);
-                        else
+//                        if (linksToDownload.size()>0)
+//                            downloadFlexatarListRecursive1(linksToDownload,0,onFinish);
+//                        else
                             onFinish.run();
                     }
 
@@ -450,6 +469,138 @@ public class FlexatarServerAccess {
                         loadNext();
                         if (downloadBuiltinObserver!=null) downloadBuiltinObserver.onError();
                         Log.d("FLX_INJECT","failed to download flexatar");
+                    }
+                }
+        );
+    }
+    public static Map<String,OnReadyOrErrorListener> activeDownloads = new HashMap<>();
+    interface OnReadyOrErrorListener{
+        void onReady();
+        void onError();
+    }
+
+
+    public static void downloadFlexatar(File flexatarFile,String servPath,OnReadyOrErrorListener listener){
+        if (activeDownloads.containsKey(servPath)) {
+            activeDownloads.put(servPath,listener);
+            return;
+        }
+        activeDownloads.put(servPath,listener);
+        String servPathMeta = servPath.replace(".p", ".m");
+        AtomicReference<byte[]> metaData = new AtomicReference<>(null);
+        AtomicReference<byte[]> body = new AtomicReference<>(null);
+
+        CountDownLatch latch = new CountDownLatch(2);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            byte[] meta = metaData.get();
+            byte[] downloadedData = body.get();
+            if (downloadedData==null){
+                OnReadyOrErrorListener list = activeDownloads.get(servPath);
+                activeDownloads.remove(servPath);
+                if (list != null) list.onError();
+
+            }else {
+
+                int flexatarType = new LengthBasedUnpack(downloadedData, true).getFlexatarType() == FlexatarData.FlxDataType.PHOTO
+                        ? 1 : 0;
+                if (!new LengthBasedFlxUnpack(downloadedData).validate(flexatarType)) {
+                    return;
+                }
+                if (flexatarFile!=null) {
+                    if (flexatarType == 1) {
+
+                        FlexatarStorageManager.dataToFile(downloadedData, flexatarFile);
+
+                    } else {
+                        File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx", ".mp4"));
+                        byte[][] extractResult = FlexatarStorageManager.extractVideo(downloadedData);
+                        FlexatarStorageManager.dataToFile(extractResult[0], flexatarFile);
+                        FlexatarStorageManager.dataToFile(extractResult[1], videoFile);
+                    }
+                    if (meta != null) {
+                        FlexatarStorageManager.FlexatarMetaData mD = new FlexatarStorageManager.FlexatarMetaData();
+                        mD.data = new Data(meta);
+                        FlexatarStorageManager.rewriteFlexatarHeader(flexatarFile, mD);
+                    }
+
+                }else{
+                    String[] pathSplit = servPath.split("/");
+                    String prefix = servPath.startsWith("public") ? FlexatarStorageManager.PUBLIC_PREFIX : FlexatarStorageManager.FLEXATAR_PREFIX;
+
+                    File flxFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,downloadedData,pathSplit[pathSplit.length-2],prefix,flexatarType);
+                    if (meta != null) {
+                        FlexatarStorageManager.FlexatarMetaData mD = new FlexatarStorageManager.FlexatarMetaData();
+                        mD.data = new Data(meta);
+                        FlexatarStorageManager.rewriteFlexatarHeader(flxFile, mD);
+                    }
+                }
+
+                OnReadyOrErrorListener list = activeDownloads.get(servPath);
+                activeDownloads.remove(servPath);
+                if (list != null) list.onReady();
+            }
+
+        });
+        FlexatarServerAccess.requestDataRecursive(FlexatarServiceAuth.getVerification(), servPathMeta, 0, new ByteArrayOutputStream(), new OnDataDownloaded() {
+                    @Override
+                    public void onReady(boolean finished, ByteArrayOutputStream byteArrayOutputStream) {
+                        metaData.set(byteArrayOutputStream.toByteArray());
+                        try {
+                            byteArrayOutputStream.close();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        latch.countDown();
+                        Log.d("FLX_INJECT", "meta data loaded " + servPath);
+
+                    }
+
+                    @Override
+                    public void onError() {
+                        latch.countDown();
+                        Log.d("FLX_INJECT", "no meta data " + servPath);
+                    }
+                }
+        );
+
+        FlexatarServerAccess.requestDataRecursive(FlexatarServiceAuth.getVerification(), servPath, 0, new ByteArrayOutputStream(),
+                new FlexatarServerAccess.OnDataDownloaded() {
+                    @Override
+                    public void onReady(boolean finished, ByteArrayOutputStream byteArrayOutputStream) {
+                        Log.d("FLX_INJECT", "downloaded " + servPath);
+                        body.set(byteArrayOutputStream.toByteArray());
+                        try {
+                            byteArrayOutputStream.close();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        latch.countDown();
+
+
+                    }
+
+
+                    @Override
+                    public void onNotFoundError() {
+                        Log.d("FLX_INJECT", "flexatar file not found, deleting entry");
+                        latch.countDown();
+
+
+                    }
+
+                    @Override
+                    public void onError() {
+                        latch.countDown();
+//                        OnReadyOrErrorListener list = activeDownloads.get(servPath);
+//                        activeDownloads.remove(servPath);
+//                        if (list != null) list.onError();
+                        Log.d("FLX_INJECT", "failed to download flexatar");
                     }
                 }
         );

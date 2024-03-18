@@ -683,30 +683,48 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
             sendData = sendData.add(cData);
         }
 
-        TicketsController.Ticket ticket = new TicketsController.Ticket();
+        /*TicketsController.Ticket ticket = new TicketsController.Ticket();
         ticket.name = flexatarName;
         ticket.status = "new";
         ticket.setDate();
         String lfid = UUID.randomUUID().toString();
 
-        TicketStorage.setTicket(lfid,ticket);
+        TicketStorage.setTicket(lfid,ticket);*/
+        AlertDialog dialog = AlertDialogs.sayFlexatarStartMaking(getContext(), () -> {
+            fragmentView.post(() -> {
+                finishPage();
+            });
+        });
 
+        showDialog(dialog);
         if (flexatarBody == null) {
             FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
                 public void onReady(FlexatarServerAccess.StdResponse response) {
                     Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());
-                    ticket.status = "in_process";
+                    /*ticket.status = "in_process";
                     ticket.formJson(FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).toJson());
                     TicketStorage.setTicket(lfid,ticket);
-                    TicketsController.flexatarTaskStart(lfid,ticket);
+                    TicketsController.flexatarTaskStart(lfid,ticket);*/
                 }
 
                 @Override
                 public void onError() {
-                    TicketStorage.removeTicket(lfid);
-                    FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                   /* TicketStorage.removeTicket(lfid);
+                    FlexatarCabinetActivity.makeFlexatarFailAction.run();*/
                     Log.d("FLX_INJECT", "make flx data error " );
+                    AndroidUtilities.runOnUIThread(()->{
+                        dialog.dismiss();
+                        try {
+                            showDialog(AlertDialogs.sayFlexatarConnectionError(getContext(), () -> {
+                                fragmentView.post(() -> {
+                                    finishPage();
+                                });
+                            }));
+                        }catch (Exception e) {
+                            FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                        }
+                    });
 
                 }
             });
@@ -717,24 +735,36 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                     Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());
 //                    String ftarId = FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).id;
 //                    Log.d("FLX_INJECT", "ftar id: " + ftarId);
-                    ticket.status = "in_process";
+                    /*ticket.status = "in_process";
                     ticket.formJson(FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).toJson());
 //                    ticket.ftarRecord = FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0);
                     TicketStorage.setTicket(lfid,ticket);
-                    TicketsController.flexatarTaskStart(lfid,ticket);
+                    TicketsController.flexatarTaskStart(lfid,ticket);*/
                 }
 
                 @Override
                 public void onError() {
-                    TicketStorage.removeTicket(lfid);
-                    FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                   /* TicketStorage.removeTicket(lfid);
+                    FlexatarCabinetActivity.makeFlexatarFailAction.run();*/
                     Log.d("FLX_INJECT", "delta fail make flx data error " );
+                    AndroidUtilities.runOnUIThread(()->{
+                        dialog.dismiss();
+                        try {
+                            showDialog(AlertDialogs.sayFlexatarConnectionError(getContext(), () -> {
+                                fragmentView.post(() -> {
+                                    finishPage();
+                                });
+                            }));
+                        }catch (Exception e) {
+                            FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                        }
+                    });
                 }
             });
         }
-        fragmentView.post(() -> {
+        /*fragmentView.post(() -> {
             finishPage();
-        });
+        });*/
     }
 
 

@@ -76,6 +76,10 @@
     <string name="PhotoTab">Photo</string>
     <string name="DeleteFlexatar">Delete flexatars</string>
     <string name="DeleteFlexatarMsg">Do you want to delete selected flexatars from local storage?</string>
+    <string name="AddFlexatarToGallery">Do you want to place it to Flexatar Gallery?</string>
+    <string name="FlexatarInGallery">Flexatar is already in Gallery</string>
+    <string name="FlexatarWillBeReady">You will be informed in Flexatar Bot when flexatar becomes available. It usually takes less then a minute</string>
+    <string name="FlexatarConnectionErr">Can\'t connect flexatar server. Try again later.</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

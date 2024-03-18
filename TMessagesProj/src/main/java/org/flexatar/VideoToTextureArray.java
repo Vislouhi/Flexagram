@@ -45,7 +45,7 @@ public class VideoToTextureArray {
             @Override
             public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                 currentFrameReady = true;
-                Log.d("FLX_INJECT", "frame ready");
+//                Log.d("FLX_INJECT", "frame ready");
                 if (onFrameAvailableListener!=null)onFrameAvailableListener.run();
             }
         });

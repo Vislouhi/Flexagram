@@ -277,6 +277,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                             presentFragment(new FlexatarVideoCapFragment());
                         }else if (tabsView.getCurrentTabId() == 1){
                             presentFragment(new FlexatarCameraCaptureFragment());
+
                         }
 
                     } else {

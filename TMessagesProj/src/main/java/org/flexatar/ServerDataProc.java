@@ -7,6 +7,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.UserConfig;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,7 +74,59 @@ public class ServerDataProc {
         rout = "private/1.00/tg/"+telegramID+"/"+flxId+"/"+flxId +".m";
         return rout;
     }
+    public static class FlexatarChatCellInfo{
+        public String ftar;
+        public boolean download;
+        public String verify;
 
+        public boolean isSet(){
+            return ftar!=null || verify!=null;
+        }
+
+        public String getFileName() {
+            if (ftar == null)return null;
+            String[] splitFtar = ftar.split("/");
+            String prefix = FlexatarStorageManager.FLEXATAR_PREFIX;
+            if(splitFtar[0].equals("public"))
+                prefix = FlexatarStorageManager.PUBLIC_PREFIX;
+            String fid = splitFtar[splitFtar.length - 1].replace(".p", "");
+            return prefix + fid + ".flx";
+        }
+    }
+    public static FlexatarChatCellInfo parseFlexatarCellUrl(String urlStr){
+        try {
+            FlexatarChatCellInfo ret = new FlexatarChatCellInfo();
+            String queryString = urlStr.split("\\?")[1];
+            String[] queryPairs = queryString.split("&");
+//            Log.d("FLX_INJECT", "queryString " + queryString);
+//            Log.d("FLX_INJECT", "queryPairs " + queryPairs.length);
+
+            for (String pair :  queryPairs){
+                String[] splited = pair.split("=");
+                if (splited.length<=1) continue;
+                if (splited[0].equals("ftar")){
+                    String notFullUrl = splited[1];
+                    String[] splited1 = notFullUrl.split("/");
+                    notFullUrl += "/"+splited1[splited1.length-1]+".p";
+                    ret.ftar = notFullUrl;
+                }
+                if (splited[0].equals("verify")){
+                    ret.verify = splited[1];
+                }
+                if (splited[0].equals("download")){
+                    ret.download = splited[1].equals("true");
+                }
+            }
+
+            return ret.isSet() ? ret : null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+//        String[] urlSplit = url.split("\\?");
+//        if (urlSplit.length<2) return null;
+//        urlSplit[1].
+    }
     /*public static class FlexatarListResponse{
 
         private final String[] linksPublic;

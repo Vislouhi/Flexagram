@@ -2,6 +2,8 @@ package org.flexatar;
 
 
 
+import android.content.Context;
+
 import com.google.android.exoplayer2.util.Log;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
@@ -10,6 +12,7 @@ import org.flexatar.DataOps.FlexatarData;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.ui.LaunchActivity;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,6 +131,9 @@ public class FlexatarRenderer {
         FlexatarCommon.prepare();
 //        VideoToTextureArray.decode();
 //        FlexatarServiceAuth.integrityCheck();
+//        Context context = ApplicationLoader.applicationContext;
+//        FlexatarStorageManager.clearStorage();
+
     }
 
 

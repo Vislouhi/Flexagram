@@ -519,6 +519,7 @@ public class FlexatarStorageManager {
         return flexatarStorageFolder;
     }
     private final static String FLEXATAR_SEND_IMAGE_STORAGE_FOLDER = "send_image_storage";
+    private final static String FLEXATAR_TMP_LOAD = "tmp_load";
     public static File createFlexatarSendImageStorage(Context context){
 
         File rootDir = context.getFilesDir();
@@ -532,6 +533,23 @@ public class FlexatarStorageManager {
         }
 
         return flexatarStorageFolder;
+    }
+    public static File createTmpLoadFlexatarStorage(Context context){
+
+        File rootDir = context.getFilesDir();
+        String userFolderName = "tg_" + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        File userFolder = new File(rootDir,userFolderName);
+        if (!userFolder.exists()) userFolder.mkdir();
+
+        File flexatarStorageFolder = new File(userFolder,FLEXATAR_TMP_LOAD);
+        if (!flexatarStorageFolder.exists()){
+            flexatarStorageFolder.mkdir();
+        }
+
+        return flexatarStorageFolder;
+    }
+    public static boolean checkIfTmpFileExists(String name){
+        return new File(createTmpLoadFlexatarStorage(ApplicationLoader.applicationContext),name).exists();
     }
 
     public static File createTmpVideoStorage(){
@@ -552,6 +570,7 @@ public class FlexatarStorageManager {
     public static File addToStorage(Context context, byte[] flexatarData,String fId,String prefix) {
         return addToStorage(context, flexatarData, fId, prefix, 1);
     }
+
     public static File addToStorage(Context context, byte[] flexatarData,String fId,String prefix,int flexatarType){
         File flexatarStorageFolder = getFlexatarStorage(context);
 
@@ -592,6 +611,33 @@ public class FlexatarStorageManager {
             addStorageRecord(context,fId);
             try {
                 copy(srcFile, flexataFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+        return flexataFile;
+    }
+    public static File addToStorage(Context context, File srcFile){
+        File videoFile = new File(srcFile.getAbsolutePath().replace(".flx", ".mp4"));
+        boolean isVideo = videoFile.exists();
+        String fid = srcFile.getName().replace(".flx","");
+        Log.d("FLX_INJECT","add to gallery "+fid);
+        File flexatarStorageFolder = getFlexatarStorage(context);
+        String fileName = srcFile.getName();
+        File flexataFile = new File(flexatarStorageFolder,fileName);
+
+        if (!flexataFile.exists()){
+            if (isVideo)
+                addStorageRecordVideo(context,fid);
+            else
+                addStorageRecord(context,fid);
+            try {
+                copy(srcFile, flexataFile);
+                if (isVideo){
+                    File videoDstFile = new File(flexatarStorageFolder,videoFile.getName());
+                    copy(videoFile, videoDstFile);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -970,9 +1016,7 @@ public class FlexatarStorageManager {
 
     }
     public static void deleteFromStorage(Context context,File flexatarFile){
-        deleteFromStorage(context,flexatarFile,true);
-
-
+        deleteFromStorage(context,flexatarFile,false);
     }
     public static void deleteFromStorage(Context context,File flexatarFile,boolean deleteOnCloaud){
         if (flexatarFile.exists()){
@@ -1455,6 +1499,7 @@ public class FlexatarStorageManager {
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(FLEXATAR_FILES, "[]");
+        editor.putString(FLEXATAR_VIDEO_FILES, "[]");
         editor.apply();
 
 //        File rootDir = context.getFilesDir();
@@ -1463,7 +1508,7 @@ public class FlexatarStorageManager {
         if (allStroageFiles == null) return;
         if (allStroageFiles.length == 0) return;
         for(File f : allStroageFiles) {
-            if (f.getName().startsWith("user") || f.getName().startsWith("builtin") || f.getName().startsWith("public")|| f.getName().startsWith("private"))
+//            if (f.getName().startsWith("user") || f.getName().startsWith("builtin") || f.getName().startsWith("public")|| f.getName().startsWith("private"))
                 f.delete();
         }
     }
