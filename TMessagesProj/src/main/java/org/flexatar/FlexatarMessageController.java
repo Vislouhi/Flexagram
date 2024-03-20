@@ -33,7 +33,7 @@ public class FlexatarMessageController extends BaseController implements Notific
     public static FlexatarMessageController getInstance(int num){
         FlexatarMessageController localInstance = Instance[num];
         if (localInstance == null) {
-            synchronized (DownloadController.class) {
+            synchronized (FlexatarMessageController.class) {
                 localInstance = Instance[num];
                 if (localInstance == null) {
                     Instance[num] = localInstance = new FlexatarMessageController(num);
@@ -42,7 +42,13 @@ public class FlexatarMessageController extends BaseController implements Notific
         }
         return localInstance;
     }
-
+    public interface FlexatarAddToGalleryListener{
+        void onAddToGallery(File flexatarFile,int flexatarType);
+    }
+    private FlexatarAddToGalleryListener flexatarAddToGalleryListener;
+    public void setOnAddToGalleryListener(FlexatarAddToGalleryListener listener){
+        flexatarAddToGalleryListener = listener;
+    }
     @SuppressWarnings("unchecked")
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
@@ -64,14 +70,18 @@ public class FlexatarMessageController extends BaseController implements Notific
                         String targetUrl = entity.url;
                         ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);
                         if (ftarInfo == null) continue;
-                        if (ftarInfo.download){
-                            File galleryFile = new File(FlexatarStorageManager.getFlexatarStorage(ApplicationLoader.applicationContext),ftarInfo.getFileName());
+//                        TODO for debug purpose
+//                        ftarInfo.download = true;
+                        if (ftarInfo.ftar!=null && ftarInfo.download){
+                            File galleryFile = new File(FlexatarStorageManager.getFlexatarStorage(ApplicationLoader.applicationContext,account),ftarInfo.getFileName());
                             if (!galleryFile.exists()){
-                                FlexatarServerAccess.downloadFlexatar(null, ftarInfo.ftar, new FlexatarServerAccess.OnReadyOrErrorListener() {
+                                FlexatarServerAccess.downloadFlexatar(account,null, ftarInfo.ftar, new FlexatarServerAccess.OnReadyOrErrorListener() {
                                     @Override
-                                    public void onReady() {
+                                    public void onReady(File flexatarFile,int flexatarType) {
                                         Log.d("FLX_INJECT","Flexatar loaded to gallery");
-
+                                        if (flexatarAddToGalleryListener!=null){
+                                            flexatarAddToGalleryListener.onAddToGallery(flexatarFile,flexatarType);
+                                        }
                                     }
 
                                     @Override
@@ -81,7 +91,9 @@ public class FlexatarMessageController extends BaseController implements Notific
                                 });
                             }
                         }
-
+                        if (ftarInfo.verify!=null){
+                            FlexatarServiceAuth.getVerification(account).verify(ftarInfo.verify);
+                        }
                         Log.d("FLX_INJECT", "received flexatar message " + targetUrl);
                     }
                 }

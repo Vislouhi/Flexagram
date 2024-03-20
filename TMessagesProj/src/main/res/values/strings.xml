@@ -80,6 +80,8 @@
     <string name="FlexatarInGallery">Flexatar is already in Gallery</string>
     <string name="FlexatarWillBeReady">You will be informed in Flexatar Bot when flexatar becomes available. It usually takes less then a minute</string>
     <string name="FlexatarConnectionErr">Can\'t connect flexatar server. Try again later.</string>
+    <string name="AskDeleteFromCloud">Do you want to delete this flexatar from Cloud Storage? It will be deleted from gallery also.</string>
+    <string name="FlexatarNotFound">Flexatar not found. It was deleted from Cloud Storage.</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

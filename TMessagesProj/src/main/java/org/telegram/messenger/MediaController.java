@@ -4207,7 +4207,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                             recordingAudioFileToSend.delete();
                             File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), UUID.randomUUID().toString() + ".mp4");
 
-                            new FlexatarVideoEncoder(360, 360, converter.speechAnimation, videoFile, new File(audioAacPath), () -> {
+                            new FlexatarVideoEncoder(recordingCurrentAccount,360, 360, converter.speechAnimation, videoFile, new File(audioAacPath), () -> {
                                 new File(audioAacPath).delete();
 //                                FlexatarNotificator.isMakingFlexatarRoundVideo = false;
                                 AndroidUtilities.runOnUIThread(() -> {

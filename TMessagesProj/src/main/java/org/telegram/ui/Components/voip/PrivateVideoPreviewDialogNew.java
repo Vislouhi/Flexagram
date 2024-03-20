@@ -52,6 +52,7 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.VoIPFragment;
 import org.webrtc.EglBase;
 import org.webrtc.RendererCommon;
 
@@ -405,7 +406,7 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
         VoIPBackgroundProvider bkgProvider = new VoIPBackgroundProvider();
         bkgProvider.setHasVideo(true);
         bkgProvider.setTotalSize(200,200);
-        flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context,bkgProvider);
+        flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context, VoIPService.getSharedInstance().getCurrentAccount(),bkgProvider);
         addView(flexatarPanelView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 12, 100, 12, 0));
     }
 

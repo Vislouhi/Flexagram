@@ -2236,7 +2236,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                bkgProvider.setHasVideo(true);
 //
 //                bkgProvider.setTotalSize(200,200);
-                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext(),true, FlexatarStorageManager.roundFlexatarChooser);
+                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext(),UserConfig.selectedAccount,true, FlexatarStorageManager.roundFlexatarChooser[UserConfig.selectedAccount]);
 //                FlexatarUI.FlexatarPanelLayout flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(getContext(), bkgProvider);
 //                flexatarPanelView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
                 actionBar.setEnabled(false);
@@ -34080,7 +34080,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                            String stubUrl = "flexatar.com?ftar=private/1.00/tg/6350413711/2bca0bc5-424b-42e7-b825-9ab8297f5d47/2bca0bc5-424b-42e7-b825-9ab8297f5d47.p";
 //                            String stubUrl = "flexatar.com?ftar=public/1.00/char3t/char3t.p";
 //                            String stubUrl = "flexatar.com?ftar=private/1.00/tg/6350413711/51b0c34a-5c69-4aaf-8684-d96e50a01bff/51b0c34a-5c69-4aaf-8684-d96e50a01bff.p";
-//                            String stubUrl = "flexatar.com?ftar=public/1.00/char4t/char4t.p&download";
+//                            String stubUrl = "flexatar.com?ftar=public/1.00/char4t&download";
                             String targetUrl = entity.url;
 //                            String targetUrl = stubUrl;
                             ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);
@@ -34097,6 +34097,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                                 showDialog(AlertDialogs.askToPutFlexatarToGallery(getContext(),flexatarFile));
                                             },()->{
                                                 showDialog(AlertDialogs.sayAlreadyInGallery(getContext()));
+                                            },(tmp,gal)->{
+                                                showDialog(AlertDialogs.askToDeleteFlexatarFromCloud(getContext(),tmp,gal));
+                                            },()->{
+                                                showDialog(AlertDialogs.sayFlexatarNotFound(getContext()));
+
                                             });
                                 }
                                 Log.d("FLX_INJECT", "need to process ftar " + ftarInfo.ftar);

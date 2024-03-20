@@ -35,7 +35,7 @@ public class FoldUpFlexatarChooseView extends LinearLayout {
     private Runnable onRemoveViewListener;
 //    private String flxId;
 
-    public FoldUpFlexatarChooseView(@NonNull Context context,String flxId) {
+    public FoldUpFlexatarChooseView(@NonNull Context context,int account,String flxId) {
         super(context);
         setOrientation(VERTICAL);
 
@@ -44,7 +44,7 @@ public class FoldUpFlexatarChooseView extends LinearLayout {
         addView(dividerCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT));
         RecyclerView recyclerView = new RecyclerView(getContext());
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(new Adapter(getContext(),flxId));
+        recyclerView.setAdapter(new Adapter(getContext(),account,flxId));
         addView(recyclerView,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
         setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
 
@@ -72,14 +72,16 @@ public class FoldUpFlexatarChooseView extends LinearLayout {
         private final Context mContext;
         private final List<File> flxFiles;
         private final String flxId;
-        public Adapter(Context context,String flxId) {
+        private final int account;
+        public Adapter(Context context,int account,String flxId) {
             super();
             this.flxId=flxId;
+            this.account=account;
             mContext = context;
             Log.d("FLX_INJECT","current id is "+flxId);
-            List<String> hiddenRecords = FlexatarStorageManager.getHiddenRecords(mContext);
-            flxFiles = FlexatarStorageManager.getFlexatarFileListExcept(mContext,new ArrayList<String>(){{
-                add(flxId);addAll(hiddenRecords);addAll(FlexatarStorageManager.getGroups(mContext));
+            List<String> hiddenRecords = FlexatarStorageManager.getHiddenRecords(mContext,account);
+            flxFiles = FlexatarStorageManager.getFlexatarFileListExcept(mContext,account,new ArrayList<String>(){{
+                add(flxId);addAll(hiddenRecords);addAll(FlexatarStorageManager.getGroups(mContext,account));
             }});
         }
 
@@ -96,8 +98,8 @@ public class FoldUpFlexatarChooseView extends LinearLayout {
             cell.loadFromFile(flxFiles.get(position));
             cell.setOnClickListener(v->{
                 String chosenId = cell.getFlexatarFile().getName().replace(".flx","");
-                FlexatarStorageManager.addGroupRecord(mContext,flxId,chosenId);
-                FlexatarStorageManager.addStorageHiddenRecord(mContext,chosenId);
+                FlexatarStorageManager.addGroupRecord(mContext,account,flxId,chosenId);
+                FlexatarStorageManager.addStorageHiddenRecord(mContext,account,chosenId);
 //                int cellIdx = flxFiles.indexOf(cell.getFlexatarFile());
                 FoldUpFlexatarChooseView.this.onFlexatarChosenListener.onChosen(flxFiles.get(position));
                 FoldUpFlexatarChooseView.this.animateClose();

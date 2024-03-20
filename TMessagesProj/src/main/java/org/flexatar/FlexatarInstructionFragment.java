@@ -29,7 +29,6 @@ import org.telegram.ui.Components.BitmapShaderTools;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 
-import org.telegram.ui.Components.voip.PrivateVideoPreviewDialogNew;
 
 public class FlexatarInstructionFragment extends BaseFragment{
     private final MotionBackgroundDrawable bgGreen = new MotionBackgroundDrawable(0xFF5FD051, 0xFF00B48E, 0xFFA9CC66, 0xFF5AB147, 0, false, true);
@@ -260,7 +259,7 @@ public class FlexatarInstructionFragment extends BaseFragment{
     public void onFragmentDestroy() {
 
         super.onFragmentDestroy();
-        TicketsController.stop();
+//        TicketsController.stop();
 
     }
 

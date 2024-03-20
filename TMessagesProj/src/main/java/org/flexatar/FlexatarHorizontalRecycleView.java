@@ -21,10 +21,10 @@ import org.telegram.ui.Cells.TextCell;
 import java.io.File;
 
 public class FlexatarHorizontalRecycleView extends RecyclerView {
-    public FlexatarHorizontalRecycleView(@NonNull Context context,int flexatarType,FlexatarUI.FlexatarChooseListener onChooseListener) {
+    public FlexatarHorizontalRecycleView(@NonNull Context context,int account,int flexatarType,FlexatarUI.FlexatarChooseListener onChooseListener) {
         super(context);
         setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-        setAdapter(new Adapter(context,flexatarType,onChooseListener));
+        setAdapter(new Adapter(context,account,flexatarType,onChooseListener));
     }
 
     public static class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
@@ -32,18 +32,20 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
         private final Context mContext;
         private final File[] flexatarsInLocalStorage;
         private final FlexatarUI.FlexatarChooseListener onChooseListener;
+        private final int account;
         private OnFlexatarChosen onFlexatarChosenListener = null;
 
-        public Adapter(Context context,int flexatarType, FlexatarUI.FlexatarChooseListener onChooseListener){
+        public Adapter(Context context,int account,int flexatarType, FlexatarUI.FlexatarChooseListener onChooseListener){
+            this.account=account;
             mContext = context;
             if (flexatarType == 0){
-                flexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context);
+                flexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context,this.account);
 
             }else if (flexatarType == 1){
-                flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context, FlexatarStorageManager.getHiddenRecords(context)).toArray(new File[0]);
+                flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context,account, FlexatarStorageManager.getHiddenRecords(context,account)).toArray(new File[0]);
 
             }else{
-                flexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context);
+                flexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context,this.account);
             }
 //            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
             this.onChooseListener = onChooseListener;
@@ -77,10 +79,10 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
             holder.itemView.setLayoutParams(new LinearLayout.LayoutParams(AndroidUtilities.dp(imageWidth), AndroidUtilities.dp(imageWidth*ratio)));
             holder.itemView.setOnClickListener((v) -> {
                 if (onFlexatarChosenListener == null) {
-                    if (FlexatarStorageManager.callFlexatarChooser.getChosenFirst().getName().equals(flexatarFile.getName())) return;
-                    FlexatarStorageManager.callFlexatarChooser.setChosenFlexatar(flexatarFile.getAbsolutePath());
-                    FlexatarStorageManager.callFlexatarChooser.getFirstFlxData();
-                    FlexatarStorageManager.callFlexatarChooser.getSecondFlxData();
+                    if (FlexatarStorageManager.callFlexatarChooser[this.account].getChosenFirst().getName().equals(flexatarFile.getName())) return;
+                    FlexatarStorageManager.callFlexatarChooser[this.account].setChosenFlexatar(flexatarFile.getAbsolutePath());
+                    FlexatarStorageManager.callFlexatarChooser[this.account].getFirstFlxData();
+                    FlexatarStorageManager.callFlexatarChooser[this.account].getSecondFlxData();
 
                    /* if (FlexatarUI.chosenFirst.getName().equals(flexatarFile.getName())) return;
                     FlexatarUI.chosenSecond = FlexatarUI.chosenFirst;

@@ -31,10 +31,10 @@ public class GcmPushListenerService extends FirebaseMessagingService {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("FCM received data: " + data + " from: " + from);
         }
-        Log.d("FLX_INJECT","cloud message " + Arrays.toString(data.keySet().toArray()));
+//        Log.d("FLX_INJECT","cloud message " + Arrays.toString(data.keySet().toArray()));
         if (data.containsKey("flexatar")){
 //            verifyListener.onVerifyAnswer(data.get("flexatar"));
-            try {
+/*            try {
                 FlexatarServerAccess.StdResponse response = new FlexatarServerAccess.StdResponse(data.get("flexatar"));
                 String key = response.tgid == null ? ""+UserConfig.getInstance(UserConfig.selectedAccount).clientUserId :""+response.tgid;
                 if (FlexatarServiceAuth.verifyProcesses.containsKey(key)) {
@@ -45,7 +45,7 @@ public class GcmPushListenerService extends FirebaseMessagingService {
                 Log.d("FLX_INJECT","incorrect flexatar auth gcm message");
             }
 //            verifyServiceListener.onReady(data.get("flexatar"));
-            Log.d("FLX_INJECT","flexatar cloud message " + data.get("flexatar"));
+            Log.d("FLX_INJECT","flexatar cloud message " + data.get("flexatar"));*/
         }else {
             PushListenerController.processRemoteMessage(PushListenerController.PUSH_TYPE_FIREBASE, data.get("p"), time);
         }

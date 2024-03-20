@@ -18,6 +18,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextCell;
@@ -105,8 +106,8 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
                 startSmoothScroll(linearSmoothScroller);
             }
         });
-        File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context,FlexatarStorageManager.FLEXATAR_PREFIX);
-        File[] videoFlexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context,FlexatarStorageManager.FLEXATAR_PREFIX);
+        File[] flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context, UserConfig.selectedAccount,FlexatarStorageManager.FLEXATAR_PREFIX);
+        File[] videoFlexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context,UserConfig.selectedAccount,FlexatarStorageManager.FLEXATAR_PREFIX);
 //        File[] videoFlexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
 //        File[] flexatarsInLocalStorage = FlexatarStorageManager.getVideoFlexatarFileList(context,FlexatarStorageManager.FLEXATAR_PREFIX);
 

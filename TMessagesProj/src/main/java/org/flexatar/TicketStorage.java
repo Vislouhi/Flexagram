@@ -17,23 +17,23 @@ import java.util.Map;
 public class TicketStorage {
     static final String PREF_STORAGE_NAME = "TicketStorage";
 
-    public static synchronized void clearTickets(){
+   /* public static synchronized void clearTickets(){
         long userID = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
 
         SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME+userID, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.apply();
-    }
-    public static synchronized void removeTicket(String lfid){
+    }*/
+    /*public static synchronized void removeTicket(String lfid){
         long userID = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
 
         SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME+userID, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.remove(lfid);
         editor.apply();
-    }
-    public static synchronized Map<String, TicketsController.Ticket> getTickets(){
+    }*/
+    /*public static synchronized Map<String, TicketsController.Ticket> getTickets(){
         long userID = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
 
         SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME+userID, Context.MODE_PRIVATE);
@@ -50,8 +50,8 @@ public class TicketStorage {
             }
         }
         return tickets;
-    }
-    public static synchronized void setTicket(String lfid,TicketsController.Ticket ticket){
+    }*/
+    /*public static synchronized void setTicket(String lfid,TicketsController.Ticket ticket){
         long userID = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
         SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences(PREF_STORAGE_NAME+userID, Context.MODE_PRIVATE);
         String ticketString = sharedPreferences.getString(lfid, "{}");
@@ -60,5 +60,5 @@ public class TicketStorage {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(lfid, jsonTicket.toString());
         editor.apply();
-    }
+    }*/
 }

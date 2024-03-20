@@ -78,12 +78,12 @@ public class FlexatarUI {
         public ImageView getImg2(){
             return img2;
         }
-        public void updateIcons(){
-            Bitmap iconBitmap1 = FlexatarStorageManager.getFlexatarMetaData(FlexatarStorageManager.callFlexatarChooser.getChosenFirst(),true).previewImage;
+        public void updateIcons(int account){
+            Bitmap iconBitmap1 = FlexatarStorageManager.getFlexatarMetaData(FlexatarStorageManager.callFlexatarChooser[account].getChosenFirst(),true).previewImage;
             RoundedBitmapDrawable dr1 = RoundedBitmapDrawableFactory.create(getContext().getResources(), iconBitmap1);
             dr1.setCornerRadius(AndroidUtilities.dp(8));
             img1.setImageDrawable(dr1);
-            Bitmap iconBitmap2 = FlexatarStorageManager.getFlexatarMetaData(FlexatarStorageManager.callFlexatarChooser.getChosenSecond(),true).previewImage;
+            Bitmap iconBitmap2 = FlexatarStorageManager.getFlexatarMetaData(FlexatarStorageManager.callFlexatarChooser[account].getChosenSecond(),true).previewImage;
             RoundedBitmapDrawable dr2 = RoundedBitmapDrawableFactory.create(getContext().getResources(), iconBitmap2);
             dr2.setCornerRadius(AndroidUtilities.dp(8));
             img2.setImageDrawable(dr2);
@@ -116,14 +116,14 @@ public class FlexatarUI {
     public static File chosenSecond;
 
 
-    public static PopupWindow panelPopup(Context context,View location){
+    public static PopupWindow panelPopup(Context context,int account,View location){
         VoIPBackgroundProvider bkgProvider = new VoIPBackgroundProvider();
         bkgProvider.setTotalSize(200, 400);
         bkgProvider.setHasVideo(true);
 //        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
 //        View popupView = inflater.inflate(R.layout.wait_popup_window, null);
-        FlexatarControlPanelLayout popupView = new FlexatarControlPanelLayout(context,false, FlexatarStorageManager.callFlexatarChooser);
+        FlexatarControlPanelLayout popupView = new FlexatarControlPanelLayout(context,account,false, FlexatarStorageManager.callFlexatarChooser[account]);
 //        FlexatarPanelLayout popupView = makeFlexatarEffectsPanel(context, bkgProvider);
         popupView.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
         PopupWindow popupWindow = new PopupWindow(
@@ -210,12 +210,12 @@ public class FlexatarUI {
         return scrollView;
     }
 */
-    public static LinearLayout makeFlexatarChoosePanel(Context context, VoIPBackgroundProvider backgroundProvider){
+    public static LinearLayout makeFlexatarChoosePanel(Context context,int account, VoIPBackgroundProvider backgroundProvider){
 
 
 
 
-        FlexatarStorageManager.FlexatarChooser currentFlexatarChooser = FlexatarStorageManager.callFlexatarChooser;
+        FlexatarStorageManager.FlexatarChooser currentFlexatarChooser = FlexatarStorageManager.callFlexatarChooser[account];
         currentFlexatarChooser.resetEffects();
         RectF bgRect = new RectF();
         Paint paint = new Paint();
@@ -249,7 +249,7 @@ public class FlexatarUI {
             public void onPageSelected(int page, boolean forward) {
                 currentFlexatarChooser.setFlxType(page);
 
-                FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,currentFlexatarChooser.getFlxType(), null);
+                FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,account,currentFlexatarChooser.getFlxType(), null);
                 ((FlexatarHorizontalRecycleView.Adapter)recyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
                     if (tabsView.getCurrentTabId() == 1) {
                         currentFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
@@ -290,7 +290,7 @@ public class FlexatarUI {
         tabsView.finishAddingTabs();
         tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,0,0,0,0));
         linearLayout.addView(tabsView);
-        FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,currentFlexatarChooser.getFlxType(), null);
+        FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,account,currentFlexatarChooser.getFlxType(), null);
         ((FlexatarHorizontalRecycleView.Adapter)recyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
             if (tabsView.getCurrentTabId() == 1) {
                 currentFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());

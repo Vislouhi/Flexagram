@@ -24,6 +24,7 @@ import android.view.Surface;
 
 import org.flexatar.DataOps.FlexatarData;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.UserConfig;
 import org.webrtc.EglBase;
 import org.webrtc.EglBase14;
 import org.webrtc.EglBase14Impl;
@@ -42,6 +43,7 @@ public class FlexatarVideoEncoder {
     private final String outputPath;
     private final File aacFile;
     private final Runnable completion;
+    private final int account;
     private EglBase eglBase = null;
     private FlxDrawer.GroupMorphState mState;
     private MediaMuxer mMuxer;
@@ -53,11 +55,12 @@ public class FlexatarVideoEncoder {
     private MediaExtractor extractor;
     private int audioTrack;
 
-    public FlexatarVideoEncoder(int mWidth, int mHeight, List<float[]> animationPattern,File videoFile,File aacFile,Runnable completion){
+    public FlexatarVideoEncoder(int account,int mWidth, int mHeight, List<float[]> animationPattern,File videoFile,File aacFile,Runnable completion){
         this.aacFile=aacFile;
         this.completion=completion;
+        this.account=account;
 
-        FlexatarStorageManager.FlexatarChooser chooser = FlexatarStorageManager.roundFlexatarChooser;
+        FlexatarStorageManager.FlexatarChooser chooser = FlexatarStorageManager.roundFlexatarChooser[account];
         int flxType = chooser.getFlxType();
         FlxDrawer flxDrawer;
         flxDrawer = new FlxDrawer();
@@ -96,20 +99,21 @@ public class FlexatarVideoEncoder {
         CountDownLatch latch = new CountDownLatch(1);
 
         handler.post(()->{
-            synchronized (EglBase.lock) {
-                eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
-                try {
-                    // Both these statements have been observed to fail on rare occasions, see BUG=webrtc:5682.
-                    eglBase.createDummyPbufferSurface();
-                    eglBase.makeCurrent();
-                } catch (RuntimeException e) {
-                    // Clean up before rethrowing the exception.
-                    eglBase.release();
-                    handler.getLooper().quit();
-                    throw e;
-                }
-            }
+
             if (flxType == 0) {
+                synchronized (EglBase.lock) {
+                    eglBase = EglBase.create(null, EglBase.CONFIG_PIXEL_BUFFER);
+                    try {
+                        // Both these statements have been observed to fail on rare occasions, see BUG=webrtc:5682.
+                        eglBase.createDummyPbufferSurface();
+                        eglBase.makeCurrent();
+                    } catch (RuntimeException e) {
+                        // Clean up before rethrowing the exception.
+                        eglBase.release();
+                        handler.getLooper().quit();
+                        throw e;
+                    }
+                }
                 flxDrawer.flxvData = videoFlx;
 
                 flxDrawer.onVideoFrameAvailableListener = new Runnable() {
@@ -133,6 +137,8 @@ public class FlexatarVideoEncoder {
                 Log.d("FLX_INJECT","request texture");
                 flxDrawer.prepareVideoTextures();
 
+            }else{
+                latch.countDown();
             }
         });
 
@@ -185,7 +191,7 @@ public class FlexatarVideoEncoder {
             }});
         }*/
         String groupId = chooser.getChosenFirst().getName().replace(".flx", "");
-        List<File> groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(ApplicationLoader.applicationContext, groupId);
+        List<File> groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(ApplicationLoader.applicationContext,account, groupId);
         if (groupFiles.size() != 0) {
             groupFiles.add(chooser.getChosenFirst());
         }
@@ -357,7 +363,8 @@ public class FlexatarVideoEncoder {
             // release encoder, muxer, and input Surface
             releaseEncoder();
             handler.post(()-> {
-                eglBase.release();
+                if (eglBase!=null)
+                    eglBase.release();
             });
 
         }

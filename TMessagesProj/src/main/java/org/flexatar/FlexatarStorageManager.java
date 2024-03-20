@@ -54,8 +54,12 @@ public class FlexatarStorageManager {
     private static final String FLEXATAR_VIDEO_FILES = "flexatar_video_files";
     private static final String HIDDEN_FILES = "hidden_files";
 
-    public static final FlexatarChooser callFlexatarChooser = new FlexatarChooser("call",0.005f,0.0025f);
-    public static final FlexatarChooser roundFlexatarChooser = new FlexatarChooser("round",0.02f,0.0025f);
+//    public static final FlexatarChooser callFlexatarChooser = new FlexatarChooser("call",0.005f,0.0025f);
+//    public static final FlexatarChooser roundFlexatarChooser = new FlexatarChooser("round",0.02f,0.0025f);
+    public static FlexatarChooser[] callFlexatarChooser;
+
+    public static FlexatarChooser[] roundFlexatarChooser;
+
     public static class FlexatarChooser {
         private static final String VIDEO = "video";
         private static final String FIRST = "first";
@@ -66,6 +70,7 @@ public class FlexatarStorageManager {
         private final float d2;
         private final float d3;
         private final TimerAutoDestroy<FlxDrawer.GroupMorphState> groupTimer;
+        private final int account;
 
         private File chosenVideoFile;
         private File first;
@@ -85,13 +90,14 @@ public class FlexatarStorageManager {
             synchronized (flexatarFileLoadMutex) {
 
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 flxType = sharedPreferences.getInt(FLX_TYPE, 0);
             }
             return flxType;
         }
-        public FlexatarChooser(String tag,float d2,float d3){
+        public FlexatarChooser(int account,String tag,float d2,float d3){
+            this.account=account;
             this.tag=tag;
             this.d2=d2;
             this.d3=d3;
@@ -176,7 +182,7 @@ public class FlexatarStorageManager {
             synchronized (flexatarFileLoadMutex) {
                 this.effectIndex = effectIndex;
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putInt("EffectIndex", effectIndex);
@@ -187,7 +193,7 @@ public class FlexatarStorageManager {
             if (effectIndex!=-1) return effectIndex;
             synchronized (flexatarFileLoadMutex) {
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 this.effectIndex = sharedPreferences.getInt("EffectIndex", 0);
                 effectId = effectIndex == 3 ? 1:0;
@@ -201,7 +207,7 @@ public class FlexatarStorageManager {
             synchronized (flexatarFileLoadMutex) {
                 this.mixWeight = mixWeight;
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putFloat("MixWeight", mixWeight);
@@ -212,7 +218,7 @@ public class FlexatarStorageManager {
             if (mixWeight>=0) return mixWeight;
             synchronized (flexatarFileLoadMutex) {
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 this.mixWeight = sharedPreferences.getFloat("MixWeight", 0.5f);
                 return this.mixWeight;
@@ -292,7 +298,7 @@ public class FlexatarStorageManager {
         public void setChosenFlexatar(String path) {
             synchronized (flexatarFileLoadMutex) {
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 String oldFirstPath = sharedPreferences.getString(FIRST, null);
 
@@ -312,7 +318,7 @@ public class FlexatarStorageManager {
         public void setChosenVideoFlexatar(String path) {
             synchronized (flexatarFileLoadMutex) {
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString(VIDEO, path);
@@ -326,7 +332,7 @@ public class FlexatarStorageManager {
         }
         public void setFlexatarGroup(){
             String groupId = getChosenFirst().getName().replace(".flx", "");
-            groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(ApplicationLoader.applicationContext, groupId);
+            groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(ApplicationLoader.applicationContext,account, groupId);
             if (groupFiles.size() != 0) {
                 groupFiles.add(getChosenFirst());
             }
@@ -335,12 +341,12 @@ public class FlexatarStorageManager {
             synchronized (flexatarFileLoadMutex) {
                 if (chosenVideoFile != null && chosenVideoFile.exists()) return chosenVideoFile;
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 String videoPath = sharedPreferences.getString(VIDEO, null);
 
                 if (videoPath == null  || !(new File(videoPath).exists()) ) {
-                    File file = getVideoFlexatarFileList(context)[0];
+                    File file = getVideoFlexatarFileList(context,account)[0];
                     chosenVideoFile = file;
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putString(VIDEO, file.getAbsolutePath());
@@ -355,11 +361,11 @@ public class FlexatarStorageManager {
             synchronized (flexatarFileLoadMutex) {
                 if (first != null && first.exists()) return first;
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 String firstPath = sharedPreferences.getString(FIRST, null);
                 if (firstPath == null) {
-                    for (File file : getFlexatarFileList(context)) {
+                    for (File file : getFlexatarFileList(context,account)) {
                         if (second == null) {
                             first = file;
                             return first;
@@ -378,7 +384,7 @@ public class FlexatarStorageManager {
                 if (firstFile.exists()) {
                     first = firstFile;
                 } else {
-                    for (File file : getFlexatarFileList(context)) {
+                    for (File file : getFlexatarFileList(context,account)) {
                         if (second == null) {
                             first = file;
                             break;
@@ -400,12 +406,12 @@ public class FlexatarStorageManager {
             synchronized (flexatarFileLoadMutex) {
                 if (second != null && second.exists()) return second;
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 String firstPath = sharedPreferences.getString(SECOND, null);
 
                 if (firstPath == null) {
-                    for (File file : getFlexatarFileList(context)) {
+                    for (File file : getFlexatarFileList(context,account)) {
                         if (first == null) {
                             second = file;
                             return second;
@@ -424,7 +430,7 @@ public class FlexatarStorageManager {
                 if (firstFile.exists()) {
                     second = firstFile;
                 } else {
-                    for (File file : getFlexatarFileList(context)) {
+                    for (File file : getFlexatarFileList(context,account)) {
                         if (first == null) {
                             second = file;
                             break;
@@ -488,7 +494,7 @@ public class FlexatarStorageManager {
             synchronized (flexatarFileLoadMutex) {
                 flxType = page;
                 Context context = ApplicationLoader.applicationContext;
-                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+                String storageName = PREF_STORAGE_NAME_CHOSEN + tag + UserConfig.getInstance(account).clientUserId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putInt(FLX_TYPE, flxType);
@@ -498,9 +504,10 @@ public class FlexatarStorageManager {
         }
     }
 
-    public static File getFlexatarStorage(Context context){
+    public static File getFlexatarStorage(Context context,int account){
         File rootDir = context.getFilesDir();
-        String userFolderName = "tg_" + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        if (account == -1) account = UserConfig.selectedAccount;
+        String userFolderName = "tg_" + UserConfig.getInstance(account).clientUserId;
         File userFolder = new File(rootDir,userFolderName);
         if (!userFolder.exists()) userFolder.mkdir();
 
@@ -520,10 +527,10 @@ public class FlexatarStorageManager {
     }
     private final static String FLEXATAR_SEND_IMAGE_STORAGE_FOLDER = "send_image_storage";
     private final static String FLEXATAR_TMP_LOAD = "tmp_load";
-    public static File createFlexatarSendImageStorage(Context context){
-
+    public static File createFlexatarSendImageStorage(Context context,int account){
+        if (account==-1)account = UserConfig.selectedAccount;
         File rootDir = context.getFilesDir();
-        String userFolderName = "tg_" + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        String userFolderName = "tg_" + UserConfig.getInstance(account).clientUserId;
         File userFolder = new File(rootDir,userFolderName);
         if (!userFolder.exists()) userFolder.mkdir();
 
@@ -534,10 +541,10 @@ public class FlexatarStorageManager {
 
         return flexatarStorageFolder;
     }
-    public static File createTmpLoadFlexatarStorage(Context context){
-
+    public static File createTmpLoadFlexatarStorage(Context context,int account){
+        if (account==-1) account = UserConfig.selectedAccount;
         File rootDir = context.getFilesDir();
-        String userFolderName = "tg_" + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        String userFolderName = "tg_" + UserConfig.getInstance(account).clientUserId;
         File userFolder = new File(rootDir,userFolderName);
         if (!userFolder.exists()) userFolder.mkdir();
 
@@ -548,8 +555,8 @@ public class FlexatarStorageManager {
 
         return flexatarStorageFolder;
     }
-    public static boolean checkIfTmpFileExists(String name){
-        return new File(createTmpLoadFlexatarStorage(ApplicationLoader.applicationContext),name).exists();
+    public static boolean checkIfTmpFileExists(String name,int account){
+        return new File(createTmpLoadFlexatarStorage(ApplicationLoader.applicationContext,account),name).exists();
     }
 
     public static File createTmpVideoStorage(){
@@ -561,18 +568,18 @@ public class FlexatarStorageManager {
         }
         return flexatarStorageFolder;
     }
-    public static File addToStorage(Context context, byte[] flexatarData,String fId){
+    public static File addToStorage(Context context,int account, byte[] flexatarData,String fId){
 
 
-        return addToStorage(context,  flexatarData,fId, "flexatar_");
+        return addToStorage(context,account,  flexatarData,fId, "flexatar_");
 
     }
-    public static File addToStorage(Context context, byte[] flexatarData,String fId,String prefix) {
-        return addToStorage(context, flexatarData, fId, prefix, 1);
+    public static File addToStorage(Context context,int account, byte[] flexatarData,String fId,String prefix) {
+        return addToStorage(context,account, flexatarData, fId, prefix, 1);
     }
 
-    public static File addToStorage(Context context, byte[] flexatarData,String fId,String prefix,int flexatarType){
-        File flexatarStorageFolder = getFlexatarStorage(context);
+    public static File addToStorage(Context context,int account, byte[] flexatarData,String fId,String prefix,int flexatarType){
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
 
 //        File rootDir = context.getFilesDir();
 //        File flexatarStorageFolder = new File(rootDir,FLEXATAR_STORAGE_FOLDER);
@@ -581,7 +588,7 @@ public class FlexatarStorageManager {
         File flexataFile = new File(flexatarStorageFolder,fileName);
         if (!flexataFile.exists()){
             if (flexatarType == 1) {
-                addStorageRecord(context, fId);
+                addStorageRecord(context,account, fId);
                 dataToFile(flexatarData,flexataFile);
             }else if (flexatarType == 0) {
                 String videoFileName = fileName.replace(".flx",".mp4");
@@ -589,7 +596,7 @@ public class FlexatarStorageManager {
                 byte[][] extractResult = extractVideo(flexatarData);
                 Log.d("FLX_INJECT","flxPack size "+extractResult[0].length);
                 Log.d("FLX_INJECT","flxVideo size "+extractResult[1].length);
-                addStorageRecordVideo(context, fId);
+                addStorageRecordVideo(context,account, fId);
                 dataToFile(extractResult[0],flexataFile);
                 dataToFile(extractResult[1],videoFile);
 
@@ -600,15 +607,15 @@ public class FlexatarStorageManager {
 
     }
 
-    public static File addToStorage(Context context, File srcFile,String fId){
+    public static File addToStorage(Context context,int account, File srcFile,String fId){
 
 
-        File flexatarStorageFolder = getFlexatarStorage(context);
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
         String fileName = ServerDataProc.routToFileName(fId,"flexatar_");
         File flexataFile = new File(flexatarStorageFolder,fileName);
         if (!flexataFile.exists()){
 
-            addStorageRecord(context,fId);
+            addStorageRecord(context,account,fId);
             try {
                 copy(srcFile, flexataFile);
             } catch (IOException e) {
@@ -618,20 +625,20 @@ public class FlexatarStorageManager {
         }
         return flexataFile;
     }
-    public static File addToStorage(Context context, File srcFile){
+    public static File addToStorage(Context context,int account, File srcFile){
         File videoFile = new File(srcFile.getAbsolutePath().replace(".flx", ".mp4"));
         boolean isVideo = videoFile.exists();
         String fid = srcFile.getName().replace(".flx","");
         Log.d("FLX_INJECT","add to gallery "+fid);
-        File flexatarStorageFolder = getFlexatarStorage(context);
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
         String fileName = srcFile.getName();
         File flexataFile = new File(flexatarStorageFolder,fileName);
 
         if (!flexataFile.exists()){
             if (isVideo)
-                addStorageRecordVideo(context,fid);
+                addStorageRecordVideo(context,account,fid);
             else
-                addStorageRecord(context,fid);
+                addStorageRecord(context,account,fid);
             try {
                 copy(srcFile, flexataFile);
                 if (isVideo){
@@ -664,8 +671,9 @@ public class FlexatarStorageManager {
         }
     }
 
-    public static synchronized void addStorageRecord(Context context,String fId){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized void addStorageRecord(Context context,int account,String fId){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
         try {
@@ -680,8 +688,9 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static synchronized void addStorageRecordVideo(Context context,String fId){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized void addStorageRecordVideo(Context context,int account,String fId){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_VIDEO_FILES, "[]");
         try {
@@ -696,8 +705,9 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static synchronized void addStorageHiddenRecord(Context context,String fId){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized void addStorageHiddenRecord(Context context,int account,String fId){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(HIDDEN_FILES, "[]");
         try {
@@ -712,16 +722,18 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static synchronized List<String> getGroups(Context context){
-        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized List<String> getGroups(Context context,int account){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         Map<String, ?> allEntries = sharedPreferences.getAll();
         Set<String> keys = allEntries.keySet();
 
         return new ArrayList<String>(){{addAll(keys);}}.stream().sequential().map(x->x.replace("groupId_","")).collect(Collectors.toList());
     }
-    public static synchronized void addGroupRecord(Context context,String groupId,String fId){
-        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized void addGroupRecord(Context context,int account,String groupId,String fId){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String groupKey = "groupId_"+groupId;
         String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
@@ -737,8 +749,9 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static synchronized void moveGroupRecord(Context context,String groupId,String fId,int direction){
-        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized void moveGroupRecord(Context context,int account,String groupId,String fId,int direction){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String groupKey = "groupId_"+groupId;
         String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
@@ -761,8 +774,9 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static synchronized int getGroupSize(Context context,String groupId){
-        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized int getGroupSize(Context context,int account,String groupId){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(account).clientUserId;
 
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String groupKey = "groupId_"+groupId;
@@ -776,8 +790,9 @@ public class FlexatarStorageManager {
         }
 
     }
-    public static synchronized String[] getGroupRecords(Context context,String groupId){
-        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized String[] getGroupRecords(Context context,int account,String groupId){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(account).clientUserId;
 
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String groupKey = "groupId_"+groupId;
@@ -797,10 +812,10 @@ public class FlexatarStorageManager {
         }
 
     }
-    public static synchronized void removeGroupRecord(Context context,String groupId,String fid){
+    public static synchronized void removeGroupRecord(Context context,int account,String groupId,String fid){
         String groupKey = "groupId_"+groupId;
-
-        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME_GROUP + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
         try {
@@ -823,9 +838,9 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static List<File> getFlexatarGroupFileList(Context context,String groupId){
-        File flexatarStorageFolder = getFlexatarStorage(context);
-        String[] fids = getGroupRecords(context,groupId);
+    public static List<File> getFlexatarGroupFileList(Context context,int account,String groupId){
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
+        String[] fids = getGroupRecords(context,account,groupId);
 
         List<File> files = new ArrayList<>();
         for (int i = 0; i < fids.length; i++) {
@@ -833,8 +848,9 @@ public class FlexatarStorageManager {
         }
         return files;
     }
-    private static synchronized void removeRecord(Context context,String fid){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    private static synchronized void removeRecord(Context context,int account,String fid){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
         try {
@@ -853,8 +869,9 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    private static synchronized void removeVideoRecord(Context context,String fid){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    private static synchronized void removeVideoRecord(Context context,int account,String fid){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_VIDEO_FILES, "[]");
         try {
@@ -873,8 +890,8 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static synchronized void removeHiddenRecord(Context context,String fid){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized void removeHiddenRecord(Context context,int account,String fid){
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(HIDDEN_FILES, "[]");
         try {
@@ -893,15 +910,17 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static synchronized void clearHiddenRecord(Context context){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized void clearHiddenRecord(Context context,int account){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(HIDDEN_FILES, "[]");
         editor.apply();
     }
-    public static synchronized String[] getRecords(Context context){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized String[] getRecords(Context context,int account){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
 
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
@@ -919,8 +938,9 @@ public class FlexatarStorageManager {
         }
 
     }
-    public static synchronized String[] getVideoRecords(Context context){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized String[] getVideoRecords(Context context,int account){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
 
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_VIDEO_FILES, "[]");
@@ -937,8 +957,9 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
     }
-    public static synchronized List<String> getHiddenRecords(Context context){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized List<String> getHiddenRecords(Context context,int account){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
 
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(HIDDEN_FILES, "[]");
@@ -956,8 +977,9 @@ public class FlexatarStorageManager {
         }
 
     }
-    public static synchronized List<String> getRecordsExcept(Context context,List<String> except){
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+    public static synchronized List<String> getRecordsExcept(Context context,int account,List<String> except){
+        if (account==-1)account=UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
 
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
@@ -978,9 +1000,10 @@ public class FlexatarStorageManager {
 
     }
 
-    public static synchronized List<String> getSavedFids(String prefix){
+    public static synchronized List<String> getSavedFids(String prefix,int account){
         Context context = ApplicationLoader.applicationContext;
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        if (account==-1)account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         String flexatarFilesString = sharedPreferences.getString(FLEXATAR_FILES, "[]");
         String flexatarVideoFilesString = sharedPreferences.getString(FLEXATAR_VIDEO_FILES, "[]");
@@ -1015,48 +1038,47 @@ public class FlexatarStorageManager {
         }
 
     }
-    public static void deleteFromStorage(Context context,File flexatarFile){
-        deleteFromStorage(context,flexatarFile,false);
+    public static void deleteFromStorage(Context context,int account,File flexatarFile){
+        deleteFromStorage(context,account,flexatarFile,false);
     }
-    public static void deleteFromStorage(Context context,File flexatarFile,boolean deleteOnCloaud){
+    public static void deleteFromStorage(Context context,int account,File flexatarFile,boolean deleteOnCloaud){
         if (flexatarFile.exists()){
             File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx", ".mp4"));
             if (videoFile.exists()){
-                removeVideoRecord(context, flexatarFile.getName().replace(".flx", ""));
+                removeVideoRecord(context, account, flexatarFile.getName().replace(".flx", ""));
                 videoFile.delete();
             }else {
-                removeRecord(context, flexatarFile.getName().replace(".flx", ""));
-            }
-            if (deleteOnCloaud) {
-                String ftarRout = ServerDataProc.fileNameToRout(flexatarFile.getName());
-                if (ftarRout != null) {
-                    String deleteRout = ServerDataProc.genDeleteRout(ftarRout);
-                    FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), deleteRout, "DELETE", new FlexatarServerAccess.OnRequestJsonReady() {
-                        @Override
-                        public void onReady(FlexatarServerAccess.StdResponse response) {
-                            Log.d("FLX_INJECT", "flexatar remote deletion success");
-                        }
-
-                        @Override
-                        public void onError() {
-                            Log.d("FLX_INJECT", "flexatar remote deletion error");
-                        }
-                    });
-//                    FlexatarServerAccess.lambdaRequest("/" + deleteRout, "DELETE", null, null, null);
-                }
+                removeRecord(context,account, flexatarFile.getName().replace(".flx", ""));
             }
             flexatarFile.delete();
         }
+        if (deleteOnCloaud) {
+            String ftarRout = ServerDataProc.fileNameToRout(flexatarFile.getName());
+            if (ftarRout != null) {
+                String deleteRout = ServerDataProc.genDeleteRout(ftarRout);
+                FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account), deleteRout, "DELETE", new FlexatarServerAccess.OnRequestJsonReady() {
+                    @Override
+                    public void onReady(FlexatarServerAccess.StdResponse response) {
+                        Log.d("FLX_INJECT", "flexatar remote deletion success");
+                    }
 
+                    @Override
+                    public void onError() {
+                        Log.d("FLX_INJECT", "flexatar remote deletion error");
+                    }
+                });
+//                    FlexatarServerAccess.lambdaRequest("/" + deleteRout, "DELETE", null, null, null);
+            }
+        }
     }
-    public static void deleteVideoFromStorage(Context context,File flexatarFile,boolean deleteOnCloaud){
+    public static void deleteVideoFromStorage(Context context,int account,File flexatarFile,boolean deleteOnCloaud){
         if (flexatarFile.exists()){
-            removeVideoRecord(context,flexatarFile.getName().replace(".flx",""));
+            removeVideoRecord(context,account,flexatarFile.getName().replace(".flx",""));
             if (deleteOnCloaud) {
                 String ftarRout = ServerDataProc.fileNameToRout(flexatarFile.getName());
                 if (ftarRout != null) {
                     String deleteRout = ServerDataProc.genDeleteRout(ftarRout);
-                    FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), deleteRout, "DELETE", new FlexatarServerAccess.OnRequestJsonReady() {
+                    FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account), deleteRout, "DELETE", new FlexatarServerAccess.OnRequestJsonReady() {
                         @Override
                         public void onReady(FlexatarServerAccess.StdResponse response) {
                             Log.d("FLX_INJECT", "flexatar remote deletion success");
@@ -1351,7 +1373,7 @@ public class FlexatarStorageManager {
         return null;
     }
 
-    public static void addDefaultFlexatars(){
+    public static void addDefaultFlexatars(int account){
 
         String[] flxFileNames = { "char6t", "char7t"};
         for (int i = 0; i < flxFileNames.length; i++) {
@@ -1360,11 +1382,11 @@ public class FlexatarStorageManager {
             String flexatarLink = "flexatar/" + fName+".p";
 
             byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
-            FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,flxRaw,fName,"builtin_");
+            FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,account,flxRaw,fName,"builtin_");
 
         }
     }
-    public static void addDefaultVideoFlexatars(){
+    public static void addDefaultVideoFlexatars(int account){
 //        for(File f :getVideoFlexatarFileList(ApplicationLoader.applicationContext)){
 //            deleteVideoFromStorage(ApplicationLoader.applicationContext,f,false);
 //        }
@@ -1376,16 +1398,16 @@ public class FlexatarStorageManager {
             String flexatarLink = "flexatar/" + fName+".p";
 
             byte[] flxRaw = AssetAccess.dataFromFile(flexatarLink);
-            FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,flxRaw,fName,"builtin_",0);
+            FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,account,flxRaw,fName,"builtin_",0);
 
         }
     }
-    public static File[] getFlexatarFileList(Context context){
-        File flexatarStorageFolder = getFlexatarStorage(context);
-        String[] fids = getRecords(context);
+    public static File[] getFlexatarFileList(Context context,int account){
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
+        String[] fids = getRecords(context,account);
         if (fids.length == 0){
-            addDefaultFlexatars();
-            fids = getRecords(context);
+            addDefaultFlexatars(account);
+            fids = getRecords(context,account);
         }
         File[] files = new File[fids.length];
 //        Log.d("FLX_INJECT", "length files "+files.length);
@@ -1400,12 +1422,12 @@ public class FlexatarStorageManager {
         return files;
     }
 
-    public static File[] getVideoFlexatarFileList(Context context){
-        File flexatarStorageFolder = getFlexatarStorage(context);
-        String[] fids = getVideoRecords(context);
+    public static File[] getVideoFlexatarFileList(Context context,int account){
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
+        String[] fids = getVideoRecords(context,account);
         if (fids.length == 0){
-            addDefaultVideoFlexatars();
-            fids = getVideoRecords(context);
+            addDefaultVideoFlexatars(account);
+            fids = getVideoRecords(context,account);
         }
         File[] files = new File[fids.length];
         for (int i = 0; i < fids.length; i++) {
@@ -1417,12 +1439,12 @@ public class FlexatarStorageManager {
         return files;
     }
 
-    public static List<File> getFlexatarFileListExcept(Context context,List<String> except){
-        File flexatarStorageFolder = getFlexatarStorage(context);
-        String[] fids = getRecordsExcept(context, except).toArray(new String[0]);
+    public static List<File> getFlexatarFileListExcept(Context context,int account,List<String> except){
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
+        String[] fids = getRecordsExcept(context,account, except).toArray(new String[0]);
         if (fids.length == 0){
-            addDefaultFlexatars();
-            fids = getRecords(context);
+            addDefaultFlexatars(account);
+            fids = getRecords(context,account);
         }
         List<File> files = new ArrayList<>();
 //        Log.d("FLX_INJECT", "length files "+files.length);
@@ -1437,9 +1459,9 @@ public class FlexatarStorageManager {
         return files;
     }
 
-    public static File[] getFlexatarFileList(Context context,String prefix){
-        File flexatarStorageFolder = getFlexatarStorage(context);
-        String[] fids = getRecords(context);
+    public static File[] getFlexatarFileList(Context context,int account,String prefix){
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
+        String[] fids = getRecords(context,account);
         List<File> files = new ArrayList<>();
         for (int i = 0; i < fids.length; i++) {
             if (fids[i].startsWith(prefix))
@@ -1451,13 +1473,13 @@ public class FlexatarStorageManager {
         return files.toArray(new File[0]);
     }
 
-    public static File[] getVideoFlexatarFileList(Context context,String prefix){
-        File flexatarStorageFolder = getFlexatarStorage(context);
-        String[] fids = getVideoRecords(context);
+    public static File[] getVideoFlexatarFileList(Context context,int account,String prefix){
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
+        String[] fids = getVideoRecords(context,account);
 
         if (fids.length == 0){
-            addDefaultVideoFlexatars();
-            fids = getVideoRecords(context);
+            addDefaultVideoFlexatars(account);
+            fids = getVideoRecords(context,account);
         }
         List<File> files = new ArrayList<>();
         for (int i = 0; i < fids.length; i++) {
@@ -1492,9 +1514,10 @@ public class FlexatarStorageManager {
         File flexatarStorageFolder = new File(rootDir,FLEXATAR_STORAGE_FOLDER);
         return new File(flexatarStorageFolder,fName);
     }*/
-    public static void clearStorage(){
+    public static void clearStorage(int account){
+        if (account==-1)account = UserConfig.selectedAccount;
         Context context = ApplicationLoader.applicationContext;
-        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(UserConfig.selectedAccount).clientUserId;
+        String storageName = PREF_STORAGE_NAME + UserConfig.getInstance(account).clientUserId;
 
         SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -1503,7 +1526,7 @@ public class FlexatarStorageManager {
         editor.apply();
 
 //        File rootDir = context.getFilesDir();
-        File flexatarStorageFolder = getFlexatarStorage(context);
+        File flexatarStorageFolder = getFlexatarStorage(context,account);
         File[] allStroageFiles = flexatarStorageFolder.listFiles();
         if (allStroageFiles == null) return;
         if (allStroageFiles.length == 0) return;

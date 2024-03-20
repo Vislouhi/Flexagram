@@ -69,6 +69,7 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FileStreamLoadOperation;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.video.VideoPlayerHolderBase;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -434,7 +435,7 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
         Data cData = new Data(videoBytes);
         cData = cData.encodeLengthHeader().add(cData);
         sendData = sendData.add(cData);
-        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
             @Override
             public void onReady(FlexatarServerAccess.StdResponse response) {
                 Log.d("FLX_INJECT", "make video flx data response: " + response.toJson().toString());

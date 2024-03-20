@@ -31,14 +31,14 @@ public class TicketsController {
     private static Map<String, Timer> ticketTimers = null;
     private static final int TIMEOUT = 30*60;
 
-    public interface TicketObserver{
+    /*public interface TicketObserver{
         void onReady(String id,File file);
         void onError(String id,Ticket ticket);
         void onTimer(String id,Ticket ticket);
 
         void onStart(String lfid,Ticket ticket);
-    }
-    public static class Ticket{
+    }*/
+    /*public static class Ticket{
 
         public String date;
 
@@ -129,9 +129,9 @@ public class TicketsController {
             return String.format(Locale.US, "%02d:%02d", minutes, seconds);
         }
 
-    }
+    }*/
 
-    private static TicketObserver ticketObserver;
+//    private static TicketObserver ticketObserver;
 //    public static void clearTimers(){
 //        if (ticketTimers == null) return;
 //        for(Map.Entry<String,Timer> ent : ticketTimers.entrySet()){
@@ -140,7 +140,7 @@ public class TicketsController {
 //        }
 //        ticketTimers.clear();
 //    }
-    public static void attachObserver(TicketObserver ticketObserver){
+   /* public static void attachObserver(TicketObserver ticketObserver){
         TicketsController.ticketObserver=ticketObserver;
         Map<String, Ticket> tickets = TicketStorage.getTickets();
         for(Map.Entry<String, Ticket> ticket : tickets.entrySet()){
@@ -148,25 +148,25 @@ public class TicketsController {
             TicketsController.ticketObserver.onStart(ticket.getKey(),ticket.getValue());
         }
 
-    }
-    public static void removeObserver(){
-        TicketsController.ticketObserver = null;
-    }
+    }*/
+//    public static void removeObserver(){
+//        TicketsController.ticketObserver = null;
+//    }
     private static boolean isRunning = false;
     private static Set<String> lfidsPooling = new HashSet<>();
-    public static void flexatarTaskStart(String lfid,Ticket ticket){
+   /* public static void flexatarTaskStart(String lfid,Ticket ticket){
         if (lfidsPooling.contains(lfid)) return;
         isRunning = true;
         lfidsPooling.add(lfid);
 
-        poolFlexatar(lfid,ticket);
-    }
-    public static void stop(){
+//        poolFlexatar(lfid,ticket);
+    }*/
+   /* public static void stop(){
         isRunning = false;
         lfidsPooling.clear();
-    }
+    }*/
 
-    private static void poolFlexatar(String lfid,Ticket ticket){
+    /*private static void poolFlexatar(String lfid,Ticket ticket){
         FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "poll/" + ticket.id, "GET", new FlexatarServerAccess.OnRequestJsonReady() {
             @Override
             public void onReady(FlexatarServerAccess.StdResponse response) {
@@ -265,5 +265,5 @@ public class TicketsController {
             }
 
         });
-    }
+    }*/
 }

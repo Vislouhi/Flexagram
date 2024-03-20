@@ -34,6 +34,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.messenger.voip.VoIPService;
@@ -325,7 +326,9 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         VoIPBackgroundProvider bkgProvider = new VoIPBackgroundProvider();
         bkgProvider.setHasVideo(true);
         bkgProvider.setTotalSize(200,200);
-        flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context,bkgProvider);
+        int account = service == null ? UserConfig.selectedAccount : service.getAccount();
+
+        flexatarPanelView = FlexatarUI.makeFlexatarChoosePanel(context, account, bkgProvider);
         addView(flexatarPanelView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 12, 100, 12, 0));
 
     }

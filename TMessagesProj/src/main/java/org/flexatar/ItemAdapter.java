@@ -27,6 +27,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
     private final List<ItemModel> itemsAction;
     private final List<ItemModel> itemsProgress;
     private final List<ItemModel> itemsFlexatar;
+    private final int account;
     private Context context;
     private ClickListener flexatarCellOnLongClickListener;
     private boolean isCheckBoxes = false;
@@ -86,10 +87,10 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
         itemsFlexatar.subList(1,itemsFlexatar.size()).clear();
         List<File> flexatarsInLocalStorage = null;
         if (flexatarType == 0){
-            flexatarsInLocalStorage = Arrays.asList(FlexatarStorageManager.getVideoFlexatarFileList(context));
+            flexatarsInLocalStorage = Arrays.asList(FlexatarStorageManager.getVideoFlexatarFileList(context,account));
 
         }else if (flexatarType == 1){
-            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context, FlexatarStorageManager.getHiddenRecords(context));
+            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileListExcept(context,account, FlexatarStorageManager.getHiddenRecords(context,account));
         }
         for (int i = 0; i < flexatarsInLocalStorage.size(); i++) {
             ItemModel item = FlexatarCabinetActivity.flexatarItemFactory(flexatarsInLocalStorage.get(i));
@@ -110,11 +111,12 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
 
     private ClickListener flexatarCellOnClickListener;
 
-    public ItemAdapter(Context context, List<ItemModel> itemsAction, List<ItemModel> itemsProgress, List<ItemModel> itemsFlexatar) {
+    public ItemAdapter(Context context,int account, List<ItemModel> itemsAction, List<ItemModel> itemsProgress, List<ItemModel> itemsFlexatar) {
         this.context = context;
         this.itemsAction = itemsAction;
         this.itemsProgress = itemsProgress;
         this.itemsFlexatar = itemsFlexatar;
+        this.account = account;
     }
 
     @NonNull

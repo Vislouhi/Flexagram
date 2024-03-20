@@ -471,6 +471,9 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			}
 		}
 	};
+	public int getCurrentAccount(){
+		return currentAccount;
+	}
 
 	public CountDownLatch getGroupCallBottomSheetLatch() {
 		return groupCallBottomSheetLatch;
@@ -803,6 +806,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				setModeRunnable = null;
 			}
 		}
+
 
 		if (isOutgoing) {
 			if (user != null) {
@@ -1221,6 +1225,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 						tgVoip[index].activateVideoCapturer(captureDevice[index]);
 					}
 					if (captureDevice[index] != 0) {
+						VoIPService.getSharedInstance().setAudioListener(true);
+						VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
 						return;
 					}
 				}
@@ -2288,6 +2294,9 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (type == CAPTURE_DEVICE_CAMERA) {
 			dispatchStateChanged(STATE_WAIT_INIT);
 		}
+
+		tgVoip[type].setAudioListener(true);
+		tgVoip[type].setFlexatarDelay1(FlexatarRenderer.isFlexatarCamera);
 	}
 
 	private void updateConnectionState(int type, int state, boolean inTransition) {
@@ -2540,8 +2549,14 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			}));
 			tgVoip[CAPTURE_DEVICE_CAMERA].setMuteMicrophone(micMute);
 
-			VoIPService.getSharedInstance().setAudioListener(true);
-			VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
+			AndroidUtilities.runOnUIThread(()->{
+				tgVoip[CAPTURE_DEVICE_CAMERA].setAudioListener(true);
+				tgVoip[CAPTURE_DEVICE_CAMERA].setFlexatarDelay1(FlexatarRenderer.isFlexatarCamera);
+			},1000);
+
+//			tgVoip[CAPTURE_DEVICE_CAMERA].setFlexatarDelay1(FlexatarRenderer.isFlexatarCamera);
+//			VoIPService.getSharedInstance().setAudioListener(true);
+//			VoIPService.getSharedInstance().setFlexatarDelay(FlexatarRenderer.isFlexatarCamera);
 
 			if (newAvailable != isVideoAvailable) {
 				isVideoAvailable = newAvailable;
@@ -3310,7 +3325,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			}
 		}
 	}
-	public void destroyCameraCapturer(){
+	/*public void destroyCameraCapturer(){
 		if (captureDevice[CAPTURE_DEVICE_CAMERA]!=0 ) {
 //			tgVoip[CAPTURE_DEVICE_CAMERA].clearVideoCapturer();
 			NativeInstance.destroyVideoCapturer(captureDevice[CAPTURE_DEVICE_CAMERA]);
@@ -3331,7 +3346,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		createCaptureDevice(false);
 
 
-	}
+	}*/
 
 	public long getCallID() {
 		return privateCall != null ? privateCall.id : 0;
@@ -3669,6 +3684,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		updateServerConfig();
 		NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.appDidLogout);
 		ConnectionsManager.getInstance(currentAccount).setAppPaused(false, false);
+
+
 	}
 
 	@SuppressLint("InvalidWakeLockTag")

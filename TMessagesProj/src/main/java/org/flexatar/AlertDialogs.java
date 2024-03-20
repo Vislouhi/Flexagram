@@ -36,6 +36,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
@@ -177,6 +178,7 @@ public class AlertDialogs {
 
     public static AlertDialog askToPutFlexatarToGallery(Context context,File flexatarFile){
 //        Context context = ApplicationLoader.applicationContext;
+        int account = UserConfig.selectedAccount;
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(LocaleController.getString("FlexatarInfo",R.string.FlexatarInfo));
 //        builder.setTitle(LocaleController.getString("VerifyAlertCap", R.string.VerifyAlertCap));
@@ -184,7 +186,32 @@ public class AlertDialogs {
 
 
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
-           FlexatarStorageManager.addToStorage(context,flexatarFile);
+           FlexatarStorageManager.addToStorage(context,account,flexatarFile);
+           File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx",".mp4"));
+            if (flexatarFile.exists()) flexatarFile.delete();
+            if (videoFile.exists()) videoFile.delete();
+
+        });
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), (dialogInterface, i) -> {
+
+        });
+        return builder.create();
+    }
+    public static AlertDialog askToDeleteFlexatarFromCloud(Context context,File tmpFile,File galleryFile){
+//        Context context = ApplicationLoader.applicationContext;
+        int account = UserConfig.selectedAccount;
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("FlexatarInfo",R.string.FlexatarInfo));
+//        builder.setTitle(LocaleController.getString("VerifyAlertCap", R.string.VerifyAlertCap));
+        builder.setMessage(LocaleController.getString("AskDeleteFromCloud",R.string.AskDeleteFromCloud));
+
+
+        builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialogInterface, i) -> {
+            if (tmpFile.exists())tmpFile.delete();
+            if (galleryFile.exists()){
+                FlexatarStorageManager.deleteFromStorage(context,account,galleryFile,true);
+            }
+
         });
         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), (dialogInterface, i) -> {
 
@@ -229,6 +256,17 @@ public class AlertDialogs {
 
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
             if (completion!=null) completion.run();
+        });
+
+        return builder.create();
+    }
+    public static AlertDialog sayFlexatarNotFound(Context context){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("FlexatarInfo",R.string.FlexatarInfo));
+        builder.setMessage(LocaleController.getString("FlexatarNotFound",R.string.FlexatarNotFound));
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+
         });
 
         return builder.create();
@@ -292,9 +330,40 @@ public class AlertDialogs {
     public interface OnAddToGalleryListener{
         void onAdd(File flexatarFile);
     }
+    public interface OnDeleteFromGalleryListener{
+        void onDelete(File tmpFile,File galleryFile);
+    }
 
+    public static class ImageViewRoundBkg extends ImageView{
+        private final RectF bgRect = new RectF();
+        private final Paint paint = new Paint();
+
+        private final float scale = 0.57f;
+        public ImageViewRoundBkg(Context context) {
+            super(context);
+            paint.setARGB(100, 0, 0, 0);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            Drawable drawable = getDrawable();
+
+            bgRect.set(0, 0, getWidth(), getHeight());
+            canvas.drawRoundRect(bgRect, getWidth()/2, getHeight()/2, paint);
+            float w = getWidth();
+            float h = getHeight();
+            int left = (int) ((w-w*scale)/2);
+            int right = (int) (left + w*scale);
+            int top = (int) ((h-h*scale)/2);
+            int bottom = (int) (top + h*scale);
+            drawable.setBounds(left, top, right, bottom);
+            drawable.draw(canvas);
+//                super.onDraw(canvas);
+        }
+    }
     public static PopupWindow importFlexatarPopup(Context context, View location,Theme.ResourcesProvider resourceProvider,
-                                                  ServerDataProc.FlexatarChatCellInfo ftarInfo,Runnable onDismiss,OnAddToGalleryListener onAddToGallery,Runnable alreadyInGallery) {
+                                                  ServerDataProc.FlexatarChatCellInfo ftarInfo,Runnable onDismiss,OnAddToGalleryListener onAddToGallery,Runnable alreadyInGallery,OnDeleteFromGalleryListener onDeleteFromGallery,Runnable flexatarNotFound) {
+        int account = UserConfig.selectedAccount;
         WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
         Point size = new Point();
@@ -306,50 +375,52 @@ public class AlertDialogs {
 
         FrameLayout layout = new FrameLayout(context);
 
-        RectF bgRect = new RectF();
-        Paint paint = new Paint();
-        paint.setARGB(100, 0, 0, 0);
 
-        ImageView decline = new ImageView(context);
-        decline.setImageResource(R.drawable.cancel_big);
-        layout.addView(decline,LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.RIGHT,0,0,12,0));
-        float scale = 0.57f;
-        ImageView accept = new ImageView(context){
-            @Override
-            protected void onDraw(Canvas canvas) {
-                Drawable drawable = getDrawable();
 
-                bgRect.set(0, 0, getWidth(), getHeight());
-                canvas.drawRoundRect(bgRect, dp(getWidth()/2), dp(getHeight()/2), paint);
-                float w = getWidth();
-                float h = getHeight();
-                int left = (int) ((w-w*scale)/2);
-                int right = (int) (left + w*scale);
-                int top = (int) ((h-h*scale)/2);
-                int bottom = (int) (top + h*scale);
-                drawable.setBounds(left, top, right, bottom);
-                drawable.draw(canvas);
-//                super.onDraw(canvas);
-            }
-        };
-        accept.setImageResource(R.drawable.msg_addfolder);
-        layout.addView(accept,LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.LEFT,12,0,12,0));
+        ImageView declineIcon = new ImageView(context);
+        declineIcon.setImageResource(R.drawable.cancel_big);
+        layout.addView(declineIcon,LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.RIGHT,0,0,12,0));
+
+        ImageViewRoundBkg acceptIcon = new ImageViewRoundBkg(context);
+        acceptIcon.setImageResource(R.drawable.msg_addfolder);
+        layout.addView(acceptIcon,LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.LEFT,12,0,12,0));
+
+        ImageViewRoundBkg deleteIcon = new ImageViewRoundBkg(context);
+        deleteIcon.setImageResource(R.drawable.msg_delete);
 
 
         //        String pathMetaData = ftarInfo.ftar.replace(".p",".m");
-        File tmpFlxFile = new File(FlexatarStorageManager.createTmpLoadFlexatarStorage(ApplicationLoader.applicationContext),ftarInfo.getFileName());
-        File galleryFile = new File(FlexatarStorageManager.getFlexatarStorage(ApplicationLoader.applicationContext),ftarInfo.getFileName());
+        File tmpFlxFile = new File(FlexatarStorageManager.createTmpLoadFlexatarStorage(ApplicationLoader.applicationContext,account),ftarInfo.getFileName());
+        File galleryFile = new File(FlexatarStorageManager.getFlexatarStorage(ApplicationLoader.applicationContext,account),ftarInfo.getFileName());
         File fileToReadFlx = galleryFile.exists() ? galleryFile : tmpFlxFile;
-        if (tmpFlxFile.exists())
-            accept.setOnClickListener(v->{
+        boolean needDeleteIcon = true;
+        if (tmpFlxFile.exists()) {
+            Log.d("FLX_INJECT","flx tmp name " +tmpFlxFile.getName());
+            if (tmpFlxFile.getName().startsWith("public"))needDeleteIcon=false;
+            acceptIcon.setOnClickListener(v -> {
                 onAddToGallery.onAdd(tmpFlxFile);
 
             });
-        if (galleryFile.exists())
-            accept.setOnClickListener(v->{
+
+
+        }
+        if (galleryFile.exists()) {
+            Log.d("FLX_INJECT","flx gal name " +galleryFile.getName());
+            if (galleryFile.getName().startsWith("public"))needDeleteIcon=false;
+
+            acceptIcon.setOnClickListener(v -> {
                 alreadyInGallery.run();
 
             });
+        }
+        if ((tmpFlxFile.exists() || galleryFile.exists())&&needDeleteIcon){
+            layout.addView(deleteIcon,LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.CENTER,0,0,0,0));
+
+            deleteIcon.setOnClickListener(v->{
+                onDeleteFromGallery.onDelete(tmpFlxFile,galleryFile);
+
+            });
+        }
         PopupWindow popupWindow = new PopupWindow(
                 layout,
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -381,21 +452,38 @@ public class AlertDialogs {
             param.height = windowHeight / 2;
             layout.addView(downloadAnimation, param);
 
-            FlexatarServerAccess.downloadFlexatar(tmpFlxFile, ftarInfo.ftar, new FlexatarServerAccess.OnReadyOrErrorListener() {
+            FlexatarServerAccess.downloadFlexatar(UserConfig.selectedAccount,tmpFlxFile, ftarInfo.ftar, new FlexatarServerAccess.OnReadyOrErrorListener() {
                 @Override
-                public void onReady() {
+                public void onReady(File flexatarFile,int flexatarType) {
                     AndroidUtilities.runOnUIThread(()->{
                         if (!isDialogOpened.get())return;
                         downloadDrawable.stop();
                         layout.removeView(downloadAnimation);
                         FrameLayout.LayoutParams params = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT,Gravity.TOP);
                         params.height = windowHeight - AndroidUtilities.dp(48);
-                        if (tmpFlxFile.exists())
+                        if (tmpFlxFile.exists()) {
                             layout.addView(createFlxSurface(tmpFlxFile), params);
-                        else if (galleryFile.exists())
-                            layout.addView(createFlxSurface(galleryFile), params);
+                            if (!tmpFlxFile.getName().startsWith("public")) {
+                                layout.addView(deleteIcon, LayoutHelper.createFrame(46, 46, Gravity.BOTTOM | Gravity.CENTER, 0, 0, 0, 0));
+                                deleteIcon.setOnClickListener(v->{
+                                    onDeleteFromGallery.onDelete(tmpFlxFile,galleryFile);
 
-                        accept.setOnClickListener(v->{
+                                });
+                            }
+                        }
+                        else if (galleryFile.exists()) {
+                            layout.addView(createFlxSurface(galleryFile), params);
+                            if (!galleryFile.getName().startsWith("public")) {
+                                layout.addView(deleteIcon, LayoutHelper.createFrame(46, 46, Gravity.BOTTOM | Gravity.CENTER, 0, 0, 0, 0));
+                                deleteIcon.setOnClickListener(v->{
+                                    onDeleteFromGallery.onDelete(tmpFlxFile,galleryFile);
+
+                                });
+                            }
+                        }
+
+
+                        acceptIcon.setOnClickListener(v->{
                             onAddToGallery.onAdd(tmpFlxFile);
 
                         });
@@ -408,6 +496,7 @@ public class AlertDialogs {
                         downloadDrawable.stop();
                         layout.removeView(downloadAnimation);
                         popupWindow.dismiss();
+                        flexatarNotFound.run();
                     });
                 }
             });
@@ -419,7 +508,7 @@ public class AlertDialogs {
         popupWindow.setWidth(windowWidth);
         popupWindow.setHeight(windowHeight);
 
-        decline.setOnClickListener(v->{
+        declineIcon.setOnClickListener(v->{
             popupWindow.dismiss();
         });
 

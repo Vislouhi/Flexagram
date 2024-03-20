@@ -24,6 +24,7 @@ import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.CheckBoxCell;
 import org.telegram.ui.Cells.DividerCell;
@@ -160,7 +161,7 @@ public class FlexatarCell extends RelativeLayout {
             dateTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmono.ttf"));
             textContentLayout.addView(dateTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 6, 0, 0));
             String groupId = flexatarFile.getName().replace(".flx","");
-            int groupSize = FlexatarStorageManager.getGroupSize(getContext(),groupId);
+            int groupSize = FlexatarStorageManager.getGroupSize(getContext(), UserConfig.selectedAccount,groupId);
             if (groupSize>0) {
                 groupCountTextView = new TextView(getContext());
                 groupCountTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));

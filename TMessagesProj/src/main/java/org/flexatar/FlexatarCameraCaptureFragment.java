@@ -48,6 +48,7 @@ import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -698,7 +699,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
         showDialog(dialog);
         if (flexatarBody == null) {
-            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
                 public void onReady(FlexatarServerAccess.StdResponse response) {
                     Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());
@@ -729,7 +730,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 }
             });
         }else{
-            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "delta/"+flexatarBody, "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "delta/"+flexatarBody, "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
                 public void onReady(FlexatarServerAccess.StdResponse response) {
                     Log.d("FLX_INJECT", "make flx data response: " + response.toJson().toString());

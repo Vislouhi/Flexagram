@@ -38,6 +38,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import org.flexatar.FlexatarMessageController;
+import org.flexatar.FlexatarStorageManager;
 import org.json.JSONObject;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
@@ -248,6 +249,13 @@ public class ApplicationLoader extends Application {
             DownloadController.getInstance(a);
             FlexatarMessageController.getInstance(a);
         }
+        FlexatarStorageManager.callFlexatarChooser = new FlexatarStorageManager.FlexatarChooser[UserConfig.MAX_ACCOUNT_COUNT];
+        FlexatarStorageManager.roundFlexatarChooser = new FlexatarStorageManager.FlexatarChooser[UserConfig.MAX_ACCOUNT_COUNT];
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            FlexatarStorageManager.callFlexatarChooser[a] = new FlexatarStorageManager.FlexatarChooser(a,"call",0.005f,0.0025f);
+            FlexatarStorageManager.roundFlexatarChooser[a] = new FlexatarStorageManager.FlexatarChooser(a,"round",0.02f,0.0025f);
+        }
+
         BillingController.getInstance().startConnection();
     }
 

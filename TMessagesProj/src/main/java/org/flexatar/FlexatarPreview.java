@@ -28,6 +28,7 @@ import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextCell;
@@ -163,7 +164,7 @@ public class FlexatarPreview extends FrameLayout {
     }
 
     public void startGroupAnimation(){
-        groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(getContext(), groupId);
+        groupFiles = FlexatarStorageManager.getFlexatarGroupFileList(getContext(),UserConfig.selectedAccount, groupId);
         if (groupFiles.size() == 0) return;
         groupFiles.add(flexatarCell.getFlexatarFile());
         groupTimer = new TimerAutoDestroy<FlxDrawer.GroupMorphState>();
@@ -533,13 +534,13 @@ public class FlexatarPreview extends FrameLayout {
         recyclerView = new RecyclerView(getContext());
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        Adapter adapter = new Adapter(getContext(), groupId,this);
+        Adapter adapter = new Adapter(getContext(),UserConfig.selectedAccount, groupId,this);
 
         adapter.setOnAddListener(()->{
             if (!foldUpOpened) {
                 foldUpOpened = true;
 //                if (foldUpFlexatarChooseView == null) {
-                    foldUpFlexatarChooseView = new FoldUpFlexatarChooseView(getContext(),flexatarCell.getFlexatarFile().getName().replace(".flx",""));
+                    foldUpFlexatarChooseView = new FoldUpFlexatarChooseView(getContext(),UserConfig.selectedAccount,flexatarCell.getFlexatarFile().getName().replace(".flx",""));
 //                    foldUpFlexatarChooseView.setFlexatarId(flexatarCell.getFlexatarFile().getName().replace(".flx",""));
                     foldUpFlexatarChooseView.addOnRemoveViewListener(()->{foldUpOpened=false;});
                     foldUpFlexatarChooseView.addOnFlexatarChosenListener(file->{
@@ -677,11 +678,11 @@ public class FlexatarPreview extends FrameLayout {
         private Runnable onAddListener;
 
 
-        public Adapter(Context context,String groupId, FlexatarPreview parent){
+        public Adapter(Context context,int account,String groupId, FlexatarPreview parent){
             this.mContext = context;
             this.parent = parent;
             this.groupId = groupId;
-            flexatars = FlexatarStorageManager.getFlexatarGroupFileList(mContext, groupId);
+            flexatars = FlexatarStorageManager.getFlexatarGroupFileList(mContext,account, groupId);
         }
         public void setOnAddListener(Runnable onAddListener){
             this.onAddListener=onAddListener;
@@ -719,7 +720,7 @@ public class FlexatarPreview extends FrameLayout {
                         Log.d("FLX_INJECT","flexatar up "+ flxIdx);
                         if (flxIdx > 0) {
                             String flxID = cell.getFlexatarFile().getName().replace(".flx","");
-                            FlexatarStorageManager.moveGroupRecord(mContext,groupId,flxID,-1);
+                            FlexatarStorageManager.moveGroupRecord(mContext, UserConfig.selectedAccount,groupId,flxID,-1);
                             Collections.swap(flexatars, flxIdx, flxIdx - 1);
                             Collections.swap(parent.groupFiles, flxIdx, flxIdx - 1);
                             AndroidUtilities.runOnUIThread(()->{
@@ -734,7 +735,7 @@ public class FlexatarPreview extends FrameLayout {
                         Log.d("FLX_INJECT","flexatar down "+ flxIdx);
                         if (flxIdx < flexatars.size()-1) {
                             String flxID = cell.getFlexatarFile().getName().replace(".flx","");
-                            FlexatarStorageManager.moveGroupRecord(mContext,groupId,flxID,1);
+                            FlexatarStorageManager.moveGroupRecord(mContext,UserConfig.selectedAccount,groupId,flxID,1);
                             Collections.swap(flexatars, flxIdx, flxIdx + 1);
                             Collections.swap(parent.groupFiles, flxIdx, flxIdx + 1);
                             AndroidUtilities.runOnUIThread(()->{
@@ -755,8 +756,8 @@ public class FlexatarPreview extends FrameLayout {
                         }
 
                         String flxID = cell.getFlexatarFile().getName().replace(".flx","");
-                        FlexatarStorageManager.removeGroupRecord(mContext, groupId,flxID);
-                        FlexatarStorageManager.removeHiddenRecord(mContext,flxID);
+                        FlexatarStorageManager.removeGroupRecord(mContext,UserConfig.selectedAccount, groupId,flxID);
+                        FlexatarStorageManager.removeHiddenRecord(mContext,UserConfig.selectedAccount,flxID);
                         int flxIdx = flexatars.indexOf(cell.getFlexatarFile());
                         removeFlexatar(flxIdx);
                     }

@@ -24,6 +24,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
+import android.icu.lang.UScript;
 import android.os.Build;
 import android.os.PowerManager;
 import android.text.Layout;
@@ -464,7 +465,10 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
     public static VoIPFragment getInstance() {
         return instance;
     }
-
+    public static int getCurrentAccount(){
+        if (instance == null) return UserConfig.selectedAccount;
+        return instance.currentAccount;
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void setInsets(WindowInsets windowInsets) {
@@ -981,7 +985,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
 
 
 
-        flexatarPanelView = new FlexatarControlPanelLayout(context,false, FlexatarStorageManager.callFlexatarChooser);
+        flexatarPanelView = new FlexatarControlPanelLayout(context,VoIPService.getSharedInstance().getCurrentAccount(),false, FlexatarStorageManager.callFlexatarChooser[currentAccount]);
         flexatarPanelView.setOnCancelListener(v->{
             AndroidUtilities.runOnUIThread(()->{
                 flexatarPanelView.setVisibility(View.GONE);

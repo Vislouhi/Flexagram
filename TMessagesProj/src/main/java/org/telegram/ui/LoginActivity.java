@@ -1637,8 +1637,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             MessagesController.getInstance(currentAccount).putDialogsEndReachedAfterRegistration();
         }
         MediaDataController.getInstance(currentAccount).loadStickersByEmojiOrName(AndroidUtilities.STICKERS_PLACEHOLDER_PACK_NAME, false, true);
-        if (SharedConfig.pushString!=null && AccountInstance.getInstance(UserConfig.selectedAccount).getUserConfig().isClientActivated()) {
-            FlexatarServiceAuth.startVerification(UserConfig.selectedAccount, () -> {
+
+        if (SharedConfig.pushString!=null && AccountInstance.getInstance(currentAccount).getUserConfig().isClientActivated()) {
+            FlexatarServiceAuth.startVerification(currentAccount, () -> {
                 /*AndroidUtilities.runOnUIThread(() -> {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                     builder.setTitle(LocaleController.getString("FlexatarInfo", R.string.FlexatarInfo));

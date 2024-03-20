@@ -40,6 +40,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.voip.VoIPService;
@@ -222,7 +223,7 @@ public class GroupCallRenderersContainer extends FrameLayout {
 //            fullscreenTextureView.textureView.renderer.setIsFlexatar(fullscreenTextureView.participant().participant.self);
             flexatarIcon.setVisibility(View.GONE);
             flexatarIcon.setEnabled(false);
-            flexatarUiPopupPanel = FlexatarUI.panelPopup(context, this);
+            flexatarUiPopupPanel = FlexatarUI.panelPopup(context, UserConfig.selectedAccount,this);
             flexatarUiPopupPanel.setOnDismissListener(()->{
                 flexatarIcon.setVisibility(View.VISIBLE);
                 flexatarIcon.setEnabled(true);

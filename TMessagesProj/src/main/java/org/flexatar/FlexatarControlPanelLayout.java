@@ -46,6 +46,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     private final VoIPBackgroundProvider backgroundProvider;
     private final RectF bgRect = new RectF();
     private final Paint paint;
+    private final int account;
     private  SeekBarView seekBar;
     private final FlexatarStorageManager.FlexatarChooser currentFlexatarChooser;
     private final boolean isWithPreview;
@@ -86,9 +87,10 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         currentFlexatarChooser.saveMixWeight(0.5f);
     }
 
-    public FlexatarControlPanelLayout(Context context,boolean isWithPreview,FlexatarStorageManager.FlexatarChooser chooser){
+    public FlexatarControlPanelLayout(Context context,int account,boolean isWithPreview,FlexatarStorageManager.FlexatarChooser chooser){
         super(context);
         this.isWithPreview=isWithPreview;
+        this.account=account;
        currentFlexatarChooser = chooser;
        mixWeight = currentFlexatarChooser.getMixWeight();
 //        File[] files = FlexatarStorageManager.getFlexatarFileList(context);
@@ -317,7 +319,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 
     }
     public void createFlexatarRecyclerView(){
-        flexatarRecyclerView = new FlexatarHorizontalRecycleView(getContext(),1, (icnFlx) -> {
+        flexatarRecyclerView = new FlexatarHorizontalRecycleView(getContext(),account,1, (icnFlx) -> {
 
         });
         ((FlexatarHorizontalRecycleView.Adapter)flexatarRecyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
@@ -473,7 +475,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 
     }
     public void createVideoFlexatarRecyclerView(){
-        videoFlexatarRecyclerView = new FlexatarHorizontalRecycleView(getContext(),0, (icnFlx) -> {
+        videoFlexatarRecyclerView = new FlexatarHorizontalRecycleView(getContext(),account,0, (icnFlx) -> {
 
         });
         ((FlexatarHorizontalRecycleView.Adapter)videoFlexatarRecyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{

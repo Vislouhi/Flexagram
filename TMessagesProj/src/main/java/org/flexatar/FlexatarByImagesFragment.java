@@ -141,7 +141,7 @@ public class FlexatarByImagesFragment extends BaseFragment {
         public Adapter(Context context,BaseFragment parent){
             mContext = context;
             this.parent = parent;
-            imagesUri = new ArrayList<>(Arrays.asList(FlexatarStorageManager.createFlexatarSendImageStorage(context).listFiles()));
+            imagesUri = new ArrayList<>(Arrays.asList(FlexatarStorageManager.createFlexatarSendImageStorage(context,-1).listFiles()));
 
         }
         @NonNull
@@ -325,7 +325,7 @@ public class FlexatarByImagesFragment extends BaseFragment {
                     Bitmap bitmap = Bitmap.createScaledBitmap(bitmapOrig, (int) (bitmapOrig.getWidth() * scaleFactor), (int) (bitmapOrig.getHeight() * scaleFactor), false);
                     bitmapOrig.recycle();
                     bitmap = rotateBitmap(bitmap, orientation);
-                    File imageFile = new File(FlexatarStorageManager.createFlexatarSendImageStorage(context), UUID.randomUUID().toString() + ".jpg");
+                    File imageFile = new File(FlexatarStorageManager.createFlexatarSendImageStorage(context,-1), UUID.randomUUID().toString() + ".jpg");
                     FileOutputStream outputStream = new FileOutputStream(imageFile);
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
                     outputStream.close();

@@ -9,6 +9,7 @@ import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.BackDrawable;
@@ -83,7 +84,7 @@ public class FlexatarPreviewFragment extends BaseFragment{
 //                            Log.d("FLX_INJECT","write meta "+FlexatarStorageManager.metaDataToJson(oldMetData));
                             byte[] metaSend = FlexatarStorageManager.rewriteFlexatarHeader(flexatarPreview.getFlexatarCell().getFlexatarFile(), oldMetData);
                             String putRout = ServerDataProc.fileNameToMetaRout(flexatarPreview.getFlexatarCell().getFlexatarFile().getName());
-                            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), putRout, "PUT", metaSend, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+                            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), putRout, "PUT", metaSend, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                                 @Override
                                 public void onReady(FlexatarServerAccess.StdResponse response) {
                                     Log.d("FLX_INJECT","Meta data uploaded success");

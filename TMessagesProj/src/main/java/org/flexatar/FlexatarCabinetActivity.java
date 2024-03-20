@@ -116,9 +116,10 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
-        TicketsController.stop();
-        TicketsController.removeObserver();
-        FlexatarServerAccess.downloadBuiltinObserver = null;
+        FlexatarMessageController.getInstance(UserConfig.selectedAccount).setOnAddToGalleryListener(null);
+//        TicketsController.stop();
+//        TicketsController.removeObserver();
+//        FlexatarServerAccess.downloadBuiltinObserver = null;
 
     }
     @Override
@@ -271,7 +272,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     getParentActivity().requestPermissions(new String[]{Manifest.permission.CAMERA},  BasePermissionsActivity.REQUEST_CODE_OPEN_CAMERA);
                     return;
                 }
-                if (FlexatarServiceAuth.getVerification()!=null && FlexatarServiceAuth.getVerification().isVerified()) {
+                if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount)!=null && FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
                     if (ValueStorage.checkIfInstructionsComplete(context)) {
                         if (tabsView.getCurrentTabId() == 0){
                             presentFragment(new FlexatarVideoCapFragment());
@@ -310,7 +311,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             itemsAction.add(item);
         }*/
-        {
+        /*{
             ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
             item.setImageResource(R.drawable.msg_download);
             if (FlexatarServerAccess.isDownloadingFlexatars){
@@ -321,7 +322,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             item.setOnClickListener(v-> {
 
-                if (FlexatarServiceAuth.getVerification()!=null && FlexatarServiceAuth.getVerification().isVerified()) {
+                if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount)!=null && FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
 
                     if (!FlexatarServerAccess.isDownloadingFlexatars) {
                         FlexatarServerAccess.isDownloadingFlexatars = true;
@@ -332,7 +333,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                             item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
                             itemAdapter.notifyItemChanged(2);
                         });
-                        FlexatarServerAccess.downloadCloudFlexatars1(() -> {
+                        FlexatarServerAccess.downloadCloudFlexatars1(UserConfig.selectedAccount,() -> {
                             FlexatarServerAccess.isDownloadingFlexatars = false;
                             itemAdapter.removeFlexatarCell(1);
                             handler.post(() -> {
@@ -361,7 +362,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             });
 
             itemsAction.add(item);
-        }
+        }*/
 
 //        ===============DEBUG CELLS============
         if (Config.debugMode) {
@@ -371,8 +372,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 item.setImageResource(R.drawable.msg_list);
                 item.setNameText("Check private storage");
                 item.setOnClickListener(v -> {
-                    if (FlexatarServiceAuth.getVerification().isVerified()) {
-                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), "list/1.00", "GET", new FlexatarServerAccess.OnRequestJsonReady() {
+                    if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
+                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "list/1.00", "GET", new FlexatarServerAccess.OnRequestJsonReady() {
                                     @Override
                                     public void onReady(FlexatarServerAccess.StdResponse response) {
                                         Log.d("FLX_INJECT", response.ftars);
@@ -440,14 +441,14 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 item.setImageResource(R.drawable.msg_delete);
                 item.setNameText("Delete local files");
                 item.setOnClickListener(v -> {
-                    if (FlexatarServiceAuth.getVerification().isVerified()) {
-                        File[] localFlexatars = FlexatarStorageManager.getFlexatarFileList(context, FlexatarStorageManager.FLEXATAR_PREFIX);
+                    if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
+                        File[] localFlexatars = FlexatarStorageManager.getFlexatarFileList(context,UserConfig.selectedAccount, FlexatarStorageManager.FLEXATAR_PREFIX);
                         for (File file : localFlexatars) {
-                            FlexatarStorageManager.deleteFromStorage(context, file, false);
+                            FlexatarStorageManager.deleteFromStorage(context,UserConfig.selectedAccount, file, false);
                         }
-                        File[] localFlexatars1 = FlexatarStorageManager.getVideoFlexatarFileList(context);
+                        File[] localFlexatars1 = FlexatarStorageManager.getVideoFlexatarFileList(context,UserConfig.selectedAccount);
                         for (File file : localFlexatars1) {
-                            FlexatarStorageManager.deleteFromStorage(context, file, false);
+                            FlexatarStorageManager.deleteFromStorage(context,UserConfig.selectedAccount, file, false);
                         }
                         Log.d("FLX_INJECT", "local flexatars deleted");
 
@@ -525,7 +526,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
         RecyclerView recyclerView = new RecyclerView(context);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
-        itemAdapter = new ItemAdapter(context, itemsAction,itemsProgress,itemsFlexatar);
+        itemAdapter = new ItemAdapter(context,UserConfig.selectedAccount, itemsAction,itemsProgress,itemsFlexatar);
 
         itemAdapter.setUpFlexatarList( tabsView.getCurrentTabId());
 
@@ -535,7 +536,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 Log.d("FLX_INJECT","flx cell pressed");
                 if (!cell.isBuiltin()) {
                     String groupId = item.getFlexatarFile().getName().replace(".flx", "");
-                    int groupSize = FlexatarStorageManager.getGroupSize(getContext(), groupId);
+                    int groupSize = FlexatarStorageManager.getGroupSize(getContext(),UserConfig.selectedAccount, groupId);
                     if (groupSize == 0) {
                         item.setChecked(!item.isChecked());
 
@@ -566,7 +567,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 getActionBar().showActionMode();
 
                 String groupId = item.getFlexatarFile().getName().replace(".flx", "");
-                int groupSize = FlexatarStorageManager.getGroupSize(getContext(), groupId);
+                int groupSize = FlexatarStorageManager.getGroupSize(getContext(),UserConfig.selectedAccount, groupId);
                 if (groupSize == 0) {
                     item.setChecked(!item.isChecked());
                     checkedCount = 1;
@@ -590,7 +591,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
 
 
-        FlexatarServerAccess.downloadBuiltinObserver = new FlexatarServerAccess.DownloadBuiltinObserver() {
+       /* FlexatarServerAccess.downloadBuiltinObserver = new FlexatarServerAccess.DownloadBuiltinObserver() {
             @Override
             public void start() {
 //                ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
@@ -614,11 +615,23 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
 
             }
-        };
+        };*/
+
+        FlexatarMessageController.getInstance(UserConfig.selectedAccount).setOnAddToGalleryListener(new FlexatarMessageController.FlexatarAddToGalleryListener() {
+            @Override
+            public void onAddToGallery(File flexatarFile, int flexatarType) {
+                if (flexatarType == tabsView.getCurrentTabId()) {
+                    ItemModel item = new ItemModel(ItemModel.FLEXATAR_CELL);
+                    item.setFlexatarFile(flexatarFile);
+                    itemAdapter.addFlexatarItem(item,  1);
+                }
+            }
+        });
+
         return fragmentView;
     }
     Map<String,ItemModel> progressCells = new HashMap<>();
-    public void progressCellSetError(String fid,String errorCode){
+    /*public void progressCellSetError(String fid,String errorCode){
         if (progressCells.containsKey(fid)){
             progressCells.get(fid).setError(errorCode);
         }
@@ -654,7 +667,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 //            itemsProgress.remove(progressCells.remove(fid));
 
         }
-    }
+    }*/
 
 
     public static ItemModel flexatarItemFactory(File flexatarFile){
@@ -662,7 +675,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         item.setFlexatarFile(flexatarFile);
         return item;
     }
-    public void showMakeFlexatarErrorAlert(String fid,ItemModel item){
+    /*public void showMakeFlexatarErrorAlert(String fid,ItemModel item){
 
 //        Log.d("FLX_INJECT","item.getErrorCode() " +item.getErrorCode());
         if (item.getErrorCode() != null ){
@@ -696,7 +709,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
         }
 
 
-    }
+    }*/
     private void showDeleteAlert(boolean all) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
@@ -709,7 +722,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             List<File> filesToDelete = itemAdapter.removeCheckedFlexatars();
 
             for(File f:filesToDelete )
-                FlexatarStorageManager.deleteFromStorage(getContext(),f);
+                FlexatarStorageManager.deleteFromStorage(getContext(),UserConfig.selectedAccount,f);
             hideActionMode(false);
 //            itemAdapter.removeCheckBoxes();
         });
@@ -792,7 +805,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             FlexatarCabinetActivity.needRedrawFlexatarList = false;
         }
 //        Log.d("FLX_INJECT","resume ");
-        TicketsController.attachObserver( new TicketsController.TicketObserver() {
+       /* TicketsController.attachObserver( new TicketsController.TicketObserver() {
             @Override
             public void onReady(String lfid, File file) {
                 removeProgressCell(lfid);
@@ -813,7 +826,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             public void onStart(String lfid, TicketsController.Ticket ticket) {
                 addProgressCell(lfid,ticket);
             }
-        });
+        });*/
     }
 
     /*@Override

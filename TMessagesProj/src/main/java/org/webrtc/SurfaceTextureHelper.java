@@ -30,6 +30,8 @@ import org.flexatar.BlinkGenerator;
 import org.flexatar.FlexatarCommon;
 import org.flexatar.FlexatarStorageManager;
 import org.flexatar.FlxDrawer;
+import org.telegram.messenger.voip.VoIPService;
+import org.telegram.ui.VoIPFragment;
 import org.webrtc.EglBase.Context;
 import org.webrtc.TextureBufferImpl.RefCountMonitor;
 import org.webrtc.VideoFrame.TextureBuffer;
@@ -308,7 +310,7 @@ public class SurfaceTextureHelper {
       if (flxDrawer == null) {
         flxDrawer = new FlxDrawer();
 
-        flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser);
+        flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser[VoIPService.getSharedInstance().getCurrentAccount()]);
         flxDrawer.setIsStaticControlBind(true);
         flxDrawer.setFrame();
 

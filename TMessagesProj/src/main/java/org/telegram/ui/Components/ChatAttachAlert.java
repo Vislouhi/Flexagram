@@ -3374,7 +3374,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         // TODO share flexatar
 
                         String path = "share/1.00/tg/"+dialogId+"/"+files.get(0);
-                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(), path, "GET", new FlexatarServerAccess.OnRequestJsonReady() {
+                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), path, "GET", new FlexatarServerAccess.OnRequestJsonReady() {
                             @Override
                             public void onReady(FlexatarServerAccess.StdResponse response) {
                                 Log.d("FLX_INJECT","flexatar send success");
