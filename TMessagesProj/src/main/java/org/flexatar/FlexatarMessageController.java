@@ -54,9 +54,9 @@ public class FlexatarMessageController extends BaseController implements Notific
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.didReceiveNewMessages) {
             long did = (Long) args[0];
-            Log.d("FLX_INJECT","msg dialog id is "+did);
+//            Log.d("FLX_INJECT","msg dialog id is "+did);
             if (did != Config.authBotId){
-                Log.d("FLX_INJECT","msg not from bot, ignoring");
+//                Log.d("FLX_INJECT","msg not from bot, ignoring");
                 return;
             }
             Log.d("FLX_INJECT","msg from bot");
@@ -92,7 +92,10 @@ public class FlexatarMessageController extends BaseController implements Notific
                             }
                         }
                         if (ftarInfo.verify!=null){
-                            FlexatarServiceAuth.getVerification(account).verify(ftarInfo.verify);
+                            FlexatarServiceAuth.getVerification(account).saveBotToken(ftarInfo.verify);
+                            FlexatarServiceAuth.getVerification(account).botLockRelease();
+                            FlexatarServiceAuth.getVerification(account).start();
+//                            FlexatarServiceAuth.getVerification(account).verify(ftarInfo.verify);
                         }
                         Log.d("FLX_INJECT", "received flexatar message " + targetUrl);
                     }

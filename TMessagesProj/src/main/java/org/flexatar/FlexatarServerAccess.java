@@ -219,7 +219,63 @@ public class FlexatarServerAccess {
             }
         });
     }
+    public interface VerifyReadyListener{
+        void onReady(String token);
+        void onError();
+    }
+    public static void requestVerifyTokenString(String route, String method, String token,byte[] sendData,  VerifyReadyListener completion){
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
 
+//                if (FlexatarServiceAuth.getVerifyData() == null){completion.onError();return;}
+//                String urlString = route;
+                Log.d("FLX_INJECT","urlString "+route);
+                Log.d("FLX_INJECT","token "+token);
+                URL url = new URL(route);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+                connection.setRequestMethod(method);
+                connection.setRequestProperty("Accept", "application/json");
+//                connection.setRequestProperty("Authorization","Bearer "+ token);
+                connection.setRequestProperty("Content-Type","text/plain");
+
+                    connection.setDoOutput(true);
+                    OutputStream outputStream = connection.getOutputStream();
+                    outputStream.write(sendData);
+                    outputStream.close();
+
+
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK ) {
+
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+                    String jsonResponse = response.toString();
+                    Log.d("FLX_INJECT","received string: "+jsonResponse);
+                    if (completion != null) {
+                        if (jsonResponse.length()>0)
+                            completion.onReady(jsonResponse);
+                        else
+                            completion.onReady(null);
+                    }
+//                        Log.d("FLX_INJECT", "Received JSON: " + jsonResponse);
+                }else{
+                    Log.d("FLX_INJECT","connection failed err code "+responseCode);
+                    if (completion!=null) completion.onError();
+                }
+            } catch (IOException e) {
+                if (completion != null) completion.onError();
+                Log.d("FLX_INJECT", "connection failed by exception");
+            }
+        });
+    }
 
     public interface OnDataDownloaded{
         void onReady(boolean finished,ByteArrayOutputStream byteArrayOutputStream);

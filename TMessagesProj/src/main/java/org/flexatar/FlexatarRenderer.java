@@ -3,6 +3,8 @@ package org.flexatar;
 
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 
 import com.google.android.exoplayer2.util.Log;
 import com.google.firebase.FirebaseApp;
@@ -129,6 +131,14 @@ public class FlexatarRenderer {
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!Config.debugMode);
         animator = new FlexatarAnimator();
         FlexatarCommon.prepare();
+        try {
+            PackageInfo pInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
+            int version = pInfo.versionCode;
+            Log.d("FLX_INJECT","version code "+ version);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
 //        VideoToTextureArray.decode();
 //        FlexatarServiceAuth.integrityCheck();
 //        Context context = ApplicationLoader.applicationContext;

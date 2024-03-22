@@ -6165,6 +6165,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (ApplicationLoader.applicationLoaderInstance != null) {
             ApplicationLoader.applicationLoaderInstance.onResume();
         }
+
+        FlexatarServiceAuth.getVerification(currentAccount).checkPermissionToWork();
     }
 
     private void invalidateTabletMode() {

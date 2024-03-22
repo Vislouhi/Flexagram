@@ -311,7 +311,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             itemsAction.add(item);
         }*/
-        /*{
+        {
             ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
             item.setImageResource(R.drawable.msg_download);
             if (FlexatarServerAccess.isDownloadingFlexatars){
@@ -362,7 +362,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             });
 
             itemsAction.add(item);
-        }*/
+        }
 
 //        ===============DEBUG CELLS============
         if (Config.debugMode) {

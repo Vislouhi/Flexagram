@@ -26,7 +26,7 @@ public class FlexatarViewRenderer implements GLSurfaceView.Renderer{
         GLES20.glViewport(0, 0, width, height);
         drawer.screenRatio = (float) width/ (float)height;
         drawer.setSize(width,height);
-        Log.d("FLX_INJECT","drawer.screenRatio "+drawer.screenRatio);
+//        Log.d("FLX_INJECT","drawer.screenRatio "+drawer.screenRatio);
     }
 
     @Override

@@ -1034,7 +1034,7 @@ public class FlexatarStorageManager {
             return result;
 
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+            return new ArrayList<>();
         }
 
     }
