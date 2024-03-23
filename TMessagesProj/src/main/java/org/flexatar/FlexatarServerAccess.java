@@ -75,6 +75,7 @@ public class FlexatarServerAccess {
         public String route;
         public static final String RESULT_RETRY = "RETRY";
         public static final String RESULT_OK = "OK";
+        public static final String RESULT_FAIL = "FAIL";
         public String ftars;
         public StdResponse(String json) throws JSONException {
             formJson(json);
@@ -83,7 +84,47 @@ public class FlexatarServerAccess {
         public StdResponse() {
 
         }
+        public boolean equal(StdResponse response){
+            if (result == null) return false;
+            if (!result.equals(response.result)) return false;
+            if (token == null) return false;
+            if (!token.equals(response.token)) return false;
+            if (route == null) return false;
+            if (!route.equals(response.route)) return false;
+            return true;
+        }
 
+        public boolean overwrite(StdResponse response){
+            boolean needOverwrite = false;
+            if (result == null && response.result!=null) {
+                needOverwrite = true;
+                result = response.result;
+            }
+            if (result != null && response.result!=null && !result.equals(response.result)) {
+                needOverwrite = true;
+                result = response.result;
+            }
+
+            if (token == null && response.token!=null) {
+                needOverwrite = true;
+                token = response.token;
+            }
+            if (token != null && response.token!=null && !token.equals(response.token)) {
+                needOverwrite = true;
+                token = response.token;
+            }
+
+            if (route == null && response.route!=null) {
+                needOverwrite = true;
+                route = response.route;
+            }
+            if (route != null && response.route!=null && !route.equals(response.route)) {
+                needOverwrite = true;
+                route = response.token;
+            }
+            return needOverwrite;
+
+        }
         public boolean isRetry(){
             if (result!=null) return result.equals(RESULT_RETRY);
             return false;
@@ -91,6 +132,12 @@ public class FlexatarServerAccess {
         public boolean isOk(){
             if (result!=null) return result.equals(RESULT_OK);
             return false;
+        }
+        public boolean isFail(){
+//            return true;
+            if (result==null) return true;
+            return result.equals(RESULT_FAIL);
+
         }
         public Map<String,List<ListElement>>  getFtars(){
             return ListElement.listFactory(ftars);
@@ -137,28 +184,33 @@ public class FlexatarServerAccess {
         requestJson(verify,path, method, null, null,completion);
     }
     public static void requestJson(FlexatarServiceAuth.FlexatarVerifyProcess verify,String path, String method,byte[] sendData,String contentType,OnRequestJsonReady completion){
+        VersionController.updateTokenForNewVersion(verify.getAccount(),()->{
+            requestJsonInternal(verify.getRoute(),path, verify.getToken(), method, sendData, contentType, new OnRequestJsonReady() {
+                @Override
+                public void onReady(StdResponse response) {
+                    if (verify.getVerifyData().overwrite(response)){
+                        verify.save();
+                    }
+                    if(response.isRetry()){
+                        android.util.Log.d("FLX_INJECT","apigw response retry");
+                        requestJson(verify,path, method, sendData, contentType, completion);
 
-        requestJsonInternal(verify.getRoute(),path, verify.getToken(), method, sendData, contentType, new OnRequestJsonReady() {
-            @Override
-            public void onReady(StdResponse response) {
-                if(response.isRetry()){
-                    android.util.Log.d("FLX_INJECT","apigw response retry");
-                    verify.save(response);
-                    requestJson(verify,path, method, sendData, contentType, completion);
+                    } else if (response.isOk()) {
+                        android.util.Log.d("FLX_INJECT","apigw response ok");
 
-                } else if (response.isOk()) {
-                    android.util.Log.d("FLX_INJECT","apigw response ok");
-                    if (completion!=null) completion.onReady(response);
-                }else{
+                        if (completion!=null) completion.onReady(response);
+                    }else{
+                        if (completion!=null) completion.onError();
+                    }
+                }
+
+                @Override
+                public void onError() {
                     if (completion!=null) completion.onError();
                 }
-            }
+            });
+        },null);
 
-            @Override
-            public void onError() {
-                if (completion!=null) completion.onError();
-            }
-        });
     }
     public static void requestJsonInternal(String rout,String path, String token, String method, byte[] sendData, String contentType, OnRequestJsonReady completion){
         ExecutorService executor = Executors.newSingleThreadExecutor();

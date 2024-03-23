@@ -93,8 +93,10 @@ import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarCameraCaptureFragment;
 import org.flexatar.FlexatarCommon;
 import org.flexatar.FlexatarRenderer;
+import org.flexatar.FlexatarServerAccess;
 import org.flexatar.FlexatarServiceAuth;
 import org.flexatar.FlexatarStorageManager;
+import org.flexatar.VersionController;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -362,6 +364,21 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         AssetAccess.context = instance;
 
         FlexatarRenderer.init();
+        VersionController.updateTokenForNewVersion(currentAccount,null,null);
+        /*if (UserConfig.getInstance(currentAccount).isClientActivated()) {
+            if (VersionController.getInstance(currentAccount).isVersionChanged(currentAccount)){
+//                TODO flexatar request new verify token
+                Log.d("FLX_INJECT","version of app changed need token update for id "+UserConfig.getInstance(currentAccount).getClientUserId());
+                FlexatarServiceAuth.FlexatarVerifyProcess verifyProcess = FlexatarServiceAuth.getVerification(currentAccount);
+                FlexatarServerAccess.StdResponse vData = verifyProcess.getVerifyData();
+                if (vData!=null && vData.token!=null *//*&& vData.isFail()*//*) {
+                    verifyProcess.renewToken(FlexatarServiceAuth.getVerification(currentAccount).getToken(),null);
+                }
+            }else{
+                Log.d("FLX_INJECT","version of app not changed for id "+UserConfig.getInstance(currentAccount).getClientUserId());
+
+            }
+        }*/
 //        Config.init();
 
         if (!UserConfig.getInstance(currentAccount).isClientActivated()) {

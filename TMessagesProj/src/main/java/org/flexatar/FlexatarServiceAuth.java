@@ -5,34 +5,25 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import org.flexatar.DataOps.Data;
-import org.flexatar.DataOps.FlexatarData;
-import org.flexatar.DataOps.LengthBasedFlxUnpack;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.SendMessagesHelper;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.google.android.gms.tasks.Task;
 import com.google.android.play.core.integrity.IntegrityManagerFactory;
 import com.google.android.play.core.integrity.StandardIntegrityManager;
@@ -47,7 +38,7 @@ public class FlexatarServiceAuth {
     private static long currentUserId = -1;
     public static FlexatarServerAccess.StdResponse verifyData;
     private static StandardIntegrityManager.StandardIntegrityTokenProvider integrityTokenProvider;
-    private static CountDownLatch integrityTokenProviderLatch = new CountDownLatch(1);
+    private static CountDownLatch integrityTokenProviderLatch;
     private static boolean isTokenProviderRequested = false;
     public static void integrityCheck(){
         if (integrityTokenProvider!=null) return;
@@ -57,6 +48,7 @@ public class FlexatarServiceAuth {
         }
 
         if (integrityTokenProvider!=null) return;
+        integrityTokenProviderLatch = new CountDownLatch(1);
         StandardIntegrityManager standardIntegrityManager =
                 IntegrityManagerFactory.createStandard(ApplicationLoader.applicationContext);
         long cloudProjectNumber = 642143043531L;
@@ -182,7 +174,7 @@ public class FlexatarServiceAuth {
     }
 
     public static class FlexatarVerifyProcess{
-        private final long userId;
+        private long userId;
         private final int account;
         private final Runnable timeoutCallback;
         private ScheduledExecutorService executorService;
@@ -212,16 +204,22 @@ public class FlexatarServiceAuth {
             Log.d("FLX_INJECT","Start flexatar verify of account  "+account + " with userid "+userId );
             start();*/
         }
-
+        public int getAccount(){
+            return account;
+        }
         public boolean isVerified(){
             if (verifyData!=null){
                 Log.d("FLX_INJECT","verify result "+verifyData.result);
             }
             return verifyData!=null;
         }
+        public FlexatarServerAccess.StdResponse getVerifyData(){
+            return verifyData;
+        }
 //        private final static int = 0
 //        private int status = 0;
         public void start(){
+            if (verifyData!=null) return;
             authTgBot();
             if (botToken==null) return;
             synchronized (startSync) {
@@ -229,30 +227,43 @@ public class FlexatarServiceAuth {
                 if (verifyInProgress) return;
                 verifyInProgress = true;
             }
+            renewToken(botToken,null,null);
 
-
-
+        }
+        public void renewToken(String token,Runnable completion,Runnable error){
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
-                getIntegrityToken(botToken, googleToken -> {
+                integrityCheck();
+                getIntegrityToken(token, googleToken -> {
+                    if (googleToken==null) {
+                        if (error!=null) error.run();
+                        return;
+                    }
                     Log.d("FLX_INJECT", "google integrity token " + googleToken);
                     String vUrl = "https://iscrjbnozgft7iobnm5gyf2eby0kocwe.lambda-url.us-east-1.on.aws/";
                     FlexatarServerAccess.requestVerifyTokenString(vUrl, "GET", googleToken, new Data(googleToken).value, new FlexatarServerAccess.VerifyReadyListener() {
                         @Override
                         public void onReady(String json) {
-                            synchronized (startSync) {
-                                verifyInProgress = false;
 
+//                                verifyInProgress = false;
                                 Log.d("FLX_INJECT", "request token ready " + json);
                                 try {
                                     verifyData = new FlexatarServerAccess.StdResponse(json);
                                     save(verifyData);
-                                } catch (JSONException e) {
+                                    VersionController.getInstance(account).setVersion(userId);
                                     synchronized (startSync) {
                                         verifyInProgress = false;
                                     }
+                                    if (completion!=null)completion.run();
+
+                                } catch (JSONException e) {
+
+                                    synchronized (startSync) {
+                                        verifyInProgress = false;
+                                    }
+                                    if (error!=null) error.run();
                                 }
-                            }
+
                         }
 
                         @Override
@@ -260,33 +271,12 @@ public class FlexatarServiceAuth {
                             synchronized (startSync) {
                                 verifyInProgress = false;
                             }
+                            if (error!=null) error.run();
                             Log.d("FLX_INJECT", "request token error");
                         }
                     });
                 });
             });
-
-
-
-
-
-
-            /*if (isVerified()) return;
-            if (!(counter>5 || counter == 0)) return;
-            counter = 0;
-            executorService = Executors.newScheduledThreadPool(1);
-
-            executorService.scheduleAtFixedRate(()->{
-                Log.d("FLX_INJECT", "Attempt to verify of user " + userId);
-                authTgBot();
-
-                counter+=1;
-                if (counter>5){
-                    executorService.shutdown();
-                    timeoutCallback.run();
-                }
-//                executorService.shutdown();
-            }, 0, 15, TimeUnit.SECONDS);*/
         }
         private boolean botLock = false;
         private final Object botSync = new Object();
@@ -302,14 +292,24 @@ public class FlexatarServiceAuth {
                 if (botLock) return;
                 botLock = true;
             }
+//            Log.d("FLX_INJECT","Writing default flexatars account "+ account + " tgid "+AccountInstance.getInstance(account).getUserConfig().getClientUserId());
 
-           ContactsController.getInstance(account).requestFlexatarBot(()->{
+//            FlexatarStorageManager.addDefaultFlexatars(account);
+//            FlexatarStorageManager.addDefaultVideoFlexatars(account);
+            ContactsController.getInstance(account).requestFlexatarBot(()->{
                 AccountInstance accountInstance = AccountInstance.getInstance(account);
                 final MessagesStorage messagesStorage = accountInstance.getMessagesStorage();
                 messagesStorage.getStorageQueue().postRunnable(() -> {
                     AndroidUtilities.runOnUIThread(() -> {
                         accountInstance.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(VERIFY_COMMAND, Config.authBotId, null, null, null, false, null, null, null, true, 0, null, false));
-//                        accountInstance.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(VERIFY_COMMAND + " " + SharedConfig.pushString, Config.authBotId, null, null, null, false, null, null, null, true, 0, null, false));
+//                        Log.d("FLX_INJECT","Writing default flexatars account "+ account + " tgid "+AccountInstance.getInstance(account).getUserConfig().getClientUserId());
+                        userId = accountInstance.getUserConfig().clientUserId;
+                        ExecutorService executor = Executors.newSingleThreadExecutor();
+                        executor.execute(() -> {
+                            FlexatarStorageManager.addDefaultFlexatars(account);
+                            FlexatarStorageManager.addDefaultVideoFlexatars(account);
+                        });
+                        //                        accountInstance.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(VERIFY_COMMAND + " " + SharedConfig.pushString, Config.authBotId, null, null, null, false, null, null, null, true, 0, null, false));
                     });
                 });
             });
@@ -326,6 +326,18 @@ public class FlexatarServiceAuth {
 //            if (verifyData == null) return;
             synchronized (storageSync) {
                 verifyData = response;
+                Log.d("FLX_INJECT", "saving verify " + verifyData.toJson().toString());
+                Context context = ApplicationLoader.applicationContext;
+                String storageName = PREF_STORAGE_NAME + userId;
+                SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(VERIFY_KEY, verifyData.toJson().toString());
+                editor.apply();
+            }
+        }
+        public void save(){
+//            if (verifyData == null) return;
+            synchronized (storageSync) {
                 Log.d("FLX_INJECT", "saving verify " + verifyData.toJson().toString());
                 Context context = ApplicationLoader.applicationContext;
                 String storageName = PREF_STORAGE_NAME + userId;
@@ -392,6 +404,7 @@ public class FlexatarServiceAuth {
                 String storageName = PREF_STORAGE_NAME + userId;
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
                 String storedString = sharedPreferences.getString(VERIFY_KEY, null);
+                Log.d("FLX_INJECT","stored verify string: " + storedString + "for userid "+ userId);
                 if (storedString == null) return;
                 try {
                     verifyData = new FlexatarServerAccess.StdResponse(storedString);
@@ -421,10 +434,10 @@ Google Api -> lambda.url/verify : <google_token_decoded>
 From <google_token_decoded> obtain <flexatar_tmp_token>, app version
 lambda.url/verify -> App : <access_token>
         */
-        public void verify(String token) {
+        public void verify() {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
-                getIntegrityToken(token, integrityToken -> {
+                /*getIntegrityToken(token, integrityToken -> {
                     JSONObject output = new JSONObject();
                     try {
                         output.put("android_ver",Config.version);
@@ -434,33 +447,33 @@ lambda.url/verify -> App : <access_token>
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
                     }
-                    Data outputData = new Data(output.toString());
+                    Data outputData = new Data(output.toString());*/
                     FlexatarServerAccess.requestJson(
                             this , "verify",
                             "POST",
-                            outputData.value,
+                            null,
                             "application/json",
                             new FlexatarServerAccess.OnRequestJsonReady() {
                                 @Override
                                 public void onReady(FlexatarServerAccess.StdResponse response) {
                                     if (response.isOk()) {
-
+                                        Log.d("FLX_INJECT","verify ok");
                                     }else{
-
+                                        Log.d("FLX_INJECT","verify fail");
                                     }
                                 }
                                 @Override
                                 public void onError() {
-
+                                    Log.d("FLX_INJECT","verify error");
                                 }
                             }
                     );
                 });
-            });
+
 
         }
 
-        public void verify(OnAuthListener listener) {
+        /*public void verify(OnAuthListener listener) {
             verify(verifyData,listener);
         }
         public void verify(FlexatarServerAccess.StdResponse verifyResponse,OnAuthListener listener){
@@ -503,7 +516,7 @@ lambda.url/verify -> App : <access_token>
                         }
                     }
             );
-        }
+        }*/
 
         public String getRoute() {
             return verifyData.route;
@@ -512,7 +525,7 @@ lambda.url/verify -> App : <access_token>
             if (verifyData == null) return null;
             return verifyData.token;
         }
-/*Еще нужен роут который возвращает только apigw responce, чтобы с некоторй периодичностью проверять можно пользоватся приложением или нет. Сейчас получается что приложение обращается к серверу только чтобы сделать флексатар, скачать флексатар и поделиться флексатаром. Пользователь может не делать этого*/
+
         public void checkPermissionToWork() {
             Log.d("FLX_INJECT","checkPermissionToWork");
             LocalDateTime currentDateTime = LocalDateTime.now();
@@ -531,8 +544,9 @@ lambda.url/verify -> App : <access_token>
             if (minutes>=1){
                 String currentTime = currentDateTime.format(formatter);
                 saveLastCheckTime(currentTime);
-                Log.d("FLX_INJECT","check on cloud again");
-                FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"list/1.00","GET",
+                Log.d("FLX_INJECT","check verify on cloud again");
+//                verify();
+                /*FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"list/1.00","GET",
                         new FlexatarServerAccess.OnRequestJsonReady() {
                             @Override
                             public void onReady(FlexatarServerAccess.StdResponse response) {
@@ -543,7 +557,7 @@ lambda.url/verify -> App : <access_token>
 
                             }
                         }
-                );
+                );*/
             }
 
         }

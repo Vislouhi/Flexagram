@@ -12,6 +12,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import org.flexatar.DataOps.FlexatarData;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.LaunchActivity;
 
 import java.io.File;
@@ -125,6 +126,7 @@ public class FlexatarRenderer {
 
         return new FlexatarData(packages);
     }*/
+
 
     public static void init() {
         FirebaseApp.initializeApp(ApplicationLoader.applicationContext);

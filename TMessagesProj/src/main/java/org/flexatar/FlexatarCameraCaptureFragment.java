@@ -691,13 +691,13 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
         String lfid = UUID.randomUUID().toString();
 
         TicketStorage.setTicket(lfid,ticket);*/
-        AlertDialog dialog = AlertDialogs.sayFlexatarStartMaking(getContext(), () -> {
+        /*AlertDialog dialog = AlertDialogs.sayFlexatarStartMaking(getContext(), () -> {
             fragmentView.post(() -> {
                 finishPage();
             });
-        });
+        });*/
 
-        showDialog(dialog);
+//        showDialog(dialog);
         if (flexatarBody == null) {
             FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
                 @Override
@@ -715,7 +715,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                     FlexatarCabinetActivity.makeFlexatarFailAction.run();*/
                     Log.d("FLX_INJECT", "make flx data error " );
                     AndroidUtilities.runOnUIThread(()->{
-                        dialog.dismiss();
+//                        dialog.dismiss();
                         try {
                             showDialog(AlertDialogs.sayFlexatarConnectionError(getContext(), () -> {
                                 fragmentView.post(() -> {
@@ -749,7 +749,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                     FlexatarCabinetActivity.makeFlexatarFailAction.run();*/
                     Log.d("FLX_INJECT", "delta fail make flx data error " );
                     AndroidUtilities.runOnUIThread(()->{
-                        dialog.dismiss();
+//                        dialog.dismiss();
                         try {
                             showDialog(AlertDialogs.sayFlexatarConnectionError(getContext(), () -> {
                                 fragmentView.post(() -> {
@@ -763,9 +763,10 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 }
             });
         }
-        /*fragmentView.post(() -> {
+        FlexatarCabinetActivity.needShowMakeFlexatarAlert = true;
+        fragmentView.post(() -> {
             finishPage();
-        });*/
+        });
     }
 
 

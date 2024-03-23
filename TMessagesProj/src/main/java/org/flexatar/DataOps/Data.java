@@ -15,6 +15,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Data {
     public byte[] value;
@@ -177,6 +179,36 @@ public class Data {
             return null;
         }
         return null;
+    }
+
+    public List<byte[]> split(int firstSize, int partSize){
+        if (value.length <= firstSize){
+            return new ArrayList<byte[]>(){{add(value);}};
+        }else{
+            int leftSize = value.length-firstSize;
+            int partCount = leftSize/partSize;
+            int lastSize = leftSize-partCount*partSize;
+            if (lastSize>0){
+                partCount+=1;
+            }
+            List<byte[]> ret = new ArrayList<>();
+            byte[] firstPart = new byte[firstSize];
+            System.arraycopy(value, 0, firstPart, 0, firstSize);
+            ret.add(firstPart);
+            for (int i = 0; i < partCount-1; i++) {
+                byte[] part = new byte[firstSize];
+                System.arraycopy(value, firstSize+partSize*i, part, 0, partSize);
+                ret.add(part);
+            }
+            if (lastSize>0){
+                byte[] part = new byte[lastSize];
+                System.arraycopy(value, firstSize+partSize*(partCount-1), part, 0, lastSize);
+                ret.add(part);
+            }
+            return ret;
+
+        }
+
     }
 
 }

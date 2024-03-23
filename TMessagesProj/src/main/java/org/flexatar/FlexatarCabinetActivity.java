@@ -65,6 +65,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
     public static Runnable makeFlexatarFailAction;
     public static boolean needRedrawFlexatarList = false;
+    public static boolean needShowMakeFlexatarAlert = false;
     private NumberTextView selectedDialogsCountTextView;
     private ArrayList<View> actionModeViews = new ArrayList<>();
 
@@ -804,7 +805,15 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             itemAdapter.setUpFlexatarList( tabsView.getCurrentTabId());
             FlexatarCabinetActivity.needRedrawFlexatarList = false;
         }
-//        Log.d("FLX_INJECT","resume ");
+        if (needShowMakeFlexatarAlert){
+            needShowMakeFlexatarAlert = false;
+            AlertDialog dialog = AlertDialogs.sayFlexatarStartMaking(getContext(), () -> {
+
+            });
+            showDialog(dialog);
+
+        }
+        Log.d("FLX_INJECT","resume flexatar cabinet");
        /* TicketsController.attachObserver( new TicketsController.TicketObserver() {
             @Override
             public void onReady(String lfid, File file) {

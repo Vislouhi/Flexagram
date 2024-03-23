@@ -435,6 +435,7 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
         Data cData = new Data(videoBytes);
         cData = cData.encodeLengthHeader().add(cData);
         sendData = sendData.add(cData);
+
         FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
             @Override
             public void onReady(FlexatarServerAccess.StdResponse response) {
@@ -448,12 +449,13 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
             @Override
             public void onError() {
 //                TicketStorage.removeTicket(lfid);
-//                FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                FlexatarCabinetActivity.makeFlexatarFailAction.run();
                 Log.d("FLX_INJECT", "make flx data error " );
             }
         });
 //        FlexatarStorageManager.dataToFile(sendData.value,makeFlxFile);
-        File makeFlxFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "make_flx_by_video.pack");
+//        File makeFlxFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "make_flx_by_video.pack");
+        FlexatarCabinetActivity.needShowMakeFlexatarAlert = true;
         finishFragment();
     }
     private void startCamera() {
