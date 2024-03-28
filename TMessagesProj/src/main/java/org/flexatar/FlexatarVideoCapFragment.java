@@ -15,6 +15,7 @@ import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.FileObserver;
+import android.text.InputType;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
@@ -79,6 +80,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.VideoPlayer;
+import org.telegram.ui.Components.voip.VoIPOverlayBackground;
 import org.telegram.ui.LaunchActivity;
 
 import java.io.ByteArrayInputStream;
@@ -89,7 +91,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleOwner {
     private LifecycleRegistry lifecycleRegistry;
@@ -141,6 +149,7 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
 
         return fragmentView;
     }
+    private static final int MAX_VIDEO_LENGTH = 10;
     private void makeRecordLayout(){
         mPreviewView = new PreviewView(getContext());
         mPreviewView.setScaleType(PreviewView.ScaleType.FIT_CENTER);
@@ -150,13 +159,26 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
 
         frameLayout.addView(mPreviewView);
 
-        TextView helpTextView = new TextView(getContext());
-        helpTextView.setTextColor(Color.WHITE);
-        helpTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-        helpTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        helpTextView.setText(LocaleController.getString("TakeShortVideo",R.string.TakeShortVideo));
-        frameLayout.addView(helpTextView,LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT,LayoutHelper.WRAP_CONTENT,Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL,0,0,0,50+72+12+20));
 
+            TextView helpTextView = new TextView(getContext());
+            helpTextView.setTextColor(Color.WHITE);
+            helpTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+            helpTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+            helpTextView.setText(LocaleController.getString("TakeShortVideo", R.string.TakeShortVideo));
+            frameLayout.addView(helpTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 50 + 72 + 12 + 20));
+
+        {
+            TextView mthClosedTextView = new TextView(getContext());
+            mthClosedTextView.setTextColor(Color.WHITE);
+            mthClosedTextView.setBackgroundColor(Color.parseColor("#105404"));
+            mthClosedTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+            mthClosedTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+            mthClosedTextView.setText(LocaleController.getString("KeepMouthClosed", R.string.KeepMouthClosed));
+            mthClosedTextView.setPadding(0,AndroidUtilities.dp(6),0,AndroidUtilities.dp(6));
+            mthClosedTextView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            mthClosedTextView.setGravity(Gravity.CENTER);
+            frameLayout.addView(mthClosedTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
+        }
 
 
         startCamera();
@@ -191,6 +213,13 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
                 timeView.setText("00 : 00 / (00 : 15)");
                 Log.d("FLX_INJECT","start video record");
                 File videoFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "saved_video.mp4");
+                if (!videoFile.exists()) {
+                    try {
+                        videoFile.createNewFile();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
                 fileObserver = new FileObserver(videoFile) {
 
                     @Override
@@ -225,10 +254,10 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
                             AndroidUtilities.runOnUIThread(()-> {
                                 {
                                     String time = (seconds<10?"0":"")+seconds;
-                                    timeView.setText("00 : "+time+" / (00 : 15)");
+                                    timeView.setText("00 : "+time+" / (00 : 10)");
                                 }
                             });
-                            if (seconds == 15){
+                            if (seconds == MAX_VIDEO_LENGTH){
                                 recording.stop();
                                 recording.close();
                                 recording = null;
@@ -401,10 +430,12 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
         linearLayout.setOrientation(LinearLayout.VERTICAL);
 
         final EditText editText = new EditText(getContext());
+        editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         editText.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
         editText.setHint(LocaleController.getString("EnterFlexatarsName", R.string.EnterFlexatarsName));
+        editText.requestFocus();
         int pad = AndroidUtilities.dp(12);
         linearLayout.setPadding(pad, pad, pad, pad);
         linearLayout.addView(editText,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER));
@@ -436,23 +467,89 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
         cData = cData.encodeLengthHeader().add(cData);
         sendData = sendData.add(cData);
 
-        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
-            @Override
-            public void onReady(FlexatarServerAccess.StdResponse response) {
-                Log.d("FLX_INJECT", "make video flx data response: " + response.toJson().toString());
+//        File makeFlxFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "make_flx_by_video.bin");
+//        FlexatarStorageManager.dataToFile(sendData.value,makeFlxFile);
+//        if (true) return;
+        if (sendData.value.length>4_000_000){
+            List<byte[]> parts = sendData.split(100, 4_000_000);
+            /*for (int i = 0; i < parts.size(); i++) {
+                File makeFlxFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "video_part_"+i+".bin");
+                 FlexatarStorageManager.dataToFile(sendData.value,makeFlxFile);
+            }*/
+            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "datalong/0/0", "POST",parts.get(0), "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+                @Override
+                public void onReady(FlexatarServerAccess.StdResponse response) {
+//                    Log.d("FLX_INJECT", "make video flx data response: " + response.toJson().toString());
+                    String id = response.getFtars().get("private").get(0).id;
+                    Log.d("FLX_INJECT", "make video flx id  = "+id);
+                    CountDownLatch latch = new CountDownLatch(parts.size()-1);
+                    Boolean[] success = new Boolean[parts.size() - 1];
+                    for (int i = 0; i < parts.size()-1; i++) {
+                        success[i] = false;
+                    }
+                    for (int i = 1; i < parts.size(); i++) {
+
+                        int finalI = i;
+                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "datalong/"+id+"/"+i, "POST", parts.get(i), "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+                            @Override
+                            public void onReady(FlexatarServerAccess.StdResponse response) {
+                                success[finalI-1] = true;
+                                latch.countDown();
+                                Log.d("FLX_INJECT", "make video flx data part sent ");
+                            }
+
+                            @Override
+                            public void onError() {
+                                latch.countDown();
+                                Log.d("FLX_INJECT", "make video flx data part failed ");
+                            }
+                        });
+                    }
+                    try {
+                        latch.await(15, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    if (Arrays.asList(success).contains(false)){
+                        Log.d("FLX_INJECT","datalong requests failed");
+                        FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                    }else{
+                        Log.d("FLX_INJECT","datalong requests successfully completed");
+                    }
+
 //                ticket.status = "in_process";
 //                ticket.formJson(FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).toJson());
 //                TicketStorage.setTicket(lfid,ticket);
 //                TicketsController.flexatarTaskStart(lfid,ticket);
-            }
+                }
 
-            @Override
-            public void onError() {
+                @Override
+                public void onError() {
 //                TicketStorage.removeTicket(lfid);
-                FlexatarCabinetActivity.makeFlexatarFailAction.run();
-                Log.d("FLX_INJECT", "make flx data error " );
-            }
-        });
+                    FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                    Log.d("FLX_INJECT", "make flx data error ");
+                }
+            });
+        }else {
+
+            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "data", "POST", sendData.value, "application/octet-stream", new FlexatarServerAccess.OnRequestJsonReady() {
+                @Override
+                public void onReady(FlexatarServerAccess.StdResponse response) {
+                    Log.d("FLX_INJECT", "make video flx data response: " + response.toJson().toString());
+//                ticket.status = "in_process";
+//                ticket.formJson(FlexatarServerAccess.ListElement.listFactory(response.ftars).get("private").get(0).toJson());
+//                TicketStorage.setTicket(lfid,ticket);
+//                TicketsController.flexatarTaskStart(lfid,ticket);
+                }
+
+                @Override
+                public void onError() {
+//                TicketStorage.removeTicket(lfid);
+                    FlexatarCabinetActivity.makeFlexatarFailAction.run();
+                    Log.d("FLX_INJECT", "make flx data error ");
+                }
+            });
+        }
 //        FlexatarStorageManager.dataToFile(sendData.value,makeFlxFile);
 //        File makeFlxFile = new File(FlexatarStorageManager.createTmpVideoStorage(), "make_flx_by_video.pack");
         FlexatarCabinetActivity.needShowMakeFlexatarAlert = true;

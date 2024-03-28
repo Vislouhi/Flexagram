@@ -216,7 +216,6 @@ public class FlexatarServerAccess {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
-
 //                if (FlexatarServiceAuth.getVerifyData() == null){completion.onError();return;}
                 String urlString = rout+"/"+path;
                 Log.d("FLX_INJECT","urlString "+urlString);
@@ -441,7 +440,8 @@ public class FlexatarServerAccess {
             onFinish.run();
             return;
         }*/
-        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"list/1.00","GET",
+//        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"list/1.00","GET",
+        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"verify","POST",
                 new OnRequestJsonReady() {
                     @Override
                     public void onReady(StdResponse response) {

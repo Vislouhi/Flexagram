@@ -67,15 +67,20 @@ public class VideoToTextureArray {
 
             Log.d("FLX_INJECT", "Video size is " + format.getInteger(MediaFormat.KEY_WIDTH) + "x" +
                     format.getInteger(MediaFormat.KEY_HEIGHT));
-
-            videoRotation = format.getInteger(MediaFormat.KEY_ROTATION);
-            if (videoRotation == 90 || videoRotation == 270){
-                saveWidth = format.getInteger(MediaFormat.KEY_HEIGHT);
-                saveHeight = format.getInteger(MediaFormat.KEY_WIDTH);
-            }else{
+            try {
+                videoRotation = format.getInteger(MediaFormat.KEY_ROTATION);
+                if (videoRotation == 90 || videoRotation == 270){
+                    saveWidth = format.getInteger(MediaFormat.KEY_HEIGHT);
+                    saveHeight = format.getInteger(MediaFormat.KEY_WIDTH);
+                }else{
+                    saveWidth = format.getInteger(MediaFormat.KEY_WIDTH);
+                    saveHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
+                }
+            }catch (NullPointerException e){
                 saveWidth = format.getInteger(MediaFormat.KEY_WIDTH);
                 saveHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
             }
+
             Matrix.setRotateM(textureRotMatrix, 0,videoRotation,0,0,1);
 
             String mime = format.getString(MediaFormat.KEY_MIME);
@@ -151,19 +156,21 @@ public class VideoToTextureArray {
         return videoTextures.size() == 0 ? -1:videoTextures.get(currentTextureIdx)[0];
     }
     long currentTime = 0;
-    public void updateTexture(){
-        surfaceTexture.updateTexImage();
-    }
+//    public void updateTexture(){
+//        surfaceTexture.updateTexImage();
+//    }
     public void draw(){
         draw(true);
     }
     public boolean alFramesLoaded(){
         return isAllFramesReady;
     }
+    private long timeStep = -1L;
     public void draw(boolean byTimeStep) {
         if (byTimeStep){
             long time = System.nanoTime();
-            if (time - currentTime < 40_000_000L) return;
+            long ts = (timeStep == -1L) ? 33_000_000L : timeStep;
+            if (time - currentTime < ts) return;
     //        Log.d("FLX_INJECT","time " +(time/1_000_000));
             currentTime = time;
         }
@@ -191,6 +198,7 @@ public class VideoToTextureArray {
 
             GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
             textureProgram.unbind();
+//            GLES20.glFinish();
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
             isAllFramesReady = getNextFrame();
             currentTextureIdx = videoTextures.size()-1;
@@ -201,7 +209,7 @@ public class VideoToTextureArray {
 //    }
     private MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
     private int inputChunk = 0;
-
+    private long oldPresentationTime = -1L;
     public boolean getNextFrame(){
         final int TIMEOUT_USEC = 10000;
         boolean VERBOSE = false;
@@ -232,6 +240,7 @@ public class VideoToTextureArray {
                                     extractor.getSampleTrackIndex() + ", expected " + trackIndex);
                         }
                         long presentationTimeUs = extractor.getSampleTime();
+
                         decoder.queueInputBuffer(inputBufIndex, 0, chunkSize,
                                 presentationTimeUs, 0 /*flags*/);
                         if (VERBOSE) {
@@ -266,6 +275,13 @@ public class VideoToTextureArray {
 
                     boolean doRender = (info.size != 0);
                     frameExtracted=true;
+                    long presentationTimeUs = info.presentationTimeUs;
+                    if (oldPresentationTime!=-1L && doRender && !outputDone && timeStep==-1L){
+
+                        timeStep = (presentationTimeUs-oldPresentationTime)*1000;
+//                        Log.d("FLX_INJECT","timeStep "+timeStep);
+                    }
+                    oldPresentationTime = presentationTimeUs;
                     decoder.releaseOutputBuffer(decoderStatus, doRender);
                     if (outputDone){
                         extractor.release();

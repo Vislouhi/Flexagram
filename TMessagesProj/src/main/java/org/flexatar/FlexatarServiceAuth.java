@@ -41,6 +41,7 @@ public class FlexatarServiceAuth {
     private static CountDownLatch integrityTokenProviderLatch;
     private static boolean isTokenProviderRequested = false;
     public static void integrityCheck(){
+
         if (integrityTokenProvider!=null) return;
         synchronized (FlexatarServiceAuth.class) {
             if (isTokenProviderRequested) return;
@@ -48,10 +49,11 @@ public class FlexatarServiceAuth {
         }
 
         if (integrityTokenProvider!=null) return;
+        Log.d("FLX_INJECT","request integrity provider");
         integrityTokenProviderLatch = new CountDownLatch(1);
         StandardIntegrityManager standardIntegrityManager =
                 IntegrityManagerFactory.createStandard(ApplicationLoader.applicationContext);
-        long cloudProjectNumber = 642143043531L;
+        long cloudProjectNumber = 901879365974L;
         standardIntegrityManager.prepareIntegrityToken(
                         StandardIntegrityManager.PrepareIntegrityTokenRequest.builder()
                                 .setCloudProjectNumber(cloudProjectNumber)
@@ -59,14 +61,18 @@ public class FlexatarServiceAuth {
                 .addOnSuccessListener(tokenProvider -> {
                     Log.d("FLX_INJECT","token provider obtained success ");
                     integrityTokenProvider = tokenProvider;
-                    integrityTokenProviderLatch.countDown();
-
-                })
-                .addOnFailureListener(exception -> {
-                    integrityTokenProviderLatch.countDown();
                     synchronized (FlexatarServiceAuth.class) {
                         isTokenProviderRequested = false;
                     }
+                    integrityTokenProviderLatch.countDown();
+
+
+                })
+                .addOnFailureListener(exception -> {
+                    synchronized (FlexatarServiceAuth.class) {
+                        isTokenProviderRequested = false;
+                    }
+                    integrityTokenProviderLatch.countDown();
                     Log.d("FLX_INJECT","integrity warmup error");
                 });
     }
@@ -210,6 +216,8 @@ public class FlexatarServiceAuth {
         public boolean isVerified(){
             if (verifyData!=null){
                 Log.d("FLX_INJECT","verify result "+verifyData.result);
+            }else{
+                start();
             }
             return verifyData!=null;
         }
@@ -222,11 +230,14 @@ public class FlexatarServiceAuth {
             if (verifyData!=null) return;
             authTgBot();
             if (botToken==null) return;
+            Log.d("FLX_INJECT","bot token ready");
+            Log.d("FLX_INJECT","verifyInProgress "+verifyInProgress);
             synchronized (startSync) {
                 if (verifyData!=null) return;
                 if (verifyInProgress) return;
                 verifyInProgress = true;
             }
+            Log.d("FLX_INJECT","start token renew");
             renewToken(botToken,null,null);
 
         }
@@ -236,6 +247,7 @@ public class FlexatarServiceAuth {
                 integrityCheck();
                 getIntegrityToken(token, googleToken -> {
                     if (googleToken==null) {
+                        verifyInProgress = false;
                         if (error!=null) error.run();
                         return;
                     }
@@ -583,6 +595,7 @@ lambda.url/verify -> App : <access_token>
 
             });
         }
+
         return verifyProcesses.get(account);
     }
 //    public static void resetVerification(){

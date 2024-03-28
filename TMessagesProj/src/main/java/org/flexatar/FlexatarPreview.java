@@ -144,11 +144,37 @@ public class FlexatarPreview extends FrameLayout {
             },100);
 
         });
-        makeLayout(currentOrientation);
+
 //        startGroupAnimation();
 //        addView(cardview);
-
+        makeLayout(currentOrientation);
     }
+    private boolean firstLayout = true;
+    int measuredWidth;
+    int measuredHeight;
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
+        measuredHeight = MeasureSpec.getSize(heightMeasureSpec);
+        Log.d("FLX_INJECT","mesured width "+measuredWidth);
+
+
+//        requestLayout();
+//        firstLayout = false;
+    }
+
+    /*@Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (firstLayout) {
+            int currentOrientation = getResources().getConfiguration().orientation;
+            makeCardviewParameters(currentOrientation,measuredWidth,measuredHeight);
+            firstLayout = false;
+        }
+    }*/
+
+
 
     public void stopGroupAnimation(){
 //        Log.d("FLX_INJECT","stopGroupAnimation " );
@@ -266,33 +292,42 @@ public class FlexatarPreview extends FrameLayout {
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        makeCardviewParameters(newConfig.orientation);
+        makeCardviewParameters(newConfig.orientation,AndroidUtilities.dp(170),AndroidUtilities.dp(220));
         boolean isPortrait = newConfig.orientation == Configuration.ORIENTATION_PORTRAIT;
+        if (AndroidUtilities.isTablet()){
+            isPortrait = true;
+        }
         layout.setOrientation(isPortrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
-//        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-//
-//        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-//
-//        }
+
     }
 
-    private void makeCardviewParameters(int orientation){
+    private void makeCardviewParameters(int orientation,int mWidth,int mHeight){
         boolean isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT;
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        int screenWidth = displayMetrics.widthPixels;
-        int screenHeight = displayMetrics.heightPixels;
+        if (AndroidUtilities.isTablet()) {
+            isPortrait = true;
+        }
+       /* DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+
+//        int screenWidth = displayMetrics.widthPixels;
+//        int screenHeight = displayMetrics.heightPixels;
+        int screenWidth = mWidth;
+        int screenHeight = mHeight;
+        Log.d("FLX_INJECT","screenWidth " + displayMetrics.widthPixels+" window width "+getWidth());
+        Log.d("FLX_INJECT","isPortrait " + isPortrait);
+
         int cardWidth = (int) (screenWidth * 0.5f);
         int cardHeight = (int) (cardWidth * 1.3f);
         if (!isPortrait){
             cardHeight = (int) (screenHeight * 0.7f);
             cardWidth = (int) (cardHeight / 1.3f);
         }
-
-        cardVieParameters = new LinearLayout.LayoutParams(cardWidth,cardHeight);
+        Log.d("FLX_INJECT","cardWidth " + cardWidth+" cardHeight "+cardHeight);*/
+        cardVieParameters = new LinearLayout.LayoutParams(mWidth,mHeight);
         cardVieParameters.gravity = isPortrait ? Gravity.TOP | Gravity.CENTER_HORIZONTAL :  Gravity.LEFT | Gravity.CENTER_VERTICAL;
         cardVieParameters.topMargin = isPortrait ? AndroidUtilities.dp(24) : 0;
         cardVieParameters.leftMargin = isPortrait ? 0:AndroidUtilities.dp(24) ;
         cardview.setLayoutParams(cardVieParameters);
+
         if (controlsScrollView == null) return;
         LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
         controlsScrollView.setLayoutParams(layoutParams);
@@ -304,14 +339,19 @@ public class FlexatarPreview extends FrameLayout {
     }
     private void makeLayout(int orientation){
         boolean isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT;
-        makeCardviewParameters(orientation);
+        if (AndroidUtilities.isTablet()){
+            isPortrait = true;
+        }
+        makeCardviewParameters(orientation,AndroidUtilities.dp(170),AndroidUtilities.dp(220));
         LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
 
         layout = new LinearLayout(getContext());
         layout.setOrientation(isPortrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
         addView(layout,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.MATCH_PARENT));
         layout.addView(cardview);
+
         if (flexatarCell.isBuiltin() || flexatarCell.isPublic()) return;
+
         LinearLayout editContentLayout = new LinearLayout(getContext());
         editContentLayout.setOrientation(LinearLayout.VERTICAL);
         if (flexatarData.flxDataType == FlexatarData.FlxDataType.PHOTO) {
@@ -332,6 +372,9 @@ public class FlexatarPreview extends FrameLayout {
                 public void onPageSelected(int page, boolean forward) {
                     int currentOrientation = getResources().getConfiguration().orientation;
                     boolean isPortrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
+                    if (AndroidUtilities.isTablet()){
+                        isPortrait = true;
+                    }
                     LinearLayout.LayoutParams layoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, isPortrait ? Gravity.TOP : Gravity.LEFT, isPortrait ? 0 : 24, 0, 0, 0);
 
                     if (page == 0) {

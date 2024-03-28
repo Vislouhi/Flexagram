@@ -1435,6 +1435,8 @@ public class FlexatarStorageManager {
             addDefaultFlexatars(account);
             fids = getRecords(context,account);
         }
+        if (FlexatarServiceAuth.getVerification(account).getVerifyData()==null)
+            return getDefaultFlexatars(account);
         if (FlexatarServiceAuth.getVerification(account).getVerifyData().isFail())
             return getDefaultFlexatars(account);
 
@@ -1456,6 +1458,9 @@ public class FlexatarStorageManager {
             addDefaultVideoFlexatars(account);
             fids = getVideoRecords(context,account);
         }
+        if (FlexatarServiceAuth.getVerification(account).getVerifyData() == null)
+            return getDefaultVideoFlexatars(account);
+
         if (FlexatarServiceAuth.getVerification(account).getVerifyData().isFail())
             return getDefaultVideoFlexatars(account);
 
@@ -1478,6 +1483,10 @@ public class FlexatarStorageManager {
         }
         List<File> files = new ArrayList<>();
 //        Log.d("FLX_INJECT", "length files "+files.length);
+        if (FlexatarServiceAuth.getVerification(account).getVerifyData()==null) {
+            files.addAll(Arrays.asList(getDefaultFlexatars(account)));
+            return files;
+        }
         if (FlexatarServiceAuth.getVerification(account).getVerifyData().isFail()) {
             files.addAll(Arrays.asList(getDefaultFlexatars(account)));
             return files;
@@ -1496,6 +1505,11 @@ public class FlexatarStorageManager {
         File flexatarStorageFolder = getFlexatarStorage(context,account);
         String[] fids = getRecords(context,account);
         List<File> files = new ArrayList<>();
+        if (FlexatarServiceAuth.getVerification(account).getVerifyData()==null) {
+            if (prefix.equals(BUILTIN_PREFIX))
+                files.addAll(Arrays.asList(getDefaultFlexatars(account)));
+            return files.toArray(new File[0]);
+        }
         if (FlexatarServiceAuth.getVerification(account).getVerifyData().isFail()) {
             if (prefix.equals(BUILTIN_PREFIX))
                 files.addAll(Arrays.asList(getDefaultFlexatars(account)));
@@ -1518,6 +1532,11 @@ public class FlexatarStorageManager {
             fids = getVideoRecords(context,account);
         }
         List<File> files = new ArrayList<>();
+        if (FlexatarServiceAuth.getVerification(account).getVerifyData()==null) {
+            if (prefix.equals(BUILTIN_PREFIX))
+                files.addAll(Arrays.asList(getDefaultVideoFlexatars(account)));
+            return files.toArray(new File[0]);
+        }
         if (FlexatarServiceAuth.getVerification(account).getVerifyData().isFail()) {
             if (prefix.equals(BUILTIN_PREFIX))
                 files.addAll(Arrays.asList(getDefaultVideoFlexatars(account)));

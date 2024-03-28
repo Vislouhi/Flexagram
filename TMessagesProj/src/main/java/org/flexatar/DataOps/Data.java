@@ -196,7 +196,7 @@ public class Data {
             System.arraycopy(value, 0, firstPart, 0, firstSize);
             ret.add(firstPart);
             for (int i = 0; i < partCount-1; i++) {
-                byte[] part = new byte[firstSize];
+                byte[] part = new byte[partSize];
                 System.arraycopy(value, firstSize+partSize*i, part, 0, partSize);
                 ret.add(part);
             }

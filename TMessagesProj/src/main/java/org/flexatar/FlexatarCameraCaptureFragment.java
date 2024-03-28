@@ -13,6 +13,7 @@ import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
 import android.util.Size;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.camera.core.AspectRatio;
@@ -99,6 +101,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
     private boolean flxPhotoHelperRotated;
     private Timer flxPhotoHelperTmer;
     private boolean isTakePhotoAvailable = false;
+    private TextView mthClosedTextView;
 
     public FlexatarCameraCaptureFragment(){
         super();
@@ -237,6 +240,22 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                                 frameLayout.addView(flxPhotoHelperView,photoHelperLayoutParams);
                             else
                                 flxPhotoHelperView.setLayoutParams(photoHelperLayoutParams);
+
+
+                            mthClosedTextView = new TextView(getContext());
+                            mthClosedTextView.setTextColor(Color.WHITE);
+                            mthClosedTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+                            mthClosedTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                            mthClosedTextView.setBackgroundColor(Color.parseColor("#105404"));
+                            mthClosedTextView.setText(LocaleController.getString("KeepMouthClosed", R.string.KeepMouthClosed));
+                            if (flexatarBody != null) {
+                                mthClosedTextView.setBackgroundColor(Color.parseColor("#670000"));
+                                mthClosedTextView.setText(LocaleController.getString("KeepMouthOpened", R.string.KeepMouthOpened));
+                            }
+                            mthClosedTextView.setPadding(0,AndroidUtilities.dp(6),0,AndroidUtilities.dp(6));
+                            mthClosedTextView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                            mthClosedTextView.setGravity(Gravity.CENTER);
+                            frameLayout.addView(mthClosedTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
 
 
 //                            mPreviewView.setVisibility(View.VISIBLE);
@@ -571,11 +590,17 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
 
             builder.setPositiveButton(LocaleController.getString("Continue", R.string.Continue), (dialogInterface, i) -> {
-                isTakePhotoAvailable = false;
+                isTakePhotoAvailable = true;
                 hintCounter = 0;
-                faceHintView.setImageResource(faceHints.get(hintCounter));
+//                faceHintView.setImageResource(faceHints.get(hintCounter));
+                flxPhotoHelperView.setImageResource(photoHelperRes[hintCounter]);
                 isMouthDone = true;
                 orangeBarView.setVisibility(View.VISIBLE);
+
+                mthClosedTextView.setBackgroundColor(Color.parseColor("#670000"));
+                mthClosedTextView.setText(LocaleController.getString("KeepMouthOpened", R.string.KeepMouthOpened));
+
+
             });
 
             builder.setNegativeButton(LocaleController.getString("ActionSkip", R.string.ActionSkip), (dialogInterface, i) -> {
@@ -648,6 +673,7 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
         editText.setHint(LocaleController.getString("EnterFlexatarsName", R.string.EnterFlexatarsName));
+        editText.requestFocus();
         int pad = AndroidUtilities.dp(12);
         linearLayout.setPadding(pad, pad, pad, pad);
         linearLayout.addView(editText,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,Gravity.CENTER));

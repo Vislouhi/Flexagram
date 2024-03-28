@@ -200,7 +200,7 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
         public int getItemCount() {
 
 //            return 3;
-            return flexatarFiles.length == 0 ? 1 : (flexatarFiles.length+1);
+            return flexatarFiles.length == 0 ? 2 : (flexatarFiles.length+1);
         }
 
         /*public ChatAttachAlertDocumentLayout.ListItem getItem(int position) {
@@ -260,7 +260,8 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
                     fCell.loadFromFile(flexatarFiles[position]);
                 }
             }else{
-                ((TextCell) holder.itemView).setTextAndIcon(LocaleController.getString("NoFlexatarsToShare", R.string.NoFlexatarsToShare), R.drawable.filled_unclaimed, false);
+                if (holder.itemView instanceof TextCell)
+                    ((TextCell) holder.itemView).setTextAndIcon(LocaleController.getString("NoFlexatarsToShare", R.string.NoFlexatarsToShare), R.drawable.filled_unclaimed, false);
             }
 //            notifyItemChanged(position);
         }

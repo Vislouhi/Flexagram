@@ -52,32 +52,18 @@ public class VideoFrameDrawer {
     switch (buffer.getType()) {
       case OES:
 
-
-//        drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
-//                viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
-
-//        if ( flexatarTextureId == -1) {
           drawer.drawOes(buffer.getTextureId(), buffer.getWidth(), buffer.getHeight(), rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
                   viewportY, viewportWidth, viewportHeight, blur);
-//        }else{
-//
-//          drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
-//                  viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
-//
-//        }
+
         break;
       case FLX:
-//        Log.d("FLX_INJECT","drawFlx");
+
 
         drawer.drawFlx( buffer.getTextureId(),512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
                 viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
-//        drawer.drawFlx( flexatarTextureId,512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
-//                viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
+
         break;
       case RGB:
-//        Log.d("FLX_INJECT","drawRgb");
-//        drawer.drawFlx( 512, 512, rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
-//                viewportY, viewportWidth, viewportHeight, blur,fromEncoder);
         drawer.drawRgb(buffer.getTextureId(), buffer.getWidth(), buffer.getHeight(), rotatedWidth, rotatedHeight, finalGlMatrix, frameWidth, frameHeight, viewportX,
             viewportY, viewportWidth, viewportHeight, blur);
 

@@ -2,6 +2,7 @@ package org.flexatar;
 
 import android.content.Context;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -40,6 +41,7 @@ public class FlexatarPreviewFragment extends BaseFragment{
         super();
         this.cell=cell;
         this.parentFragment=parentFragment;
+
     }
 
     public void finishPage(){
@@ -123,7 +125,7 @@ public class FlexatarPreviewFragment extends BaseFragment{
         menu.addItem(10, R.drawable.background_selected);
 
         initLayout();
-
+        fragmentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
         return fragmentView;
     }
     private boolean finishCalled = false;

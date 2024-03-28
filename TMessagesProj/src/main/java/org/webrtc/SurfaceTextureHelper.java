@@ -28,6 +28,7 @@ import java.util.concurrent.Callable;
 import org.flexatar.AnimationUnit;
 import org.flexatar.BlinkGenerator;
 import org.flexatar.FlexatarCommon;
+import org.flexatar.FlexatarRenderer;
 import org.flexatar.FlexatarStorageManager;
 import org.flexatar.FlxDrawer;
 import org.telegram.messenger.voip.VoIPService;
@@ -445,9 +446,11 @@ public class SurfaceTextureHelper {
     }
 //    Log.d("tryDeliverTextureFrame","textureWidth " +textureWidth +" textureHeight "+textureHeight + " oesTextureId "+oesTextureId);
     int texId = oesTextureId;
-    if (flxDrawer!=null){
-      if (flxDrawer.renderTexture!=null)
-        texId = flxDrawer.renderTexture[0];
+    if (FlexatarRenderer.isFlexatarCamera) {
+      if (flxDrawer != null) {
+        if (flxDrawer.renderTexture != null)
+          texId = flxDrawer.renderTexture[0];
+      }
     }
     final VideoFrame.TextureBuffer buffer =
         new TextureBufferImpl(textureWidth, textureHeight, tetxureType, texId,

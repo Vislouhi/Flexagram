@@ -246,7 +246,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             item.setNameText(LocaleController.getString("ViewInstructions", R.string.ViewInstructions));
             item.setOnClickListener(v->{
 
-                FlexatarInstructionFragment flexatarInstructionFragment = new FlexatarInstructionFragment();
+                FlexatarInstructionFragment flexatarInstructionFragment = new FlexatarInstructionFragment(tabsView.getCurrentTabId() == 0 ? FlexatarInstructionFragment.InstructionType.VIDEO : FlexatarInstructionFragment.InstructionType.PHOTO);
                 flexatarInstructionFragment.setOnTryInterfacePressed((v1) -> {
                     if (Build.VERSION.SDK_INT >= 23 && getParentActivity().checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                         getParentActivity().requestPermissions(new String[]{Manifest.permission.CAMERA},  BasePermissionsActivity.REQUEST_CODE_OPEN_CAMERA);
@@ -274,17 +274,18 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     return;
                 }
                 if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount)!=null && FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
-                    if (ValueStorage.checkIfInstructionsComplete(context)) {
+
                         if (tabsView.getCurrentTabId() == 0){
                             presentFragment(new FlexatarVideoCapFragment());
                         }else if (tabsView.getCurrentTabId() == 1){
-                            presentFragment(new FlexatarCameraCaptureFragment());
-
+                            if (ValueStorage.checkIfInstructionsComplete(context)) {
+                                presentFragment(new FlexatarCameraCaptureFragment());
+                            } else {
+                                showDialog(AlertDialogs.askToCompleteInstructions(context));
+                            }
                         }
 
-                    } else {
-                        showDialog(AlertDialogs.askToCompleteInstructions(context));
-                    }
+
                 }else{
                     showDialog(AlertDialogs.showVerifyInProgress(context));
                     FlexatarServiceAuth.startVerification(UserConfig.selectedAccount, () -> {
@@ -442,7 +443,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 item.setImageResource(R.drawable.msg_delete);
                 item.setNameText("Delete local files");
                 item.setOnClickListener(v -> {
-                    if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
+                    FlexatarStorageManager.clearStorage(UserConfig.selectedAccount);
+                    /*if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
                         File[] localFlexatars = FlexatarStorageManager.getFlexatarFileList(context,UserConfig.selectedAccount, FlexatarStorageManager.FLEXATAR_PREFIX);
                         for (File file : localFlexatars) {
                             FlexatarStorageManager.deleteFromStorage(context,UserConfig.selectedAccount, file, false);
@@ -455,7 +457,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
                     } else {
                         showDialog(AlertDialogs.showVerifyInProgress(context));
-                    }
+                    }*/
                 });
 
                 itemsAction.add(item);
@@ -550,8 +552,10 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                     }
                 }
             }else{
-                if (cell.getFlexatarFile()!=null)
-                    presentFragment(new FlexatarPreviewFragment(cell,this));
+                if (cell.getFlexatarFile()!=null) {
+                    Log.d("FLX_INJECT","cabinet fragment width: "+fragmentView.getWidth());
+                    presentFragment(new FlexatarPreviewFragment(cell, this));
+                }
 
             }
         });

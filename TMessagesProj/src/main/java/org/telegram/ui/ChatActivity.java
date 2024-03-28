@@ -3593,6 +3593,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //            flexatarCabinetButton.setColorfulIcon(Theme.getColor(Theme.key_actionBarDefaultTitle),R.drawable.menu_flexatar);
 //            flexatarCabinetButton.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
             flexatarCabinetButton.setOnClickListener(v -> {
+                if (flexatarPopUp!=null && flexatarPopUp.isShowing()) flexatarPopUp.dismiss();
                 presentFragment(new FlexatarCabinetActivity());
             });
             actionBar.addSpaceForFlexatarButton(AndroidUtilities.dp(48));
@@ -34080,7 +34081,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                            String stubUrl = "flexatar.com?ftar=private/1.00/tg/6350413711/2bca0bc5-424b-42e7-b825-9ab8297f5d47/2bca0bc5-424b-42e7-b825-9ab8297f5d47.p";
 //                            String stubUrl = "flexatar.com?ftar=public/1.00/char3t/char3t.p";
 //                            String stubUrl = "flexatar.com?ftar=private/1.00/tg/6350413711/51b0c34a-5c69-4aaf-8684-d96e50a01bff/51b0c34a-5c69-4aaf-8684-d96e50a01bff.p";
-//                            String stubUrl = "flexatar.com?ftar=public/1.00/char4t&download";
+//                            String stubUrl = "flexatar.com?ftar=public/1.00/char1t&download";
                             String targetUrl = entity.url;
 //                            String targetUrl = stubUrl;
                             ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);

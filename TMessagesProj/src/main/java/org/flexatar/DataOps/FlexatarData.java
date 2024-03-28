@@ -3,6 +3,7 @@ package org.flexatar.DataOps;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import org.flexatar.AnimationUnit;
 import org.flexatar.FlexatarAnimator;
@@ -16,6 +17,7 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -70,6 +72,16 @@ public class FlexatarData {
     private File parentFile;
     private void setParentFile(File file) {
         parentFile = file;
+        if (file.getName().contains("char1")) {
+            Log.d("FLX_INJECT","saving default mouth");
+
+
+            try {
+                FlexatarStorageManager.copy(file, new File(FlexatarStorageManager.createTmpVideoStorage(), "char1.flx"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
     public File getVideo() {
         return new File(parentFile.getAbsolutePath().replace(".flx",".mp4"));
@@ -140,7 +152,8 @@ public class FlexatarData {
             flxData.remove("mouth");
             currentPart = new HashMap<>();
             flxData.put("mouth",currentPart);
-            byte[] moutData = new LengthBasedUnpack(AssetAccess.dataFromFile("flexatar/FLX_mouth_collection.dat")).bPacks.get(0);
+            byte[] moutData = AssetAccess.dataFromFile("flexatar/FLX_mouth_collection1.dat");
+//            byte[] moutData = new LengthBasedUnpack(AssetAccess.dataFromFile("flexatar/FLX_mouth_collection.dat")).bPacks.get(0);
             LengthBasedFlxUnpack packLBMouth = new LengthBasedFlxUnpack(moutData);
             for (int i = 0; i < packLBMouth.hPacks.size(); i++) {
                 String headerName = packLBMouth.hPacks.get(i);

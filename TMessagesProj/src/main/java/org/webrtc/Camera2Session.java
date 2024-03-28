@@ -338,6 +338,8 @@ class Camera2Session implements CameraSession {
                                /* mirror= */ isCameraFrontFacing,
                                /* rotation= */ -cameraOrientation),
                 /* rotation= */ getFrameOrientation(), frame.getTimestampNs());
+
+
         events.onFrameCaptured(Camera2Session.this, modifiedFrame);
         modifiedFrame.release();
       });

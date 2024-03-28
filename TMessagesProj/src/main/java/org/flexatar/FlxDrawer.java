@@ -439,6 +439,7 @@ public class FlxDrawer {
             initVideoTexture();
             if (videoToTextureArray == null) return 0;
             videoToTextureArray.draw();
+
         }
         initFrameBuffer();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFrameBuffer[0]);
@@ -447,10 +448,13 @@ public class FlxDrawer {
 
 
         GLES20.glViewport(0, 0, 400, 600);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+//        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         draw(true);
+//        GLES20.glFinish();
 //        drawVideo();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
+
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
             Log.e("FLX_INJECT", "Error openg: " + error);

@@ -36,11 +36,19 @@ public class FlexatarInstructionFragment extends BaseFragment{
     private final BitmapShaderTools bgGreenShaderTools = new BitmapShaderTools(80, 80);
     private final BitmapShaderTools bgBlueVioletShaderTools = new BitmapShaderTools(80, 80);
     private final MotionBackgroundDrawable bgBlueViolet = new MotionBackgroundDrawable(0xFF00A3E6, 0xFF296EF7, 0xFF18CEE2, 0xFF3FB2FF, 0, false, true);
+    private final InstructionType instructionType;
     private TextView positiveButton;
     private View.OnClickListener onViewInstructionsChosenListener = null;
-
+    public enum InstructionType{
+        VIDEO,PHOTO
+    }
     public FlexatarInstructionFragment(){
         super();
+        this.instructionType=InstructionType.PHOTO;
+    }
+    public FlexatarInstructionFragment(InstructionType instructionType){
+        super();
+        this.instructionType=instructionType;
     }
 
 
@@ -83,7 +91,23 @@ public class FlexatarInstructionFragment extends BaseFragment{
         LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         scrollView.addView(linearLayout);
+        if (instructionType == InstructionType.VIDEO){
+            String[] instTexts = new String[]{
+                    LocaleController.getString("TakeShortVideoOFYourself", R.string.TakeShortVideoOFYourself),
+                    LocaleController.getString("EnsureOneFace", R.string.EnsureOneFace),
+                    LocaleController.getString("KeepMouthClosed", R.string.KeepMouthClosed),
+            };
 
+            for (String text:instTexts){
+                TextView textView1 = FlxLayoutHelper.textViewFactory(context, text);
+                textView1.setGravity(Gravity.CENTER);
+                textView1.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+                linearLayout.addView(textView1, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
+            }
+
+
+            return fragmentView;
+        }
         TextView textView1 = FlxLayoutHelper.textViewFactory(context,LocaleController.getString("InstructionText1", R.string.InstructionText1));
 
         textView1.setGravity(Gravity.CENTER);
@@ -112,7 +136,7 @@ public class FlexatarInstructionFragment extends BaseFragment{
             linearLayout.addView(FlxLayoutHelper.horizontalLayoutFactory(context,new View[]{textComment,imageView}),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,AndroidUtilities.dp(72),Gravity.CENTER_HORIZONTAL|Gravity.TOP));
         }
 
-        TextView textView2 = FlxLayoutHelper.textViewFactory(context,LocaleController.getString("InstructionText2", R.string.InstructionText2));
+        /*TextView textView2 = FlxLayoutHelper.textViewFactory(context,LocaleController.getString("InstructionText2", R.string.InstructionText2));
 
         textView2.setGravity(Gravity.CENTER);
         textView2.setPadding(AndroidUtilities.dp(12),AndroidUtilities.dp(12),AndroidUtilities.dp(12),AndroidUtilities.dp(12));
@@ -137,7 +161,7 @@ public class FlexatarInstructionFragment extends BaseFragment{
             textComment.setPadding(AndroidUtilities.dp(0),AndroidUtilities.dp(48),AndroidUtilities.dp(0),AndroidUtilities.dp(0));
 
             linearLayout.addView(FlxLayoutHelper.horizontalLayoutFactory(context,new View[]{textComment,imageView}),LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,AndroidUtilities.dp(72),Gravity.CENTER_HORIZONTAL|Gravity.TOP));
-        }
+        }*/
 
         TextView textView3 = FlxLayoutHelper.textViewFactory(context,LocaleController.getString("InstructionText3", R.string.InstructionText3));
 

@@ -82,6 +82,10 @@
     <string name="FlexatarConnectionErr">Can\'t connect flexatar server. Try again later.</string>
     <string name="AskDeleteFromCloud">Do you want to delete this flexatar from Cloud Storage? It will be deleted from gallery also.</string>
     <string name="FlexatarNotFound">Flexatar not found. It was deleted from Cloud Storage.</string>
+    <string name="TakeShortVideoOFYourself">Take a short video of yourself. Less then 10 seconds.</string>
+    <string name="EnsureOneFace">Ensure that there is and only one face in a frame.</string>
+    <string name="KeepMouthClosed">Keep mouth closed.</string>
+    <string name="KeepMouthOpened">Keep mouth opened.</string>
 
 <!--    telegram locale-->
     <string name="AppName">Flexatar Telegram</string>

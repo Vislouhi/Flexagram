@@ -329,7 +329,7 @@ public class ShaderLib {
                     " result.xyz *= uv.y/(teethBotKeyPointY - teethTopKeyPointY)  - teethTopKeyPointY/(teethBotKeyPointY - teethTopKeyPointY) ;" +
                     " }" +
                     " }" +
-                    " highp float xDarken = pow(cos((uv.x-0.5)*3.14),3.0);" +
+                    " highp float xDarken = pow(cos((uv.x-0.5)*3.14),2.0);" +
                     " result.xyz*=xDarken;" +
 //            " gl_FragColor = vec4(vec3(1.0),0.1);" +
 //            " gl_FragColor = result;" +
