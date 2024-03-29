@@ -4231,9 +4231,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                     videoEditedInfo.resultHeight = 360;
                                     videoEditedInfo.originalPath = videoFile.getAbsolutePath();
                                     videoEditedInfo.estimatedDuration = 3L * 1000000L;
+//                                    videoEditedInfo.
 
                                     AccountInstance accountInstance = AccountInstance.getInstance(UserConfig.selectedAccount);
-                                    SendMessagesHelper.prepareSendingVideo(accountInstance, videoFile.getAbsolutePath(), videoEditedInfo, recordDialogId, null, null, null, null, null, 0, null, true, 0, true, false, "",null,0);
+                                    SendMessagesHelper.prepareSendingVideo(accountInstance, videoFile.getAbsolutePath(), videoEditedInfo, recordDialogId, null, null, null, null, null, once ? 0x7FFFFFFF : 0, null, true, 0, true, false, "",null,0);
 //                                    videoFile.delete();
                                     requestAudioFocus(false);
                                     Log.d("FLX_INJECT", " flexatar round video was sent");

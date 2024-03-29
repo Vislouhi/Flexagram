@@ -214,15 +214,17 @@ public class FlxDrawer {
 
     }
 
-    private void initPromoProgram(){
+    private void initPromoProgram(boolean isRound){
         if (promoProgram != null) return;
         promoProgram = new ShaderProgram(ShaderLib.PROMO_VERTEX, ShaderLib.PROMO_FRAGMENT);
         promoProgram.attribute("uv" , commonBuffers.frameVBO, 2);
         TextureArray frameTexture = new TextureArray();
-        frameTexture.addTexture(FlexatarCommon.promoLabel);
+
+        frameTexture.addTexture(isRound ? FlexatarCommon.promoRoundLabel:FlexatarCommon.promoLabel);
         promoProgram.textureArray("uSampler", frameTexture, 0);
         promoProgram.addUniform4f("sizePosition");
     }
+
     private void initFrameRoundedProgram(){
         if (commonBuffers == null) return;
         if (frameRoundedProgram != null) return;
@@ -709,19 +711,19 @@ public class FlxDrawer {
     }
     public void drawPromo(){
         if (isPromo) {
-            initPromoProgram();
+            initPromoProgram(isTgRoundVideo);
             promoProgram.use();
             promoProgram.bind();
             if (isTgRoundVideo) {
                 float width = 0.4f;
-                float height = width / FlexatarCommon.promoRatio;
+                float height = width / FlexatarCommon.promoRoundRatio;
 
                 promoProgram.uniform4f("sizePosition", width, height * screenRatio, (1f - width) / 2f, 0.8f);
             }else{
-                float width = 0.5f;
+                float width = 0.12f;
                 float height = width / FlexatarCommon.promoRatio;
 
-                promoProgram.uniform4f("sizePosition", width, height * screenRatio, (1f - width) / 2f, 0.85f);
+                promoProgram.uniform4f("sizePosition", width, height * screenRatio, 0.02f, 0.02f);
             }
             GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
             promoProgram.unbind();
@@ -926,6 +928,7 @@ public class FlxDrawer {
                 GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
                 frameProgram.unbind();
             }
+            drawPromo();
         }
         GLES20.glDisable(GLES20.GL_BLEND);
 //        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);

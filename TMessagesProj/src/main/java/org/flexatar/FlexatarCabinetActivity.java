@@ -313,61 +313,62 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             itemsAction.add(item);
         }*/
-        {
-            ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
-            item.setImageResource(R.drawable.msg_download);
-            if (FlexatarServerAccess.isDownloadingFlexatars){
-                item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
-            }else{
-                item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
-            }
 
-            item.setOnClickListener(v-> {
-
-                if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount)!=null && FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
-
-                    if (!FlexatarServerAccess.isDownloadingFlexatars) {
-                        FlexatarServerAccess.isDownloadingFlexatars = true;
-                        ItemModel itemLoader = new ItemModel(ItemModel.FLEXATAR_CELL);
-                        itemAdapter.addFlexatarItem(itemLoader);
-
-                        handler.post(() -> {
-                            item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
-                            itemAdapter.notifyItemChanged(2);
-                        });
-                        FlexatarServerAccess.downloadCloudFlexatars1(UserConfig.selectedAccount,() -> {
-                            FlexatarServerAccess.isDownloadingFlexatars = false;
-                            itemAdapter.removeFlexatarCell(1);
-                            handler.post(() -> {
-                                item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
-                                itemAdapter.notifyItemChanged(2);
-                            });
-                        },()->{
-                            FlexatarServerAccess.isDownloadingFlexatars = false;
-                            itemAdapter.removeFlexatarCell(1);
-                            handler.post(() -> {
-                                item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
-                                itemAdapter.notifyItemChanged(2);
-                            });
-                            AndroidUtilities.runOnUIThread(() -> {
-                                AlertDialogs.sayImpossibleToPerform(getContext()).show();
-                            });
-                        });
-                    }
-
-                }else{
-                    showDialog(AlertDialogs.showVerifyInProgress(context));
-                    FlexatarServiceAuth.startVerification(UserConfig.selectedAccount, () -> {
-
-                    });
-                }
-            });
-
-            itemsAction.add(item);
-        }
 
 //        ===============DEBUG CELLS============
         if (Config.debugMode) {
+            {
+                ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
+                item.setImageResource(R.drawable.msg_download);
+                if (FlexatarServerAccess.isDownloadingFlexatars){
+                    item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
+                }else{
+                    item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
+                }
+
+                item.setOnClickListener(v-> {
+
+                    if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount)!=null && FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
+
+                        if (!FlexatarServerAccess.isDownloadingFlexatars) {
+                            FlexatarServerAccess.isDownloadingFlexatars = true;
+                            ItemModel itemLoader = new ItemModel(ItemModel.FLEXATAR_CELL);
+                            itemAdapter.addFlexatarItem(itemLoader);
+
+                            handler.post(() -> {
+                                item.setNameText(LocaleController.getString("LoadingFlexatarFromCloud", R.string.LoadingFlexatarFromCloud));
+                                itemAdapter.notifyItemChanged(2);
+                            });
+                            FlexatarServerAccess.downloadCloudFlexatars1(UserConfig.selectedAccount,() -> {
+                                FlexatarServerAccess.isDownloadingFlexatars = false;
+                                itemAdapter.removeFlexatarCell(1);
+                                handler.post(() -> {
+                                    item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
+                                    itemAdapter.notifyItemChanged(2);
+                                });
+                            },()->{
+                                FlexatarServerAccess.isDownloadingFlexatars = false;
+                                itemAdapter.removeFlexatarCell(1);
+                                handler.post(() -> {
+                                    item.setNameText(LocaleController.getString("FlexatarFromCloud", R.string.FlexatarFromCloud));
+                                    itemAdapter.notifyItemChanged(2);
+                                });
+                                AndroidUtilities.runOnUIThread(() -> {
+                                    AlertDialogs.sayImpossibleToPerform(getContext()).show();
+                                });
+                            });
+                        }
+
+                    }else{
+                        showDialog(AlertDialogs.showVerifyInProgress(context));
+                        FlexatarServiceAuth.startVerification(UserConfig.selectedAccount, () -> {
+
+                        });
+                    }
+                });
+
+                itemsAction.add(item);
+            }
 
             {
                 ItemModel item = new ItemModel(ItemModel.ACTION_CELL);

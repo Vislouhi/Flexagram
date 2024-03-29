@@ -314,6 +314,7 @@ public class SurfaceTextureHelper {
         flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser[VoIPService.getSharedInstance().getCurrentAccount()]);
         flxDrawer.setIsStaticControlBind(true);
         flxDrawer.setFrame();
+        flxDrawer.setPromo();
 
       }
       flxDrawer.screenRatio = (float)textureHeight/textureWidth;

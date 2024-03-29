@@ -838,7 +838,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 updateViewState();
             }
         });
-        currentUserTextureView.renderer.setMirror(true);
+        currentUserTextureView.renderer.setMirror(!FlexatarRenderer.isFlexatarCamera);
         currentUserCameraFloatingLayout.addView(currentUserTextureView);
 
         callingUserMiniFloatingLayout = new VoIPFloatingLayout(context);
@@ -2101,7 +2101,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                 service.sharedUIParams.tapToVideoTooltipWasShowed = true;
             }
             currentUserTextureView.setIsScreencast(service.isScreencast());
-            currentUserTextureView.renderer.setMirror(service.isFrontFaceCamera());
+//            currentUserTextureView.renderer.setMirror(false);
+            currentUserTextureView.renderer.setMirror(!FlexatarRenderer.isFlexatarCamera && service.isFrontFaceCamera());
             service.setSinks(currentUserIsVideo && !service.isScreencast() ? currentUserTextureView.renderer : null, showCallingUserVideoMini ? callingUserMiniTextureRenderer : callingUserTextureView.renderer);
 
             if (animated) {

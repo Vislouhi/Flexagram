@@ -85,7 +85,8 @@ public class AppIconsSelectorCell extends RecyclerListView implements Notificati
 
             @Override
             public int getItemCount() {
-                return availableIcons.size();
+                return 1;
+//                return availableIcons.size();
             }
         });
         addItemDecoration(new ItemDecoration() {

@@ -325,8 +325,8 @@ public class FlexatarVideoEncoder {
                     flxDrawer.setMixWeightVal(weight);
                 }*/
 
-                if (i == animationPattern.size()/2)
-                    flxDrawer.builtinAnimator.reverse();
+//                if (i == animationPattern.size()/2)
+//                    flxDrawer.builtinAnimator.reverse();
 
 
                 GLES20.glClearColor(0f,0f,0f,0f);

@@ -34089,8 +34089,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             if (ftarInfo!=null&&ftarInfo.ftar!=null){
                                 isFlexatarCell = true;
                                 if (flexatarPopUp == null) {
-
-                                    flexatarPopUp = AlertDialogs.importFlexatarPopup(getContext(), ChatActivity.this.fragmentLocationContextView, getResourceProvider(), ftarInfo,
+                                    int fragW = fragmentView.getWidth();
+                                    int fragH = fragmentView.getHeight();
+                                    flexatarPopUp = AlertDialogs.importFlexatarPopup(getContext(), fragmentView, getResourceProvider(), ftarInfo,fragW,fragH,
                                             ()->{
                                                 flexatarPopUp = null;
                                             },flexatarFile->{
@@ -34184,7 +34185,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 if (!handled) {
 //                    Log.d("FLX_INJECT", "flexatar file name "+message.getDocumentName());
-                    if (message.getDocumentName().endsWith(".flx") && message.getDocumentName().startsWith("flexatar_")) {
+                    /*if (message.getDocumentName().endsWith(".flx") && message.getDocumentName().startsWith("flexatar_")) {
                         Log.d("FLX_INJECT", "Catch flexatar file here");
                         File f = null;
                         if (message.messageOwner.attachPath != null && message.messageOwner.attachPath.length() != 0) {
@@ -34205,14 +34206,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                        showDialog(AlertDialogs.askToSaveFlexatarToGallery(getContext(),f));
                         Log.d("FLX_INJECT", "Flexatar was placed to gallery " + message.getFileName().endsWith(".flx"));
 
-                    }else{
+                    }else{*/
                         try {
                             AndroidUtilities.openForView(message, getParentActivity(), themeDelegate);
                         } catch (Exception e) {
                             FileLog.e(e);
                             alertUserOpenError(message);
                         }
-                    }
+//                    }
 
                 }
             }

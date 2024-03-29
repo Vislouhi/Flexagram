@@ -362,16 +362,16 @@ public class AlertDialogs {
         }
     }
     public static PopupWindow importFlexatarPopup(Context context, View location,Theme.ResourcesProvider resourceProvider,
-                                                  ServerDataProc.FlexatarChatCellInfo ftarInfo,Runnable onDismiss,OnAddToGalleryListener onAddToGallery,Runnable alreadyInGallery,OnDeleteFromGalleryListener onDeleteFromGallery,Runnable flexatarNotFound) {
+                                                  ServerDataProc.FlexatarChatCellInfo ftarInfo,int fragW,int fragH,Runnable onDismiss,OnAddToGalleryListener onAddToGallery,Runnable alreadyInGallery,OnDeleteFromGalleryListener onDeleteFromGallery,Runnable flexatarNotFound) {
         int account = UserConfig.selectedAccount;
-        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        Display display = windowManager.getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        int width = Math.min(size.x, size.y);
+//        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+//
+
+        int width = Math.min(fragW, fragH);
 
         int windowWidth = width/2;
         int windowHeight = (int)(windowWidth * 1.6f);
+        int buttonSize = (int) ((float)windowWidth/4.5f);
 
         FrameLayout layout = new FrameLayout(context);
 
@@ -379,16 +379,25 @@ public class AlertDialogs {
 
         ImageView declineIcon = new ImageView(context);
         declineIcon.setImageResource(R.drawable.cancel_big);
-        layout.addView(declineIcon,LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.RIGHT,0,0,12,0));
+        FrameLayout.LayoutParams par1 = LayoutHelper.createFrame(46, 46, Gravity.BOTTOM | Gravity.RIGHT, 0, 0, 12, 0);
+        par1.width = buttonSize;
+        par1.height = buttonSize;
+
+        layout.addView(declineIcon,par1);
+
 
         ImageViewRoundBkg acceptIcon = new ImageViewRoundBkg(context);
+        FrameLayout.LayoutParams par2 = LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.LEFT,12,0,12,0);
+        par2.width = buttonSize;
+        par2.height = buttonSize;
         acceptIcon.setImageResource(R.drawable.msg_addfolder);
-        layout.addView(acceptIcon,LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.LEFT,12,0,12,0));
+        layout.addView(acceptIcon,par2);
 
         ImageViewRoundBkg deleteIcon = new ImageViewRoundBkg(context);
         deleteIcon.setImageResource(R.drawable.msg_delete);
-
-
+        FrameLayout.LayoutParams par3 = LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.CENTER,0,0,0,0);
+        par3.width = buttonSize;
+        par3.height = buttonSize;
         //        String pathMetaData = ftarInfo.ftar.replace(".p",".m");
         File tmpFlxFile = new File(FlexatarStorageManager.createTmpLoadFlexatarStorage(ApplicationLoader.applicationContext,account),ftarInfo.getFileName());
         File galleryFile = new File(FlexatarStorageManager.getFlexatarStorage(ApplicationLoader.applicationContext,account),ftarInfo.getFileName());
@@ -414,7 +423,7 @@ public class AlertDialogs {
             });
         }
         if ((tmpFlxFile.exists() || galleryFile.exists())&&needDeleteIcon){
-            layout.addView(deleteIcon,LayoutHelper.createFrame(46,46,Gravity.BOTTOM |Gravity.CENTER,0,0,0,0));
+            layout.addView(deleteIcon,par3);
 
             deleteIcon.setOnClickListener(v->{
                 onDeleteFromGallery.onDelete(tmpFlxFile,galleryFile);
@@ -464,7 +473,7 @@ public class AlertDialogs {
                         if (tmpFlxFile.exists()) {
                             layout.addView(createFlxSurface(tmpFlxFile), params);
                             if (!tmpFlxFile.getName().startsWith("public")) {
-                                layout.addView(deleteIcon, LayoutHelper.createFrame(46, 46, Gravity.BOTTOM | Gravity.CENTER, 0, 0, 0, 0));
+                                layout.addView(deleteIcon, par3);
                                 deleteIcon.setOnClickListener(v->{
                                     onDeleteFromGallery.onDelete(tmpFlxFile,galleryFile);
 
@@ -474,7 +483,7 @@ public class AlertDialogs {
                         else if (galleryFile.exists()) {
                             layout.addView(createFlxSurface(galleryFile), params);
                             if (!galleryFile.getName().startsWith("public")) {
-                                layout.addView(deleteIcon, LayoutHelper.createFrame(46, 46, Gravity.BOTTOM | Gravity.CENTER, 0, 0, 0, 0));
+                                layout.addView(deleteIcon, par3);
                                 deleteIcon.setOnClickListener(v->{
                                     onDeleteFromGallery.onDelete(tmpFlxFile,galleryFile);
 

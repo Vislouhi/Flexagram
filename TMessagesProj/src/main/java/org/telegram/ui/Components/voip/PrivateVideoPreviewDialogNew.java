@@ -337,15 +337,9 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
 
         VoIPService service = VoIPService.getSharedInstance();
         if (service != null) {
-            Log.d("FLX_INJECT","Start renderer");
-            textureView.renderer.setMirror(service.isFrontFaceCamera());
+//            Log.d("FLX_INJECT","Start renderer");
+            textureView.renderer.setMirror(!FlexatarRenderer.isFlexatarCamera && service.isFrontFaceCamera());
             EglBase.Context glContext = VideoCapturerDevice.getEglBase().getEglBaseContext();
-//            FlexatarRenderer flxRender = new FlexatarRenderer(glContext, this.getContext());
-//            FlexatarRenderer.init();
-//            AssetAccess.context = this.getContext();
-
-//            FlexatarRenderer.drawer = new FlxDrawer();
-//            FlexatarRenderer.drawer.addHead(flxData);
             textureView.renderer.init(glContext, new RendererCommon.RendererEvents() {
                 @Override
                 public void onFirstFrameRendered() {
@@ -888,7 +882,7 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
 
     public void update() {
         if (VoIPService.getSharedInstance() != null) {
-            textureView.renderer.setMirror(VoIPService.getSharedInstance().isFrontFaceCamera());
+            textureView.renderer.setMirror(!FlexatarRenderer.isFlexatarCamera && VoIPService.getSharedInstance().isFrontFaceCamera());
         }
     }
 }

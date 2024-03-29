@@ -1114,7 +1114,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	}
 
 	public void requestVideoCall(boolean screencast) {
-		Log.d("FLX_INJECT","tgVoip[CAPTURE_DEVICE_CAMERA] "+captureDevice[CAPTURE_DEVICE_CAMERA]);
+//		Log.d("FLX_INJECT","tgVoip[CAPTURE_DEVICE_CAMERA] "+captureDevice[CAPTURE_DEVICE_CAMERA]);
 		if (tgVoip[CAPTURE_DEVICE_CAMERA] == null) {
 			return;
 		}

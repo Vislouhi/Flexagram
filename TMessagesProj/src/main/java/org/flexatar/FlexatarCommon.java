@@ -33,6 +33,8 @@ public class FlexatarCommon {
     public static ByteBuffer frameBB;
     public static Bitmap promoLabel;
     public static float promoRatio;
+    public static Bitmap promoRoundLabel;
+    public static float promoRoundRatio;
     public static int videoStride;
 
     public static void prepare(){
@@ -181,6 +183,8 @@ public class FlexatarCommon {
         blackFrame = BitmapFactory.decodeStream(new ByteArrayInputStream(AssetAccess.dataFromFile("flexatar/frame.png")));
         promoLabel = BitmapFactory.decodeStream(new ByteArrayInputStream(AssetAccess.dataFromFile("flexatar/flexatar_telegram_promo.png")));
         promoRatio = (float)promoLabel.getWidth()/promoLabel.getHeight();
+        promoRoundLabel = BitmapFactory.decodeStream(new ByteArrayInputStream(AssetAccess.dataFromFile("flexatar/flexatar_telegram_promo_round.png")));
+        promoRoundRatio = (float)promoRoundLabel.getWidth()/promoRoundLabel.getHeight();
         frameBB = Data.floatArrayToBytebuffer(new float[]{0,0,0,1,1,1,0,0,1,1,1,0});
     }
     static GlBuffers bufferFactory(){
