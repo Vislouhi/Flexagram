@@ -296,20 +296,35 @@ public class FlexatarStorageManager {
         public void resetEffects(){
             setEffectIndex(0);
         }
+        public void clear(){
+            Context context = ApplicationLoader.applicationContext;
+            String storageName = PREF_STORAGE_NAME_CHOSEN + tag + AccountInstance.getInstance(account).getUserConfig().getClientUserId();
+            SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.clear();
+            editor.apply();
+            first = null;
+            second = null;
+            secondFlxData = null;
+            firstFlxData = null;
+            chosenVideoFile = null;
+            flxType = -1;
+        }
         public void setChosenFlexatar(String path) {
+            String oldFirstPath = getChosenFirst().getAbsolutePath();
             synchronized (flexatarFileLoadMutex) {
                 Context context = ApplicationLoader.applicationContext;
                 String storageName = PREF_STORAGE_NAME_CHOSEN + tag + AccountInstance.getInstance(account).getUserConfig().getClientUserId();
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
-                String oldFirstPath = sharedPreferences.getString(FIRST, null);
+//                String oldFirstPath = sharedPreferences.getString(FIRST, null);
 
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString(FIRST, path);
                 editor.putString(SECOND, oldFirstPath);
                 editor.apply();
                 first = new File(path);
-                if (oldFirstPath != null)
-                    second = new File(oldFirstPath);
+//                if (oldFirstPath != null)
+                second = new File(oldFirstPath);
                 secondFlxData = firstFlxData;
                 firstFlxData = null;
                 setFlexatarGroup();
@@ -1379,6 +1394,7 @@ public class FlexatarStorageManager {
 
     public static void addDefaultFlexatars(int account){
 
+//        String[] flxFileNames = {"char1t", "char2t","char3t", "char4t","char5t", "char6t", "char7t"};
         String[] flxFileNames = { "char6t", "char7t"};
         for (int i = 0; i < flxFileNames.length; i++) {
             String fName = flxFileNames[flxFileNames.length - i - 1];
@@ -1404,6 +1420,8 @@ public class FlexatarStorageManager {
     }
     public  static File[] getDefaultFlexatars(int account){
         String[] flxFileNames = { "char6t", "char7t"};
+//        String[] flxFileNames = {"char1t", "char2t","char3t", "char4t","char5t", "char6t", "char7t"};
+
         return getFlexatarsById(account,flxFileNames);
 
     }

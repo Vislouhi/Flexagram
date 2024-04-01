@@ -292,6 +292,8 @@ public class FlexatarUI {
         linearLayout.addView(tabsView);
         FlexatarHorizontalRecycleView recyclerView = new FlexatarHorizontalRecycleView(context,account,currentFlexatarChooser.getFlxType(), null);
         ((FlexatarHorizontalRecycleView.Adapter)recyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
+            Log.d("FLX_INJECT","switch flexatar");
+            if (file.equals(currentFlexatarChooser.getChosenFirst()) ) return;
             if (tabsView.getCurrentTabId() == 1) {
                 currentFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
             }else if (tabsView.getCurrentTabId() == 0){

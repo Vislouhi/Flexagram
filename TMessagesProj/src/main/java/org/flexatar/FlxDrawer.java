@@ -723,7 +723,7 @@ public class FlxDrawer {
                 float width = 0.12f;
                 float height = width / FlexatarCommon.promoRatio;
 
-                promoProgram.uniform4f("sizePosition", width, height * screenRatio, 0.02f, 0.02f);
+                promoProgram.uniform4f("sizePosition", width, height * screenRatio, 0.02f, 0.4f);
             }
             GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
             promoProgram.unbind();

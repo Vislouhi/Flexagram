@@ -68,14 +68,13 @@ public class FlexatarCommon {
 //    public static Map<String,List<float[]>> emoAnimPatterns = new HashMap<>();
 
     static void prepareEmoAnimation(){
-        String[] animIds = {"neu","hap","sup","sad","ang"};
+        String[] animIds = {"neu","neu1","hap","sup","ang"};
         for (String animId:animIds){
             String fName = "flexatar/FLX_"+animId+".anim";
             float[] currentPatternFlat = Data.dataToFloatArray(AssetAccess.dataFromFile(fName));
             List<float[]> currentPattern = new ArrayList<>();
             for (int i = 0; i < currentPatternFlat.length / 10 - 1; i++) {
                 currentPattern.add(Arrays.copyOfRange(currentPatternFlat, i*10, (i+1)*10));
-
             }
 
             emoAnimPatterns.add(currentPattern);

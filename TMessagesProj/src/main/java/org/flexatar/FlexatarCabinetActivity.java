@@ -376,7 +376,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 item.setNameText("Check private storage");
                 item.setOnClickListener(v -> {
                     if (FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).isVerified()) {
-                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "list/1.00", "GET", new FlexatarServerAccess.OnRequestJsonReady() {
+                        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "verify", "POST", new FlexatarServerAccess.OnRequestJsonReady() {
                                     @Override
                                     public void onReady(FlexatarServerAccess.StdResponse response) {
                                         Log.d("FLX_INJECT", response.ftars);

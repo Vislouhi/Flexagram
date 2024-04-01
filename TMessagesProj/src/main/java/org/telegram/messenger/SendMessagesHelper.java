@@ -3427,8 +3427,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public void sendMessage(SendMessageParams sendMessageParams) {
-        Log.d("FLX_INJECT","sendMessage "+ sendMessageParams.message);
-        Log.d("FLX_INJECT","user id "+ sendMessageParams.user);
 
         String message = sendMessageParams.message;
         String caption = sendMessageParams.caption;

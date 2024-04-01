@@ -257,6 +257,7 @@ public class FlexatarServerAccess {
                     }
 //                        Log.d("FLX_INJECT", "Received JSON: " + jsonResponse);
                 }else{
+
                     Log.d("FLX_INJECT","connection failed err code "+responseCode);
                     if (completion!=null) completion.onError();
                 }
@@ -440,8 +441,8 @@ public class FlexatarServerAccess {
             onFinish.run();
             return;
         }*/
-//        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"list/1.00","GET",
-        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"verify","POST",
+        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"list/1.00","GET",
+//        FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"verify","POST",
                 new OnRequestJsonReady() {
                     @Override
                     public void onReady(StdResponse response) {
@@ -450,10 +451,13 @@ public class FlexatarServerAccess {
 
                         List<String> savedFids = FlexatarStorageManager.getSavedFids(null,account);
 //                        Log.d("FLX_INJECT","savedFids " + Arrays.toString(savedFids.toArray(new String[0])));
-                        String[] keys = {"public","private"};
+                        String[] keys = {"public"};
+//                        String[] keys = {"public","private"};
                         for (String key : keys){
                             String prefix = FlexatarStorageManager.FLEXATAR_PREFIX;
-                            if (key.equals("public")) prefix = FlexatarStorageManager.PUBLIC_PREFIX;
+                            if (key.equals("public"))
+                                prefix = FlexatarStorageManager.PUBLIC_PREFIX;
+
                             if (ftars.containsKey(key)){
                                 List<ListElement> elements = ftars.get(key);
                                 if (elements == null) continue;
@@ -471,7 +475,7 @@ public class FlexatarServerAccess {
                         }
                         Log.d("FLX_INJECT","linksToDownload " + linksToDownload.size());
 //                        if (linksToDownload.size()>0)
-//                            downloadFlexatarListRecursive1(linksToDownload,0,onFinish);
+                            downloadFlexatarListRecursive1(UserConfig.selectedAccount,linksToDownload,0,onFinish);
 //                        else
                             onFinish.run();
                     }
@@ -484,14 +488,14 @@ public class FlexatarServerAccess {
         );
 
     }
-    /*public static void downloadFlexatarListRecursive1(int account,List<String[]> links, int position,Runnable onFinish){
+    public static void downloadFlexatarListRecursive1(int account,List<String[]> links, int position,Runnable onFinish){
         if (downloadBuiltinObserver!=null) downloadBuiltinObserver.start();
-        *//*StdResponse vd = FlexatarServiceAuth.getVerifyData();
+        StdResponse vd = FlexatarServiceAuth.getVerification(account).getVerifyData();
         if (vd == null){
             onFinish.run();
             return;
-        }*//*
-        FlexatarServerAccess.requestDataRecursive(FlexatarServiceAuth.getVerification(), links.get(position)[0], 0, new ByteArrayOutputStream(),
+        }
+        FlexatarServerAccess.requestDataRecursive(FlexatarServiceAuth.getVerification(account), links.get(position)[0], 0, new ByteArrayOutputStream(),
                 new FlexatarServerAccess.OnDataDownloaded() {
                     @Override
                     public void onReady(boolean finished, ByteArrayOutputStream byteArrayOutputStream) {
@@ -524,7 +528,7 @@ public class FlexatarServerAccess {
                                 throw new RuntimeException(e);
                             }
                         }else{
-                            FlexatarServerAccess.requestDataRecursive(FlexatarServiceAuth.getVerification(), links.get(position)[4], 0, new ByteArrayOutputStream(), new OnDataDownloaded() {
+                            FlexatarServerAccess.requestDataRecursive(FlexatarServiceAuth.getVerification(account), links.get(position)[4], 0, new ByteArrayOutputStream(), new OnDataDownloaded() {
                                 @Override
                                 public void onReady(boolean finished, ByteArrayOutputStream metaByteArray) {
                                     FlexatarStorageManager.FlexatarMetaData metaData = new FlexatarStorageManager.FlexatarMetaData();
@@ -580,7 +584,7 @@ public class FlexatarServerAccess {
                     }
                 }
         );
-    }*/
+    }
     public static Map<String,OnReadyOrErrorListener> activeDownloads = new HashMap<>();
     interface OnReadyOrErrorListener{
         void onReady(File flexatarFile,int flexatarType);

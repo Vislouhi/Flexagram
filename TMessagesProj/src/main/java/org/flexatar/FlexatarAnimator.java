@@ -12,7 +12,7 @@ public class FlexatarAnimator {
     private Timer timer;
     private int animationPatternIdx = 0;
 //    InterUnit interUnit;
-    private int animIdx = 50;
+    private float animIdx = 50;
     public AnimationUnit animUnit;
     private float[] point = {0.5f,0.45f};
     public boolean isActive = false;
@@ -108,15 +108,51 @@ public class FlexatarAnimator {
 
         }
     }
-    private int delta = 2;
+    private float delta = 1.75f;
+    private float[] getAnimVector(int idx){
+//        animationPatternIdx = 4;
+        float yShift = 0.0f;
+        float scaleCorrection = 0.0f;
+        float scaleFactor = 0.5f;
+        if (animationPatternIdx == 0){
+            yShift = 0.4f;
+            scaleCorrection = 0.045f;
+        }
+        else if (animationPatternIdx == 1){
+            yShift = 0.0f;
+            scaleCorrection = -0.02f;
+        }else if (animationPatternIdx == 3){
+            yShift = 0.3f;
+            scaleCorrection = -0.02f;
+
+        }else if (animationPatternIdx == 4){
+            scaleFactor = 0.25f;
+            scaleCorrection = -0.02f;
+        }
+        float tx = 4*FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[0];
+        float ty = 4*FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[1] - yShift;
+        float sc = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[2]*scaleFactor+scaleCorrection;
+        float rx = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[3];
+        float ry = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[4];
+        float rz = -FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[5]*0.5f;
+        float eyebrow = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[6];
+        return new float[]{tx,ty,sc,rx,ry,rz,eyebrow};
+
+    }
     public void next() {
-        float tx = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[0];
-        float ty = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[1] + 0.0f;
-        float sc = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[2];
-        float rx = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[3];
-        float ry = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[4];
-        float rz = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[5];
-        float eyebrow = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(animIdx)[6];
+
+        int firstIdx = (int)animIdx;
+        float wInv = animIdx - (float)firstIdx;
+        float w = 1f - wInv;
+        float[] v1 = getAnimVector(firstIdx);
+        float[] v2 = getAnimVector(firstIdx+1);
+        float tx = v1[0]*w+v2[0]*wInv;
+        float ty = v1[1]*w+v2[1]*wInv;
+        float sc = v1[2]*w+v2[2]*wInv;
+        float rx = v1[3]*w+v2[3]*wInv;
+        float ry = v1[4]*w+v2[4]*wInv;
+        float rz = v1[5]*w+v2[5]*wInv;
+        float eyebrow = v1[6]*w+v2[6]*wInv;
         point = new float[2];
         point[0] = rx;
         point[1] = ry;
@@ -125,9 +161,14 @@ public class FlexatarAnimator {
         animUnit = new AnimationUnit(tx, ty, sc+headScale, rz, eyebrow, BlinkGenerator.nextBlinkWeight());
         animIdx += delta;
 
-        if (animIdx >= FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).size() || animIdx<0) {
-            delta = -delta;
-            animIdx += delta;
+        if (animIdx >= (FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).size()-1)|| animIdx < 0) {
+//            delta = -delta;
+//            animIdx += delta;
+            animIdx = 0;
+            animationPatternIdx+=1;
+            if (animationPatternIdx >= FlexatarCommon.emoAnimPatterns.size()){
+                animationPatternIdx=0;
+            }
         }
 
         /*if (FlexatarRenderer.isEffectsOn && FlexatarRenderer.effectID == 1){
