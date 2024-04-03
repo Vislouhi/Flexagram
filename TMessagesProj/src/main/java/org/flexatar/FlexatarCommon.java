@@ -68,7 +68,7 @@ public class FlexatarCommon {
 //    public static Map<String,List<float[]>> emoAnimPatterns = new HashMap<>();
 
     static void prepareEmoAnimation(){
-        String[] animIds = {"neu","neu1","hap","sup","ang"};
+        String[] animIds = {"neu","L01","L02","L03","L04"};
         for (String animId:animIds){
             String fName = "flexatar/FLX_"+animId+".anim";
             float[] currentPatternFlat = Data.dataToFloatArray(AssetAccess.dataFromFile(fName));

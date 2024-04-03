@@ -4,6 +4,7 @@
     <string name="FlexatarMenuName">Flexatar</string>
     <string name="NewFlexatarByPhoto">New Flexatar by Photo</string>
     <string name="NewFlexatarByVideo">New Flexatar by Video</string>
+    <string name="SwitchAnimation">Switch Animation</string>
     <string name="MouthByPhoto">Make Mouth by Photo</string>
     <string name="FlexatarFromCloud">Load Flexatars From Cloud</string>
     <string name="LoadingFlexatarFromCloud">Loading …</string>

@@ -434,6 +434,8 @@ public class FlexatarVideoCapFragment extends BaseFragment implements LifecycleO
         editText.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
+        editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
+        editText.setHintTextColor(getThemedColor(Theme.key_windowBackgroundWhiteHintText));
         editText.setHint(LocaleController.getString("EnterFlexatarsName", R.string.EnterFlexatarsName));
         editText.requestFocus();
         int pad = AndroidUtilities.dp(12);

@@ -1060,6 +1060,26 @@ public class FlexatarStorageManager {
     public static void deleteFromStorage(Context context,int account,File flexatarFile){
         deleteFromStorage(context,account,flexatarFile,false);
     }
+    public static void deleteFromCloud(int account,File flexatarFile){
+        String ftarRout = ServerDataProc.fileNameToRout(flexatarFile.getName());
+        Log.d("FLX_INJECT",flexatarFile.getName());
+        Log.d("FLX_INJECT",ftarRout);
+        if (ftarRout != null) {
+            String deleteRout = ServerDataProc.genDeleteRout(ftarRout);
+            FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account), deleteRout, "DELETE", new FlexatarServerAccess.OnRequestJsonReady() {
+                @Override
+                public void onReady(FlexatarServerAccess.StdResponse response) {
+                    Log.d("FLX_INJECT", "flexatar remote deletion success");
+                }
+
+                @Override
+                public void onError() {
+                    Log.d("FLX_INJECT", "flexatar remote deletion error");
+                }
+            });
+//                    FlexatarServerAccess.lambdaRequest("/" + deleteRout, "DELETE", null, null, null);
+        }
+    }
     public static void deleteFromStorage(Context context,int account,File flexatarFile,boolean deleteOnCloaud){
         if (flexatarFile.exists()){
             File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx", ".mp4"));
@@ -1072,22 +1092,7 @@ public class FlexatarStorageManager {
             flexatarFile.delete();
         }
         if (deleteOnCloaud) {
-            String ftarRout = ServerDataProc.fileNameToRout(flexatarFile.getName());
-            if (ftarRout != null) {
-                String deleteRout = ServerDataProc.genDeleteRout(ftarRout);
-                FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account), deleteRout, "DELETE", new FlexatarServerAccess.OnRequestJsonReady() {
-                    @Override
-                    public void onReady(FlexatarServerAccess.StdResponse response) {
-                        Log.d("FLX_INJECT", "flexatar remote deletion success");
-                    }
-
-                    @Override
-                    public void onError() {
-                        Log.d("FLX_INJECT", "flexatar remote deletion error");
-                    }
-                });
-//                    FlexatarServerAccess.lambdaRequest("/" + deleteRout, "DELETE", null, null, null);
-            }
+            deleteFromCloud(account,flexatarFile);
         }
     }
     public static void deleteVideoFromStorage(Context context,int account,File flexatarFile,boolean deleteOnCloaud){

@@ -442,13 +442,25 @@ public class FlexatarPreview extends FrameLayout {
             Log.d("FLX_INJECT","change flexatar name pressed");
 
 //            parentFragment.showDialog(
-                AlertDialogs.askFlexatarNameDialog(getContext(),flexatarData.getMetaData().name,name -> {
+                AlertDialogs.askFlexatarNameDialog(parentFragment,getContext(),flexatarData.getMetaData().name,name -> {
                     if (name.isEmpty()) name = "No Name";
                     newName = name;
                     changeNameCell.setTextAndValue(name, LocaleController.getString("FlexatarName", R.string.FlexatarName), true);
                 }).show();
 //                        ,true,null
 //            );
+        });
+
+        TextCell selectAnimationCell = new TextCell(getContext());
+        selectAnimationCell.setTextAndValueAndIcon(LocaleController.getString("SwitchAnimation", R.string.SwitchAnimation),"1", R.drawable.msg2_animations, true);
+        controlsLayout.addView(selectAnimationCell,LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT,0,Gravity.TOP,0,0,0,0));
+        selectAnimationCell.setOnClickListener(v->{
+            if (drawer!=null){
+                if (drawer.animator!=null){
+                    int patternIdx = drawer.animator.switchAnimationPattern();
+                    selectAnimationCell.setValue("" + (patternIdx+1),false);
+                }
+            }
         });
 
         TextCell makeMouthByPhotoCell = new TextCell(getContext());

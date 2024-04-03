@@ -68,6 +68,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -128,9 +129,9 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
             R.drawable.flx_photo_helper_front,
             R.drawable.flx_photo_helper_right,
             R.drawable.flx_photo_helper_front,
-            R.drawable.flx_photo_helper_up,
-            R.drawable.flx_photo_helper_front,
             R.drawable.flx_photo_helper_down,
+            R.drawable.flx_photo_helper_front,
+            R.drawable.flx_photo_helper_up,
     };
     private void makeUI(){
 
@@ -673,6 +674,8 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
         editText.setHint(LocaleController.getString("EnterFlexatarsName", R.string.EnterFlexatarsName));
+        editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
+        editText.setHintTextColor(getThemedColor(Theme.key_windowBackgroundWhiteHintText));
         editText.requestFocus();
         int pad = AndroidUtilities.dp(12);
         linearLayout.setPadding(pad, pad, pad, pad);
@@ -703,6 +706,11 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
 
         Data sendData = new Data(jsonObject.toString());
         sendData = sendData.encodeLengthHeader().add(sendData);
+
+        Collections.swap(imagesCollector, 3, 4);
+        if (imagesCollector.size()>5){
+            Collections.swap(imagesCollector, 8, 9);
+        }
 
         for (int i = 0; i < imagesCollector.size(); i++) {
             Data cData = new Data(imagesCollector.get(i));

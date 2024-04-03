@@ -114,20 +114,27 @@ public class FlexatarAnimator {
         float yShift = 0.0f;
         float scaleCorrection = 0.0f;
         float scaleFactor = 0.5f;
+        float scaleXRot = 0.7f;
+        float scaleYRot = 0.7f;
         if (animationPatternIdx == 0){
             yShift = 0.4f;
-            scaleCorrection = 0.045f;
+            scaleCorrection = 0.0f;
         }
         else if (animationPatternIdx == 1){
-            yShift = 0.0f;
-            scaleCorrection = -0.02f;
-        }else if (animationPatternIdx == 3){
-            yShift = 0.3f;
-            scaleCorrection = -0.02f;
+            yShift = 0.5f;
+            scaleCorrection = -0.04f;
+        }else if (animationPatternIdx == 2){
+            yShift = 0.4f;
+            scaleCorrection = -0.04f;
+            scaleYRot = 0.5f;
+        }
+        else if (animationPatternIdx == 3){
+            yShift = 0.4f;
+            scaleCorrection = -0.04f;
 
         }else if (animationPatternIdx == 4){
-            scaleFactor = 0.25f;
-            scaleCorrection = -0.02f;
+            yShift = 0.4f;
+            scaleCorrection = -0.04f;
         }
         float tx = 4*FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[0];
         float ty = 4*FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[1] - yShift;
@@ -136,41 +143,45 @@ public class FlexatarAnimator {
         float ry = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[4];
         float rz = -FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[5]*0.5f;
         float eyebrow = FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).get(idx)[6];
+        rx =( rx - 0.5f)*scaleXRot + 0.5f;
+        ry =( ry - 0.45f)*scaleYRot + 0.45f;
+
         return new float[]{tx,ty,sc,rx,ry,rz,eyebrow};
 
     }
+    private final Object changeAnimSync = new Object();
     public void next() {
+        synchronized (changeAnimSync) {
+            int firstIdx = (int) animIdx;
+            float wInv = animIdx - (float) firstIdx;
+            float w = 1f - wInv;
+            float[] v1 = getAnimVector(firstIdx);
+            float[] v2 = getAnimVector(firstIdx + 1);
+            float tx = v1[0] * w + v2[0] * wInv;
+            float ty = v1[1] * w + v2[1] * wInv;
+            float sc = v1[2] * w + v2[2] * wInv;
+            float rx = v1[3] * w + v2[3] * wInv;
+            float ry = v1[4] * w + v2[4] * wInv;
+            float rz = v1[5] * w + v2[5] * wInv;
+            float eyebrow = v1[6] * w + v2[6] * wInv;
+            point = new float[2];
+            point[0] = rx;
+            point[1] = ry;
 
-        int firstIdx = (int)animIdx;
-        float wInv = animIdx - (float)firstIdx;
-        float w = 1f - wInv;
-        float[] v1 = getAnimVector(firstIdx);
-        float[] v2 = getAnimVector(firstIdx+1);
-        float tx = v1[0]*w+v2[0]*wInv;
-        float ty = v1[1]*w+v2[1]*wInv;
-        float sc = v1[2]*w+v2[2]*wInv;
-        float rx = v1[3]*w+v2[3]*wInv;
-        float ry = v1[4]*w+v2[4]*wInv;
-        float rz = v1[5]*w+v2[5]*wInv;
-        float eyebrow = v1[6]*w+v2[6]*wInv;
-        point = new float[2];
-        point[0] = rx;
-        point[1] = ry;
 
+            animUnit = new AnimationUnit(tx, ty, sc + headScale, rz, eyebrow, BlinkGenerator.nextBlinkWeight());
+            animIdx += delta;
 
-        animUnit = new AnimationUnit(tx, ty, sc+headScale, rz, eyebrow, BlinkGenerator.nextBlinkWeight());
-        animIdx += delta;
-
-        if (animIdx >= (FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).size()-1)|| animIdx < 0) {
+            if (animIdx >= (FlexatarCommon.emoAnimPatterns.get(animationPatternIdx).size() - 1) || animIdx < 0) {
 //            delta = -delta;
 //            animIdx += delta;
-            animIdx = 0;
-            animationPatternIdx+=1;
-            if (animationPatternIdx >= FlexatarCommon.emoAnimPatterns.size()){
-                animationPatternIdx=0;
+                animIdx = 0;
+//            animationPatternIdx+=1;
+//            if (animationPatternIdx >= FlexatarCommon.emoAnimPatterns.size()){
+//                animationPatternIdx=0;
+//            }
             }
         }
-
         /*if (FlexatarRenderer.isEffectsOn && FlexatarRenderer.effectID == 1){
             FlexatarRenderer.effectsMixWeight += 0.0025f;
             if (FlexatarRenderer.effectsMixWeight>1){FlexatarRenderer.effectsMixWeight = 0;}
@@ -181,7 +192,25 @@ public class FlexatarAnimator {
         }*/
 //        Log.d("FLX_INJECT", "animator working");
     }
-
+    public int getAnimationCount(){
+        return FlexatarCommon.emoAnimPatterns.size();
+    }
+    public void setAnimationPattern(int idx){
+        synchronized (changeAnimSync) {
+            animationPatternIdx = idx;
+            animIdx = 0;
+        }
+    }
+    public int switchAnimationPattern(){
+        synchronized (changeAnimSync) {
+            animationPatternIdx++;
+            animIdx = 0;
+            if (animationPatternIdx >= FlexatarCommon.emoAnimPatterns.size()){
+                animationPatternIdx=0;
+            }
+        }
+        return animationPatternIdx;
+    }
     public void reverse() {
         delta = -delta;
     }

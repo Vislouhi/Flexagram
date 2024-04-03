@@ -379,7 +379,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                         FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(UserConfig.selectedAccount), "verify", "POST", new FlexatarServerAccess.OnRequestJsonReady() {
                                     @Override
                                     public void onReady(FlexatarServerAccess.StdResponse response) {
-                                        Log.d("FLX_INJECT", response.ftars);
+                                        Log.d("FLX_INJECT", "verify ok");
                                     }
 
                                     @Override

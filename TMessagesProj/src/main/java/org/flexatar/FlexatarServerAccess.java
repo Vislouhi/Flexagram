@@ -239,21 +239,28 @@ public class FlexatarServerAccess {
 
                 int responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_OK ) {
-
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
+                    InputStream is = connection.getInputStream();
+                    if (is == null ){
+                        completion.onReady(new StdResponse());
                     }
-                    reader.close();
-                    String jsonResponse = response.toString();
-                    Log.d("FLX_INJECT","received string: "+jsonResponse);
-                    if (completion != null) {
-                        if (jsonResponse.length()>0)
-                            completion.onReady(new StdResponse(jsonResponse));
-                        else
-                            completion.onReady(new StdResponse());
+                    else if (is.available()==0){
+                        completion.onReady(new StdResponse());
+                    }else {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                        StringBuilder response = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            response.append(line);
+                        }
+                        reader.close();
+                        String jsonResponse = response.toString();
+                        Log.d("FLX_INJECT", "received string: " + jsonResponse);
+                        if (completion != null) {
+                            if (jsonResponse.length() > 0)
+                                completion.onReady(new StdResponse(jsonResponse));
+                            else
+                                completion.onReady(new StdResponse());
+                        }
                     }
 //                        Log.d("FLX_INJECT", "Received JSON: " + jsonResponse);
                 }else{
@@ -267,6 +274,7 @@ public class FlexatarServerAccess {
                 //            return null;
 //                throw new RuntimeException(e);
             } catch (JSONException e) {
+//                if (completion!=null) completion.onReady(new StdResponse());
                 if (completion!=null) completion.onError();
             }
         });

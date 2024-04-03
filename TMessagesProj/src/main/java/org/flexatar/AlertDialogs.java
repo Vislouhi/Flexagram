@@ -38,6 +38,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RLottieDrawable;
@@ -66,7 +67,7 @@ public class AlertDialogs {
     public static interface OnNameReady{
         void onNameReady(String name);
     }
-    public static Dialog askFlexatarNameDialog(Context context,String initialName,OnNameReady listener){
+    public static Dialog askFlexatarNameDialog(BaseFragment baseFragment,Context context, String initialName, OnNameReady listener){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
 
         builder.setTitle(LocaleController.getString("FlexatarName", R.string.FlexatarName));
@@ -78,6 +79,8 @@ public class AlertDialogs {
         editText.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
+        editText.setTextColor(baseFragment.getThemedColor(Theme.key_dialogTextBlack));
+        editText.setHintTextColor(baseFragment.getThemedColor(Theme.key_windowBackgroundWhiteHintText));
         editText.setHint(LocaleController.getString("EnterFlexatarsName", R.string.EnterFlexatarsName));
         int pad = AndroidUtilities.dp(12);
         linearLayout.setPadding(pad, pad, pad, pad);
@@ -210,6 +213,9 @@ public class AlertDialogs {
             if (tmpFile.exists())tmpFile.delete();
             if (galleryFile.exists()){
                 FlexatarStorageManager.deleteFromStorage(context,account,galleryFile,true);
+            }else{
+                FlexatarStorageManager.deleteFromCloud(account,galleryFile);
+
             }
 
         });

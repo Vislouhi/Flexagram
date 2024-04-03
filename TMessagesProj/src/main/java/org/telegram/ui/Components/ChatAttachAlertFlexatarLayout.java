@@ -122,13 +122,13 @@ public class ChatAttachAlertFlexatarLayout extends ChatAttachAlert.AttachAlertLa
         addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listView.setOnItemClickListener((view, position) -> {
             if (flexatarsInLocalStorage.length>0) {
-                Log.d("FLX_INJECT", "send flexatar file " + flexatarsInLocalStorage[position]);
+                Log.d("FLX_INJECT", "send flexatar file " + result[position]);
 
 
                 ArrayList<MessageObject> fmessages = new ArrayList<>();
 
                 ArrayList<String> files = new ArrayList<>();
-                String flxID = flexatarsInLocalStorage[position].getName().split("_")[1].replace(".flx", "");
+                String flxID = result[position].getName().split("_")[1].replace(".flx", "");
                 files.add(flxID);
 //                files.add(FlexatarStorageManager.storePreviewImage(flexatarsInLocalStorage[position]).getAbsolutePath());
 //                files.add(flexatarsInLocalStorage[position].getAbsolutePath());

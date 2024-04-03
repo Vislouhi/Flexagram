@@ -70,6 +70,8 @@ public class FlxDrawer {
     private int flexatarType = -1;
 //    public int[] viewport = {0,0,400,600};
     private Handler handler;
+    public FlexatarAnimator animator;
+
     public Handler getHandler(){
         return handler;
     }
@@ -590,7 +592,7 @@ public class FlxDrawer {
 //            initVideoProgram();
             }
 
-            FlexatarAnimator animator = isStaticControlBind ? FlexatarRenderer.animator : builtinAnimator;
+            animator = isStaticControlBind ? FlexatarRenderer.animator : builtinAnimator;
             if (isTgRoundVideo) {
                 animator.headScale = -0.15f;
             } else {
