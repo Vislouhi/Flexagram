@@ -73,6 +73,7 @@ public class FlexatarServerAccess {
         public String token;
         public String st;
         public String route;
+        public String interval;
         public static final String RESULT_RETRY = "RETRY";
         public static final String RESULT_OK = "OK";
         public static final String RESULT_FAIL = "FAIL";
@@ -122,6 +123,16 @@ public class FlexatarServerAccess {
                 needOverwrite = true;
                 route = response.token;
             }
+
+            if (interval == null && response.interval!=null) {
+                needOverwrite = true;
+                interval = response.interval;
+            }
+            if (interval != null && response.interval!=null && !interval.equals(response.interval)) {
+                needOverwrite = true;
+                interval = response.interval;
+            }
+//            Log.d("FLX_INJECT", "interval " + response.interval);
             return needOverwrite;
 
         }
@@ -241,11 +252,13 @@ public class FlexatarServerAccess {
                 if (responseCode == HttpURLConnection.HTTP_OK ) {
                     InputStream is = connection.getInputStream();
                     if (is == null ){
+                        Log.d("FLX_INJECT", "input is null" );
                         completion.onReady(new StdResponse());
                     }
-                    else if (is.available()==0){
+                    /*else if (is.available()==0){
+                        Log.d("FLX_INJECT", "available 0" );
                         completion.onReady(new StdResponse());
-                    }else {
+                    }*/else {
                         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                         StringBuilder response = new StringBuilder();
                         String line;
@@ -271,9 +284,11 @@ public class FlexatarServerAccess {
             } catch (IOException e) {
                 if (completion!=null) completion.onError();
                 Log.d("FLX_INJECT","connection failed by exception");
+                e.printStackTrace();
                 //            return null;
 //                throw new RuntimeException(e);
             } catch (JSONException e) {
+                Log.d("FLX_INJECT","connection failed by json exception");
 //                if (completion!=null) completion.onReady(new StdResponse());
                 if (completion!=null) completion.onError();
             }
@@ -367,6 +382,19 @@ public class FlexatarServerAccess {
 
             @Override
             public void onUnauthorized() {
+                FlexatarServerAccess.requestJson(verify, "verify", "POST",
+                        new FlexatarServerAccess.OnRequestJsonReady() {
+                            @Override
+                            public void onReady(FlexatarServerAccess.StdResponse response) {
+                                Log.d("FLX_INJECT", "check accomplished");
+                            }
+
+                            @Override
+                            public void onError() {
+
+                            }
+                        }
+                );
                 /*FlexatarServiceAuth.getVerification().verify(new FlexatarServiceAuth.OnAuthListener() {
                     @Override
                     public void onReady() {

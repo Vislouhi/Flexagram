@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Config {
     public static long authBotId = 6818271084L;
-    public static final boolean debugMode = true;
+    public static final boolean debugMode = false;
 
     public static final String version = "pre-historic";
 

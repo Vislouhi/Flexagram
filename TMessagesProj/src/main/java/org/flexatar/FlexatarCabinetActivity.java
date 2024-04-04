@@ -384,7 +384,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
                                     @Override
                                     public void onError() {
-
+                                        Log.d("FLX_INJECT", "verify error");
                                     }
                                 });
                         /*FlexatarServerAccess.lambdaRequest("/list/1.00", "GET", null, null, new FlexatarServerAccess.CompletionListener() {
@@ -818,6 +818,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             showDialog(dialog);
 
         }
+
         Log.d("FLX_INJECT","resume flexatar cabinet");
        /* TicketsController.attachObserver( new TicketsController.TicketObserver() {
             @Override

@@ -553,23 +553,31 @@ lambda.url/verify -> App : <access_token>
             LocalDateTime startDate = LocalDateTime.parse(lCheckTime,formatter);
             Duration duration = Duration.between(startDate, currentDateTime);
             long minutes = duration.toMinutes();
-            if (minutes>=1){
-                String currentTime = currentDateTime.format(formatter);
-                saveLastCheckTime(currentTime);
-                Log.d("FLX_INJECT","check verify on cloud again");
-//                verify();
-                /*FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account),"list/1.00","GET",
-                        new FlexatarServerAccess.OnRequestJsonReady() {
-                            @Override
-                            public void onReady(FlexatarServerAccess.StdResponse response) {
-                                Log.d("FLX_INJECT","check accomplished");
-                            }
-                            @Override
-                            public void onError() {
+            FlexatarServerAccess.StdResponse vd = getVerifyData();
+            if (vd!=null && vd.interval!=null) {
 
+                int days = Integer.parseInt(vd.interval);
+                Log.d("FLX_INJECT", "check verify on minutes passed " + minutes + " left to wait " + days*24*60);
+                if (minutes >= (long) days*24*60) {
+//                if (minutes >= 1) {
+                    String currentTime = currentDateTime.format(formatter);
+                    saveLastCheckTime(currentTime);
+
+//                verify();
+                    FlexatarServerAccess.requestJson(this, "verify", "POST",
+                            new FlexatarServerAccess.OnRequestJsonReady() {
+                                @Override
+                                public void onReady(FlexatarServerAccess.StdResponse response) {
+                                    Log.d("FLX_INJECT", "check accomplished");
+                                }
+
+                                @Override
+                                public void onError() {
+
+                                }
                             }
-                        }
-                );*/
+                    );
+                }
             }
 
         }

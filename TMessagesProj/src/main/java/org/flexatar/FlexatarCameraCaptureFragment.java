@@ -657,7 +657,11 @@ public class FlexatarCameraCaptureFragment extends BaseFragment implements Lifec
     private void askFlexatarName(){
         if (isTryOut){
             ValueStorage.setInstructionsComplete(getContext());
-            finishPage();
+            AlertDialog dialog = AlertDialogs.sayYouAreAccomplishedTestInterface(getContext(), () -> {
+                finishPage();
+            });
+            showDialog(dialog);
+
             return;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());

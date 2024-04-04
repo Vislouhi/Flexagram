@@ -58,6 +58,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.ReplacementSpan;
 import android.util.Base64;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
@@ -2299,6 +2300,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
 //            if (BuildVars.DEBUG_VERSION && activityMode == MODE_LOGIN) {
             if (activityMode == MODE_LOGIN) {
+//                Log.d("FLX_INJECT","testBackendCheckBox");
                 testBackendCheckBox = new CheckBoxCell(context, 2);
                 testBackendCheckBox.setText(LocaleController.getString(R.string.DebugTestBackend), "", testBackend, false);
                 addView(testBackendCheckBox, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP, 16, 0, 16 + (LocaleController.isRTL && AndroidUtilities.isSmallScreen() ? Build.VERSION.SDK_INT >= 21 ? 56 : 60 : 0), 0));
@@ -2311,7 +2313,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     testBackend = !testBackend;
                     cell.setChecked(testBackend, true);
 
-                    boolean testBackend = BuildVars.DEBUG_VERSION && getConnectionsManager().isTestBackend();
+                    boolean testBackend = getConnectionsManager().isTestBackend();
+//                    boolean testBackend = BuildVars.DEBUG_VERSION && getConnectionsManager().isTestBackend();
                     if (testBackend != LoginActivity.this.testBackend) {
                         getConnectionsManager().switchBackend(false);
                     }

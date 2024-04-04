@@ -189,7 +189,7 @@ public class FlexatarCell extends RelativeLayout {
             moveCellView.setOrientation(LinearLayout.HORIZONTAL);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(AndroidUtilities.dp(34), AndroidUtilities.dp(34), 1);
             ImageView moveUpwardsIcon = new ImageView(getContext());
-            moveUpwardsIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefault, resourceProvider), PorterDuff.Mode.MULTIPLY));
+            moveUpwardsIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogTextBlack, resourceProvider), PorterDuff.Mode.MULTIPLY));
 
             moveUpwardsIcon.setImageResource(R.drawable.msg_go_up);
             moveUpwardsIcon.setOnClickListener(v->{
@@ -198,7 +198,7 @@ public class FlexatarCell extends RelativeLayout {
             moveCellView.addView(moveUpwardsIcon,params);
 
             ImageView moveDownwardsIcon = new ImageView(getContext());
-            moveDownwardsIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefault, resourceProvider), PorterDuff.Mode.MULTIPLY));
+            moveDownwardsIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogTextBlack, resourceProvider), PorterDuff.Mode.MULTIPLY));
 
             moveDownwardsIcon.setImageResource(R.drawable.msg_go_down);
             moveDownwardsIcon.setOnClickListener(v->{
@@ -206,7 +206,7 @@ public class FlexatarCell extends RelativeLayout {
             });
             moveCellView.addView(moveDownwardsIcon,params);
             ImageView removeIcon = new ImageView(getContext());
-            removeIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefault, resourceProvider), PorterDuff.Mode.MULTIPLY));
+            removeIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogTextBlack, resourceProvider), PorterDuff.Mode.MULTIPLY));
 
             removeIcon.setImageResource(R.drawable.msg_round_cancel_m);
             removeIcon.setOnClickListener(v->{

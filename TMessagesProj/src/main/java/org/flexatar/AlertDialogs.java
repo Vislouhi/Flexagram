@@ -109,6 +109,19 @@ public class AlertDialogs {
         });
         return builder.create();
     }
+
+    public static AlertDialog sayYouAreAccomplishedTestInterface(Context context,Runnable completion){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("Info", R.string.Info));
+        builder.setMessage(LocaleController.getString("TestInterfaceAccomplished", R.string.TestInterfaceAccomplished));
+
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+            completion.run();
+
+        });
+        return builder.create();
+    }
     public static AlertDialog sayImpossibleToPerform(Context context){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(LocaleController.getString("Info", R.string.Info));

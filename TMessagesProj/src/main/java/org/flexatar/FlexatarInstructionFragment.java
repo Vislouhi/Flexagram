@@ -115,13 +115,20 @@ public class FlexatarInstructionFragment extends BaseFragment{
 
         linearLayout.addView(textView1, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT, Gravity.TOP));
 
-        int[] rotationExampleRes = {R.drawable.face_example_front,R.drawable.face_example_left,R.drawable.face_example_right,R.drawable.face_example_up,R.drawable.face_example_down};
+        int[] rotationExampleRes = {
+                R.drawable.face_example_front,
+                R.drawable.face_example_left,
+                R.drawable.face_example_right,
+                R.drawable.face_example_down,
+                R.drawable.face_example_up,
+               };
         String[] comments = {
                 LocaleController.getString("Front", R.string.Front),
                 LocaleController.getString("Left", R.string.Left),
                 LocaleController.getString("Right", R.string.Right),
+                LocaleController.getString("Down", R.string.Down),
                 LocaleController.getString("Up", R.string.Up),
-                LocaleController.getString("Down", R.string.Down)
+
         };
         for (int i = 0; i < rotationExampleRes.length; i++) {
             ImageView imageView = new ImageView(context);
@@ -171,13 +178,19 @@ public class FlexatarInstructionFragment extends BaseFragment{
         linearLayout.addView(textView3, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,LayoutHelper.WRAP_CONTENT, Gravity.TOP));
 
 
-        int[] mouthExampleRes = {R.drawable.mouth_example_front,R.drawable.mouth_example_left,R.drawable.mouth_example_right,R.drawable.mouth_example_up,R.drawable.mouth_example_down};
+        int[] mouthExampleRes = {
+                R.drawable.mouth_example_front,
+                R.drawable.mouth_example_left,
+                R.drawable.mouth_example_right,
+                R.drawable.mouth_example_down,
+                R.drawable.mouth_example_up,
+               };
         String[] commentsMouth = {
                 LocaleController.getString("Front", R.string.Front),
                 LocaleController.getString("Left", R.string.Left),
                 LocaleController.getString("Right", R.string.Right),
+                LocaleController.getString("Down", R.string.Down),
                 LocaleController.getString("Up", R.string.Up),
-                LocaleController.getString("Down", R.string.Down)
         };
         for (int i = 0; i < mouthExampleRes.length; i++) {
             ImageView imageView = new ImageView(context);
