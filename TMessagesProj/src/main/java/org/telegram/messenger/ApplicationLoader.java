@@ -254,8 +254,8 @@ public class ApplicationLoader extends Application {
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             FlexatarStorageManager.callFlexatarChooser[a] = new FlexatarStorageManager.FlexatarChooser(a,"call",0.005f,0.0025f);
             FlexatarStorageManager.roundFlexatarChooser[a] = new FlexatarStorageManager.FlexatarChooser(a,"round",0.02f,0.0025f);
-            FlexatarStorageManager.callFlexatarChooser[a].clear();
-            FlexatarStorageManager.roundFlexatarChooser[a].clear();
+//            FlexatarStorageManager.callFlexatarChooser[a].clear();
+//            FlexatarStorageManager.roundFlexatarChooser[a].clear();
         }
 
         BillingController.getInstance().startConnection();

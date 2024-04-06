@@ -315,6 +315,7 @@ public class SurfaceTextureHelper {
         flxDrawer.setIsStaticControlBind(true);
         flxDrawer.setFrame();
         flxDrawer.setPromo();
+        flxDrawer.setScaleViewport(0.9f);
 
       }
       flxDrawer.screenRatio = (float)textureHeight/textureWidth;

@@ -90,7 +90,13 @@ public class FlxDrawer {
     }
 
     private boolean isRealtimeAnimation = true;
+    private int[] scaledViewport;
+    public void setScaleViewport(float scale){
+        int scaledWidth = (int) (scale*400f);
+        int scaledHeight = (int) (scale*600f);
+        scaledViewport = new int[]{(400-scaledWidth)/2,(600-scaledHeight)/2,scaledWidth,scaledHeight};
 
+    }
     public void setFrame(){
         isFrame = true;
     }
@@ -454,6 +460,7 @@ public class FlxDrawer {
         GLES20.glViewport(0, 0, 400, 600);
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         draw(true);
+        GLES20.glViewport(0, 0, 400, 600);
 //        GLES20.glFinish();
 //        drawVideo();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
@@ -523,7 +530,7 @@ public class FlxDrawer {
     }
     public void draw(boolean isFromFb) {
 
-//        GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 //        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if (isStaticControlBind) {
             if (!FlexatarRenderer.isFlexatarCamera) return;
@@ -567,7 +574,13 @@ public class FlxDrawer {
         }else {return;}
 //        if (true) return;
         if (isFromFb)
-            GLES20.glViewport(0, 0, 400, 600);
+            if (scaledViewport!=null) {
+                GLES20.glViewport(0, 0, 400, 600);
+                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+                GLES20.glViewport(scaledViewport[0], scaledViewport[1], scaledViewport[2], scaledViewport[3]);
+
+            }else
+                GLES20.glViewport(0, 0, 400, 600);
         else
             GLES20.glViewport(0, 0, width, height);
         if (flexatarType == 0) {

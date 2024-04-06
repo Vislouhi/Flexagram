@@ -126,11 +126,13 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             }
         };
         currentPage = currentFlexatarChooser.getFlxType();
+        Log.d("FLX_INJECT","currentPage "+currentPage);
 //        tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         tabsView.tabMarginDp = 16;
         tabsView.addTab(0, LocaleController.getString("VideoTab",R.string.VideoTab));
         tabsView.addTab(1, LocaleController.getString("PhotoTab",R.string.PhotoTab));
-        tabsView.selectTabWithId(currentPage,1f);
+//        tabsView.selectTabWithId(currentPage,1f);
+        tabsView.selectTab(currentPage,(currentPage==0)? 1:0,1f);
         tabsView.setPadding(0,6,0,6);
         tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
             @Override
@@ -454,6 +456,13 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 
             @Override
             public void onSeekBarPressed(boolean pressed) {
+                Log.d("FLX_INJECT","seek bar pressed "+pressed);
+                if (pressed){
+                    FlexatarControlPanelLayout.this.setVisibility(View.INVISIBLE);
+                }else{
+                    FlexatarControlPanelLayout.this.setVisibility(View.VISIBLE);
+
+                }
             }
 
             @Override

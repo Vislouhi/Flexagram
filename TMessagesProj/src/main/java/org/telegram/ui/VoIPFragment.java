@@ -985,7 +985,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
 
 
 
-        flexatarPanelView = new FlexatarControlPanelLayout(context,VoIPService.getSharedInstance().getCurrentAccount(),false, FlexatarStorageManager.callFlexatarChooser[currentAccount]);
+        flexatarPanelView = new FlexatarControlPanelLayout(context,VoIPService.getSharedInstance().getCurrentAccount(),false, FlexatarStorageManager.callFlexatarChooser[VoIPService.getSharedInstance().getCurrentAccount()]);
         flexatarPanelView.setOnCancelListener(v->{
             AndroidUtilities.runOnUIThread(()->{
                 flexatarPanelView.setVisibility(View.GONE);
