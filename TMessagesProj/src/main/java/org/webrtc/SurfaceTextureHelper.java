@@ -308,20 +308,22 @@ public class SurfaceTextureHelper {
   private FlxDrawer flxDrawer;
   public void forceFlexatarFrame() {
     handler.post(() -> {
-      if (flxDrawer == null) {
-        flxDrawer = new FlxDrawer();
+      if (VoIPService.getSharedInstance()!=null) {
+        if (flxDrawer == null) {
+          flxDrawer = new FlxDrawer();
 
-        flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser[VoIPService.getSharedInstance().getCurrentAccount()]);
-        flxDrawer.setIsStaticControlBind(true);
-        flxDrawer.setFrame();
-        flxDrawer.setPromo();
-        flxDrawer.setScaleViewport(0.9f);
+          flxDrawer.setFlexatarChooser(FlexatarStorageManager.callFlexatarChooser[VoIPService.getSharedInstance().getCurrentAccount()]);
+          flxDrawer.setIsStaticControlBind(true);
+          flxDrawer.setFrame();
+          flxDrawer.setPromo();
+          flxDrawer.setScaleViewport(0.9f);
 
+        }
+        flxDrawer.screenRatio = (float) textureHeight / textureWidth;
+        flxDrawer.drawToFrameBuffer();
+        hasPendingTexture = true;
+        tryDeliverTextureFrame();
       }
-      flxDrawer.screenRatio = (float)textureHeight/textureWidth;
-      flxDrawer.drawToFrameBuffer();
-      hasPendingTexture = true;
-      tryDeliverTextureFrame();
     });
   }
   public void forceFrame() {

@@ -47,6 +47,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
     private final RectF bgRect = new RectF();
     private final Paint paint;
     private final int account;
+    private final ViewPagerFixed.TabsView tabsView;
     private  SeekBarView seekBar;
     private final FlexatarStorageManager.FlexatarChooser currentFlexatarChooser;
     private final boolean isWithPreview;
@@ -89,6 +90,8 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
 
     public FlexatarControlPanelLayout(Context context,int account,boolean isWithPreview,FlexatarStorageManager.FlexatarChooser chooser){
         super(context);
+        Log.d("FLX_INJECT","FlexatarControlPanelLayout account "+account);
+
         this.isWithPreview=isWithPreview;
         this.account=account;
        currentFlexatarChooser = chooser;
@@ -118,7 +121,7 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         panelLayout.setGravity(Gravity.CENTER);
         panelLayout.setOrientation(LinearLayout.VERTICAL);
 //        ====== TAB SWITCHER ===
-        ViewPagerFixed.TabsView tabsView = new ViewPagerFixed.TabsView(getContext(), true, 3, LaunchActivity.getLastFragment().getResourceProvider()) {
+        tabsView = new ViewPagerFixed.TabsView(getContext(), true, 3, LaunchActivity.getLastFragment().getResourceProvider()) {
             @Override
             public void selectTab(int currentPosition, int nextPosition, float progress) {
                 super.selectTab(currentPosition, nextPosition, progress);
@@ -126,17 +129,17 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             }
         };
         currentPage = currentFlexatarChooser.getFlxType();
-        Log.d("FLX_INJECT","currentPage "+currentPage);
-//        tabsView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+
         tabsView.tabMarginDp = 16;
         tabsView.addTab(0, LocaleController.getString("VideoTab",R.string.VideoTab));
         tabsView.addTab(1, LocaleController.getString("PhotoTab",R.string.PhotoTab));
-//        tabsView.selectTabWithId(currentPage,1f);
-        tabsView.selectTab(currentPage,(currentPage==0)? 1:0,1f);
+
+
         tabsView.setPadding(0,6,0,6);
         tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
             @Override
             public void onPageSelected(int page, boolean forward) {
+
                 currentFlexatarChooser.setFlxType(page);
                 switchTabs(page);
 
@@ -171,33 +174,19 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         tabsView.setLayoutParams(LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,32,0,0,0,0));
         panelLayout.addView(tabsView);
 
-//        =====Flexatar chooser recycle view ==========
-        /*flexatarRecyclerView = new FlexatarHorizontalRecycleView(context, (icnFlx) -> {
 
-        });
-        ((FlexatarHorizontalRecycleView.Adapter)flexatarRecyclerView.getAdapter()).setAndOverrideOnItemClickListener(file->{
-            if (file.equals(currentFlexatarChooser.getChosenFirst()) ) return;
-            currentFlexatarChooser.setChosenFlexatar(file.getAbsolutePath());
-//            chosenSecond = chosenFirst;
-//            chosenFirst = file;
-//            if (drawer!=null){
-//                FlexatarData flexatarData = FlexatarData.factory(file);
-//                flexatarData.getPreviewImage();
-                Bitmap iconBitmap = currentFlexatarChooser.getFirstFlxData().getPreviewImage();
-                RoundedBitmapDrawable dr = RoundedBitmapDrawableFactory.create(context.getResources(), iconBitmap);
-                dr.setCornerRadius(AndroidUtilities.dp(8));
-                icnFlx2.setImageDrawable(icnFlx1.getDrawable());
-                icnFlx1.setImageDrawable(dr);
-//                drawer.changeFlexatar(flexatarData);
-//            }
-        });*/
         if (currentFlexatarChooser.getFlxType() == 0){
             createVideoFlexatarRecyclerView();
             panelLayout.addView(videoFlexatarRecyclerView);
+
         }else if (currentFlexatarChooser.getFlxType() == 1){
+
             createFlexatarRecyclerView();
             addPhotoFlexatarViews();
         }
+        currentPage = currentFlexatarChooser.getFlxType();
+        tabsView.selectTab(currentPage==0 ? 1:0,currentPage,1f);
+
 
 
 //============= Image Pair Layout ================
@@ -281,6 +270,15 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
         });
     }
     int currentPage = -1;
+    public void switchTabs(){
+        int cPage = currentFlexatarChooser.getFlxType();
+        if (cPage!= currentPage){
+            switchTabs(cPage);
+            currentPage = cPage;
+        }
+        tabsView.selectTab(currentPage==0 ? 1:0,currentPage,1f);
+
+    }
     public void switchTabs(int page){
         if (currentPage == page) return;
         currentPage = page;
@@ -457,11 +455,13 @@ public class FlexatarControlPanelLayout  extends LinearLayout{
             @Override
             public void onSeekBarPressed(boolean pressed) {
                 Log.d("FLX_INJECT","seek bar pressed "+pressed);
-                if (pressed){
-                    FlexatarControlPanelLayout.this.setVisibility(View.INVISIBLE);
-                }else{
-                    FlexatarControlPanelLayout.this.setVisibility(View.VISIBLE);
+                if (!isWithPreview) {
+                    if (pressed) {
+                        FlexatarControlPanelLayout.this.setVisibility(View.INVISIBLE);
+                    } else {
+                        FlexatarControlPanelLayout.this.setVisibility(View.VISIBLE);
 
+                    }
                 }
             }
 

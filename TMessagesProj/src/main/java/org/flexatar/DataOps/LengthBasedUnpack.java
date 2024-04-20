@@ -24,6 +24,7 @@ public class LengthBasedUnpack {
         while (offset<data.length) {
             byte[] lengthHeaderBytes = Arrays.copyOfRange(data, offset, offset + 8);
             long lengthHeader = Data.decodeLengthHeader(lengthHeaderBytes);
+            if (lengthHeader>30_000_000) break;
             offset += 8;
             byte[] body = Arrays.copyOfRange(data, offset, offset + (int) lengthHeader);
             offset += (int) lengthHeader;
@@ -36,7 +37,7 @@ public class LengthBasedUnpack {
         try {
             return new JSONObject(new String(bPacks.get(idx), StandardCharsets.UTF_8));
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+            return null;
         }
     }
     public FlexatarData.FlxDataType getFlexatarType(){

@@ -165,7 +165,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
     private int selectedRating;
 
     LinearLayout emojiLayout;
-    FlexatarControlPanelLayout flexatarPanelView;
+    public FlexatarControlPanelLayout flexatarPanelView;
     FrameLayout hideEmojiLayout;
     TextView hideEmojiTextView;
     RateCallLayout rateCallLayout;
@@ -1145,6 +1145,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         flexatarIcon.setOnClickListener(view -> {
 
             flexatarPanelView.setVisibility(View.VISIBLE);
+            flexatarPanelView.switchTabs();
 //            flexatarPanelView.updateIcons();
 //            flexatarPanelView.switchToCameraButton.setText(FlexatarRenderer.isFlexatarRendering ? "Turn Off" : "Turn On");
             Log.d("FLX_BUTTON","on click");

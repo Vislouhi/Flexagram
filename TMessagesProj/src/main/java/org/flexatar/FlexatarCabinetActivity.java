@@ -87,6 +87,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     private LinearLayout mainLayout;
     private ViewPagerFixed.TabsView tabsView;
     private static int currentTabId = -1;
+    private int lastClickedPosition = -1;
 
     private static int getCurrentTabId(){
         if (currentTabId!=-1) return currentTabId;
@@ -466,30 +467,9 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             {
                 ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
                 item.setImageResource(R.drawable.msg_delete);
-                item.setNameText("Try send to bot");
+                item.setNameText("Try send log");
                 item.setOnClickListener(v -> {
-//                    if (Config.isVerified()) {
-
-                        Log.d("FLX_INJECT", "Try send to bot");
-////                        FlexatarServiceAuth.clearVerificationData();
-//                        if (!FlexatarServiceAuth.loadVerificationData()) {
-                            Log.d("FLX_INJECT", "Request auth");
-                            /*FlexatarServiceAuth.auth(new FlexatarServiceAuth.OnAuthListener() {
-                                @Override
-                                public void onReady() {
-                                    Log.d("FLX_INJECT","auth ready");
-                                }
-
-                                @Override
-                                public void onError() {
-                                    Log.d("FLX_INJECT","auth error");
-                                }
-                            });*/
-
-
-//                    } else {
-//                        showDialog(AlertDialogs.showVerifyInProgress(context));
-//                    }
+                    FlexatarServerAccess.debugLog("test","some log",FlexatarServiceAuth.getVerification(currentAccount).getBotToken());
                 });
 
                 itemsAction.add(item);
@@ -534,10 +514,11 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
         itemAdapter.setUpFlexatarList( tabsView.getCurrentTabId());
 
-        itemAdapter.setFlexatarCellOnClickListener((item,cell)->{
+        itemAdapter.setFlexatarCellOnClickListener((position,item,cell)->{
+            lastClickedPosition = position;
 //            ItemModel item = (ItemModel) v;
             if(getActionBar().isActionModeShowed() ) {
-                Log.d("FLX_INJECT","flx cell pressed");
+                Log.d("FLX_INJECT","flx cell pressed " + position);
                 if (!cell.isBuiltin()) {
                     String groupId = item.getFlexatarFile().getName().replace(".flx", "");
                     int groupSize = FlexatarStorageManager.getGroupSize(getContext(),UserConfig.selectedAccount, groupId);
@@ -560,7 +541,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             }
         });
-        itemAdapter.setFlexatarCellOnLongClickListener((item,cell)->{
+        itemAdapter.setFlexatarCellOnLongClickListener((pos,item,cell)->{
             boolean isCallActivity = VoIPService.getSharedInstance() != null;
 
             if (isCallActivity) {
@@ -806,6 +787,9 @@ public class FlexatarCabinetActivity extends BaseFragment  {
     public void onResume() {
         super.onResume();
 
+        if (lastClickedPosition!=-1){
+            itemAdapter.notifyItemChanged(lastClickedPosition);
+        }
         if (needRedrawFlexatarList) {
             itemAdapter.setUpFlexatarList( tabsView.getCurrentTabId());
             FlexatarCabinetActivity.needRedrawFlexatarList = false;
@@ -816,7 +800,6 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             });
             showDialog(dialog);
-
         }
 
         Log.d("FLX_INJECT","resume flexatar cabinet");

@@ -238,7 +238,9 @@ public class FlexatarServiceAuth {
                 verifyInProgress = true;
             }
             Log.d("FLX_INJECT","start token renew");
-            renewToken(botToken,null,null);
+            renewToken(botToken,null,()->{
+
+            });
 
         }
         public void renewToken(String token,Runnable completion,Runnable error){
@@ -247,6 +249,8 @@ public class FlexatarServiceAuth {
                 integrityCheck();
                 getIntegrityToken(token, googleToken -> {
                     if (googleToken==null) {
+                        FlexatarServerAccess.debugLog("PlayIntegrity","Failed to obtain play integrity provider",getBotToken());
+
                         verifyInProgress = false;
                         if (error!=null) error.run();
                         return;

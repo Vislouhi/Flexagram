@@ -214,7 +214,7 @@ public class FlexatarUI {
 
 
 
-
+        Log.d("FLX_INJECT","makeFlexatarChoosePanel account "+account);
         FlexatarStorageManager.FlexatarChooser currentFlexatarChooser = FlexatarStorageManager.callFlexatarChooser[account];
         currentFlexatarChooser.resetEffects();
         RectF bgRect = new RectF();
@@ -242,7 +242,7 @@ public class FlexatarUI {
         tabsView.tabMarginDp = 16;
         tabsView.addTab(0, LocaleController.getString("VideoTab",R.string.VideoTab));
         tabsView.addTab(1, LocaleController.getString("PhotoTab",R.string.PhotoTab));
-        tabsView.selectTabWithId(currentFlexatarChooser.getFlxType(),1f);
+        tabsView.selectTab(currentFlexatarChooser.getFlxType(),currentFlexatarChooser.getFlxType(),1f);
         tabsView.setPadding(0,6,0,6);
         tabsView.setDelegate(new ViewPagerFixed.TabsView.TabsViewDelegate() {
             @Override

@@ -62,6 +62,7 @@ import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.LeadingMarginSpan;
 import android.text.style.URLSpan;
+import android.util.Log;
 import android.util.Pair;
 import android.util.Property;
 import android.util.SparseArray;
@@ -89,9 +90,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 
-import com.google.android.exoplayer2.util.Log;
 
-import org.flexatar.FlexatarStorageManager;
+import org.flexatar.Config;
+import org.flexatar.ServerDataProc;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -218,7 +219,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean skipFrameUpdate;
 
     public ChannelRecommendationsCell channelRecommendationsCell;
-    private boolean isFlexatarFile =false;
+
 
     public RadialProgress2 getRadialProgress() {
         return radialProgress;
@@ -4895,6 +4896,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     private void setMessageContent(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
+
+
         if (messageObject.checkLayout() || currentPosition != null && lastHeight != AndroidUtilities.displaySize.y) {
             currentMessageObject = null;
         }
@@ -8061,6 +8064,27 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         photoWidth = w;
                         currentCaption = messageObject.caption;
 
+                        if (messageObject.messageOwner.peer_id.user_id == Config.authBotId) {
+                            Log.d("FLX_INJECT", "message id " + messageObject.messageOwner.peer_id.user_id);
+                            Log.d("FLX_INJECT", "message string " + messageObject.caption);
+                            for (int i = 0; i < messageObject.messageOwner.entities.size(); i++) {
+                                TLRPC.MessageEntity entity = messageObject.messageOwner.entities.get(i);
+                                if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
+
+                                    String targetUrl = entity.url;
+                                    ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);
+                                    if (ftarInfo.code!=null && ftarInfo.code.equals("400"))
+                                        currentCaption = LocaleController.getString("FlexatarErrorText",R.string.FlexatarErrorText);
+                                    else if (ftarInfo.ftar!=null){
+
+                                        currentCaption += "\n"+LocaleController.getString("TapOverPhoto",R.string.TapOverPhoto);
+
+                                    }
+                                }
+
+                            }
+                        }
+
                         int minCaptionWidth;
                         if (AndroidUtilities.isTablet()) {
                             minCaptionWidth = (int) (AndroidUtilities.getMinTabletSide() * 0.65f);
@@ -9577,28 +9601,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             documentAttachType = DOCUMENT_ATTACH_TYPE_DOCUMENT;
 
             String name = FileLoader.getDocumentFileName(documentAttach);
-//            Log.d("FLX_INJECT","file name " +name);
 
-
-            if (name.startsWith("flexatar_") && (name.endsWith(".flx"))) {
-                Log.d("FLX_INJECT","file name " +name);
-                isFlexatarFile = true;
-//                documentAttachType = DOCUMENT_ATTACH_TYPE_FLEXATAR;
-                File f = null;
-                if (messageObject.messageOwner.attachPath != null && messageObject.messageOwner.attachPath.length() != 0) {
-                    f = new File(messageObject.messageOwner.attachPath);
-                }
-                if (f == null || !f.exists()) {
-                    f = FileLoader.getInstance(messageObject.currentAccount).getPathToMessage(messageObject.messageOwner);
-                }
-                if (f!=null && f.exists()){
-                    try {
-                        name = FlexatarStorageManager.getFlexatarMetaData(f, false).name;
-                    }catch (NullPointerException ignored){
-
-                    }
-                }
-            }
             if (name.length() == 0) {
                 name = LocaleController.getString("AttachDocument", R.string.AttachDocument);
             }
@@ -13231,10 +13234,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     radialProgress.setColorKeys(Theme.key_chat_inLoader, Theme.key_chat_inLoaderSelected, Theme.key_chat_inMediaIcon, Theme.key_chat_inMediaIconSelected);
                 }
                 if (buttonState == -1) {
-                    if (isFlexatarFile)
-                        return MediaActionDrawable.ICON_FLEXATAR;
-                    else
-                        return MediaActionDrawable.ICON_FILE;
+                    return MediaActionDrawable.ICON_FILE;
                 } else if (buttonState == 0) {
                     return MediaActionDrawable.ICON_DOWNLOAD;
                 } else if (buttonState == 1) {

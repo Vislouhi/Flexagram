@@ -77,6 +77,7 @@ public class ServerDataProc {
     public static class FlexatarChatCellInfo{
         public String ftar;
         public boolean download;
+        public String code;
         public String verify;
 
         public boolean isSet(){
@@ -115,6 +116,9 @@ public class ServerDataProc {
                 }
                 if (splited[0].equals("download")){
                     ret.download = splited[1].equals("true");
+                }
+                if (splited[0].equals("code")){
+                    ret.code = splited[1];
                 }
             }
 

@@ -100,7 +100,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
     }
 
     public interface ClickListener{
-        void onClick(ItemModel item, FlexatarCell cell);
+        void onClick(int position, ItemModel item, FlexatarCell cell);
     }
     public void setFlexatarCellOnClickListener(ClickListener flexatarCellOnClickListener) {
         this.flexatarCellOnClickListener = flexatarCellOnClickListener;
@@ -195,12 +195,12 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
 
 
                 fCell.setOnClickListener(v->{
-                    flexatarCellOnClickListener.onClick(item,fCell);
+                    flexatarCellOnClickListener.onClick(position,item,fCell);
                     notifyItemChanged(position);
                 });
 
                 fCell.setOnLongClickListener(v->{
-                    flexatarCellOnLongClickListener.onClick(item,fCell);
+                    flexatarCellOnLongClickListener.onClick(position,item,fCell);
 //                    int start = itemsAction.size() + (itemsProgress.size() > 1 ? itemsProgress.size() : 0);
 //                    notifyItemRangeChanged(start + 1,itemsFlexatar.size()-1);
 

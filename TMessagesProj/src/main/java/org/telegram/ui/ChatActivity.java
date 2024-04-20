@@ -2236,7 +2236,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                bkgProvider.setHasVideo(true);
 //
 //                bkgProvider.setTotalSize(200,200);
-                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext(),UserConfig.selectedAccount,true, FlexatarStorageManager.roundFlexatarChooser[UserConfig.selectedAccount]);
+
+                flexatarControlPanelLayout = new FlexatarControlPanelLayout(getContext(),currentAccount,true, FlexatarStorageManager.roundFlexatarChooser[currentAccount]);
 //                FlexatarUI.FlexatarPanelLayout flexatarPanelView = FlexatarUI.makeFlexatarEffectsPanel(getContext(), bkgProvider);
 //                flexatarPanelView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
                 actionBar.setEnabled(false);
@@ -34086,7 +34087,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                            String targetUrl = stubUrl;
                             ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);
 
-                            if (ftarInfo!=null&&ftarInfo.ftar!=null){
+                            if (ftarInfo!=null&&ftarInfo.ftar!=null&&ftarInfo.code==null){
                                 isFlexatarCell = true;
                                 if (flexatarPopUp == null) {
                                     int fragW = fragmentView.getWidth();

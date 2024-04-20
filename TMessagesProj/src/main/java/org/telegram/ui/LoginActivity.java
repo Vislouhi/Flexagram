@@ -2858,11 +2858,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 needShowAlert(LocaleController.getString(R.string.RestorePasswordNoEmailTitle), LocaleController.getString("ChooseCountry", R.string.ChooseCountry));
                 needHideProgress(false);
                 return;
-            } else if (countryState == COUNTRY_STATE_INVALID && !BuildVars.DEBUG_VERSION) {
+//            } else if (countryState == COUNTRY_STATE_INVALID && !BuildVars.DEBUG_VERSION) {
+            } /*else if (countryState == COUNTRY_STATE_INVALID) {
                 needShowAlert(LocaleController.getString(R.string.RestorePasswordNoEmailTitle), LocaleController.getString("WrongCountry", R.string.WrongCountry));
                 needHideProgress(false);
                 return;
-            }
+            }*/
             String phone = PhoneFormat.stripExceptNumbers("" + codeField.getText() + phoneField.getText());
             if (activityMode == MODE_LOGIN) {
                 if (getParentActivity() instanceof LaunchActivity) {

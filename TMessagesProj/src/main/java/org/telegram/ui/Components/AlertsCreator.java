@@ -45,6 +45,7 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.URLSpan;
 import android.util.Base64;
+import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 import android.util.TypedValue;
@@ -5263,6 +5264,7 @@ public class AlertsCreator {
         builder.setMessage(AndroidUtilities.replaceTags(LocaleController.getString(R.string.PermissionBackgroundLocation)));
         builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialog, which) -> {
             if (activity.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Log.d("FLX_INJECT","request location");
                 activity.requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 30);
             }
         });

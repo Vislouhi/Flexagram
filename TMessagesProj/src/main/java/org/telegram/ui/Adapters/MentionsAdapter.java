@@ -16,6 +16,7 @@ import android.location.Location;
 import android.os.Build;
 import android.text.Spanned;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -706,6 +707,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             return;
         }
         if (Build.VERSION.SDK_INT >= 23 && parentFragment.getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.d("FLX_INJECT","request ACCESS_COARSE_LOCATION");
             parentFragment.getParentActivity().requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
             return;
         }

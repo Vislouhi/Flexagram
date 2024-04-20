@@ -464,7 +464,7 @@ public class FlxDrawer {
 //        GLES20.glFinish();
 //        drawVideo();
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-
+        GLES20.glFinish();
 
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {

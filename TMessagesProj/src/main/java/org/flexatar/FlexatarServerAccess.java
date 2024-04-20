@@ -27,6 +27,9 @@ import java.io.OutputStream;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -223,12 +226,36 @@ public class FlexatarServerAccess {
         },null);
 
     }
+    public static void debugLog(String tag,String value,String token){
+        String rout = "https://ijye3k3hz3aebtwi3mmuxb2zmy0ahijw.lambda-url.us-east-1.on.aws";
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("tag", tag);
+            jsonObject.put("value", value);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        Data sendData = new Data(jsonObject.toString());
+        requestJsonInternal(rout, null, token, "POST", sendData.value, "application/json", new OnRequestJsonReady() {
+            @Override
+            public void onReady(StdResponse response) {
+                Log.d("FLX_INJECT","log sent");
+            }
+
+            @Override
+            public void onError() {
+                Log.d("FLX_INJECT","log sent error");
+            }
+        });
+    }
     public static void requestJsonInternal(String rout,String path, String token, String method, byte[] sendData, String contentType, OnRequestJsonReady completion){
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
 //                if (FlexatarServiceAuth.getVerifyData() == null){completion.onError();return;}
-                String urlString = rout+"/"+path;
+                String urlString = rout;
+                if (path!=null)
+                    urlString += "/"+path;
                 Log.d("FLX_INJECT","urlString "+urlString);
                 Log.d("FLX_INJECT","token "+token);
                 URL url = new URL(urlString);
@@ -651,54 +678,75 @@ public class FlexatarServerAccess {
             }
             byte[] meta = metaData.get();
             byte[] downloadedData = body.get();
-            if (downloadedData==null){
+            if (downloadedData == null) {
                 synchronized (downloadsLock) {
                     OnReadyOrErrorListener list = activeDownloads.get(servPath);
                     activeDownloads.remove(servPath);
                     if (list != null) list.onError();
                 }
 
-            }else {
+            } else {
+                try{
+                    int flexatarType = new LengthBasedUnpack(downloadedData, true).getFlexatarType() == FlexatarData.FlxDataType.PHOTO
+                            ? 1 : 0;
+                    if (!new LengthBasedFlxUnpack(downloadedData).validate(flexatarType)) {
+                        return;
+                    }
+                    File resultFile = null;
+                    if (flexatarFile != null) {
+                        if (flexatarType == 1) {
 
-                int flexatarType = new LengthBasedUnpack(downloadedData, true).getFlexatarType() == FlexatarData.FlxDataType.PHOTO
-                        ? 1 : 0;
-                if (!new LengthBasedFlxUnpack(downloadedData).validate(flexatarType)) {
-                    return;
-                }
-                File resultFile = null;
-                if (flexatarFile!=null) {
-                    if (flexatarType == 1) {
+                            FlexatarStorageManager.dataToFile(downloadedData, flexatarFile);
 
-                        FlexatarStorageManager.dataToFile(downloadedData, flexatarFile);
-
+                        } else {
+                            File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx", ".mp4"));
+                            byte[][] extractResult = FlexatarStorageManager.extractVideo(downloadedData);
+                            FlexatarStorageManager.dataToFile(extractResult[0], flexatarFile);
+                            FlexatarStorageManager.dataToFile(extractResult[1], videoFile);
+                        }
+                        if (meta != null) {
+                            FlexatarStorageManager.FlexatarMetaData mD = new FlexatarStorageManager.FlexatarMetaData();
+                            mD.data = new Data(meta);
+                            FlexatarStorageManager.rewriteFlexatarHeader(flexatarFile, mD);
+                        }
+                        resultFile = flexatarFile;
                     } else {
-                        File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx", ".mp4"));
-                        byte[][] extractResult = FlexatarStorageManager.extractVideo(downloadedData);
-                        FlexatarStorageManager.dataToFile(extractResult[0], flexatarFile);
-                        FlexatarStorageManager.dataToFile(extractResult[1], videoFile);
-                    }
-                    if (meta != null) {
-                        FlexatarStorageManager.FlexatarMetaData mD = new FlexatarStorageManager.FlexatarMetaData();
-                        mD.data = new Data(meta);
-                        FlexatarStorageManager.rewriteFlexatarHeader(flexatarFile, mD);
-                    }
-                    resultFile = flexatarFile;
-                }else{
-                    String[] pathSplit = servPath.split("/");
-                    String prefix = servPath.startsWith("public") ? FlexatarStorageManager.PUBLIC_PREFIX : FlexatarStorageManager.FLEXATAR_PREFIX;
+                        String[] pathSplit = servPath.split("/");
+                        String prefix = servPath.startsWith("public") ? FlexatarStorageManager.PUBLIC_PREFIX : FlexatarStorageManager.FLEXATAR_PREFIX;
 
-                    File flxFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext,account,downloadedData,pathSplit[pathSplit.length-2],prefix,flexatarType);
-                    if (meta != null) {
-                        FlexatarStorageManager.FlexatarMetaData mD = new FlexatarStorageManager.FlexatarMetaData();
-                        mD.data = new Data(meta);
-                        FlexatarStorageManager.rewriteFlexatarHeader(flxFile, mD);
+                        File flxFile = FlexatarStorageManager.addToStorage(ApplicationLoader.applicationContext, account, downloadedData, pathSplit[pathSplit.length - 2], prefix, flexatarType);
+                        if (meta != null) {
+                            FlexatarStorageManager.FlexatarMetaData mD = new FlexatarStorageManager.FlexatarMetaData();
+                            mD.data = new Data(meta);
+                            FlexatarStorageManager.rewriteFlexatarHeader(flxFile, mD);
+                        }
+                        resultFile = flxFile;
                     }
-                    resultFile = flxFile;
-                }
-                synchronized (downloadsLock) {
+                    synchronized (downloadsLock) {
+                        OnReadyOrErrorListener list = activeDownloads.get(servPath);
+                        activeDownloads.remove(servPath);
+                        if (list != null) list.onReady(resultFile, flexatarType);
+                    }
+                }catch (Exception ignored){
+//                    String resp = new String(downloadedData, StandardCharsets.UTF_8);
+//                    Log.d("FLX_INJECT","incorrect flexatar data: "+resp);
                     OnReadyOrErrorListener list = activeDownloads.get(servPath);
                     activeDownloads.remove(servPath);
-                    if (list != null) list.onReady(resultFile,flexatarType);
+                    if (list != null) list.onError();
+
+                    FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account), "verify", "POST",
+                            new FlexatarServerAccess.OnRequestJsonReady() {
+                                @Override
+                                public void onReady(FlexatarServerAccess.StdResponse response) {
+                                    Log.d("FLX_INJECT", "check accomplished");
+                                }
+
+                                @Override
+                                public void onError() {
+
+                                }
+                            }
+                    );
                 }
             }
 

@@ -290,6 +290,19 @@ public class AlertDialogs {
 
         return builder.create();
     }
+    public static AlertDialog locationAlert(Context context,Runnable completion){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("FlexatarInfo",R.string.FlexatarInfo));
+        builder.setMessage(LocaleController.getString("LocationAlert",R.string.LocationAlert));
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+            completion.run();
+        });
+        builder.setOnDismissListener(v->{
+            completion.run();
+        });
+        return builder.create();
+    }
    /* public static AlertDialog askToSaveFlexatarToGallery(Context context, File flexatarFile){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(LocaleController.getString("Info", R.string.Info));
