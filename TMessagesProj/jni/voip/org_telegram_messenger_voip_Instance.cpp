@@ -846,6 +846,9 @@ Java_org_telegram_messenger_voip_NativeInstance_setAudioListener(JNIEnv *env, jo
     if (enabled) {
         onFlexatarAudioBuffer = [platformContext](const float *audioBuffer, int len) {
             tgvoip::jni::DoWithJNI([platformContext, audioBuffer, len](JNIEnv *env) {
+//                std::stringstream ss;
+//                ss << "signal " << audioBuffer[0];
+//                __android_log_print(ANDROID_LOG_DEBUG, "FLX_INJECT", ss.str().c_str());
 
                 jfloatArray floatArray = env->NewFloatArray(len);
 
@@ -866,12 +869,12 @@ Java_org_telegram_messenger_voip_NativeInstance_setAudioListener(JNIEnv *env, jo
     }
 
     if (instance->nativeInstance != nullptr) {
-        instance->nativeInstance->setFlexatarAudioBufferCallback(onFlexatarAudioBuffer);
+        instance->nativeInstance->setFlexatarAudioBufferCallback(std::move(onFlexatarAudioBuffer));
 //        __android_log_print(ANDROID_LOG_DEBUG, "FLX_INJECT", "nativeInstance setFlexatarDelay");
     } else if (instance->groupNativeInstance != nullptr) {
 //        __android_log_print(ANDROID_LOG_DEBUG, "FLX_INJECT", "groupNativeInstance setFlexatarDelay");
 
-        instance->groupNativeInstance->setFlexatarAudioBufferCallback(onFlexatarAudioBuffer);
+        instance->groupNativeInstance->setFlexatarAudioBufferCallback(std::move(onFlexatarAudioBuffer));
     }
 //    env->CallVoidMethod(globalRef, env->GetMethodID(NativeInstanceClass, "onNativeAudioBuffer",
 //                                                    "([F)V"), env->NewStringUTF(successString));

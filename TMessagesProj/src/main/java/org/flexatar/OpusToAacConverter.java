@@ -29,6 +29,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class OpusToAacConverter {
     private static final String TAG = "FLX_INJECT";
@@ -106,7 +107,7 @@ public class OpusToAacConverter {
         fileReadingQueue.postRunnable(()-> {
             audioReader.start(new AudioReader.OnAudioBufferReady() {
                 @Override
-                public void onReady(ByteBuffer buffer, MediaCodec.BufferInfo bufferInfo) {
+                public void onReady(ByteBuffer buffer1, MediaCodec.BufferInfo bufferInfo) {
                     boolean isFinished;
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         isFinished = true;
@@ -116,10 +117,11 @@ public class OpusToAacConverter {
                     sizeCounter += bufferInfo.size;
 //                    Log.d(TAG, "out buffer avaliblae with size : " + sizeCounter / audioReader.sampleRate / audioReader.channelCount / 2);
                     CountDownLatch latch = new CountDownLatch(1);
-                    fileEncodingQueue.postRunnable(()->{
+                    ByteBuffer buffer = buffer1.duplicate();
+//                    fileEncodingQueue.postRunnable(()->{
                         audioWriter.write(buffer, bufferInfo,latch);
 
-                    });
+//                    });
                     buffer.position(bufferInfo.offset);
                     buffer.limit(bufferInfo.offset + bufferInfo.size);
                     ShortBuffer shortBuffer = buffer.asShortBuffer();
@@ -163,7 +165,10 @@ public class OpusToAacConverter {
                     });
 
                     try {
+//                        Log.d(TAG,"before write latch");
                         latch.await();
+//                        latch.await(100,TimeUnit.MILLISECONDS);
+//                        Log.d(TAG,"before write latch");
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }

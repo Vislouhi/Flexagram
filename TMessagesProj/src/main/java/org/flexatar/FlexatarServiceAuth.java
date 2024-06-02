@@ -189,6 +189,7 @@ public class FlexatarServiceAuth {
 
         private FlexatarServerAccess.StdResponse verifyData;
         private String botToken;
+        private boolean isFirstStart = false;
 
         public FlexatarVerifyProcess(int account,Runnable timeoutCallback){
 
@@ -238,7 +239,17 @@ public class FlexatarServiceAuth {
                 verifyInProgress = true;
             }
             Log.d("FLX_INJECT","start token renew");
-            renewToken(botToken,null,()->{
+
+            renewToken(botToken,()->{
+                if (isFirstStart){
+//                    Log.d("FLX_INJECT","first start");
+                    AndroidUtilities.runOnUIThread(() -> {
+                        AccountInstance accountInstance = AccountInstance.getInstance(account);
+                        accountInstance.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of("/cabinet", Config.authBotId, null, null, null, false, null, null, null, true, 0, null, false));
+                    });
+                }
+
+            },()->{
 
             });
 
@@ -312,6 +323,7 @@ public class FlexatarServiceAuth {
 
 //            FlexatarStorageManager.addDefaultFlexatars(account);
 //            FlexatarStorageManager.addDefaultVideoFlexatars(account);
+            isFirstStart = true;
             ContactsController.getInstance(account).requestFlexatarBot(()->{
                 AccountInstance accountInstance = AccountInstance.getInstance(account);
                 final MessagesStorage messagesStorage = accountInstance.getMessagesStorage();
@@ -581,6 +593,7 @@ lambda.url/verify -> App : <access_token>
                                 }
                             }
                     );
+                    Statistics.process(account);
                 }
             }
 

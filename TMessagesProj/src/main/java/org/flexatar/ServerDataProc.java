@@ -10,6 +10,7 @@ import org.telegram.messenger.UserConfig;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ServerDataProc {
@@ -43,6 +44,13 @@ public class ServerDataProc {
             throw new RuntimeException(e);
         }
 
+    }
+    public static String flxFileNameByRoute(String route){
+        String[] pathSplit = route.split("/");
+        String prefix = route.startsWith("public") ? FlexatarStorageManager.PUBLIC_PREFIX : FlexatarStorageManager.FLEXATAR_PREFIX;
+        String fId = pathSplit[pathSplit.length - 2];
+        String fileName = prefix+fId+".flx";
+        return fileName;
     }
 
     public static String genDeleteRout(String ftar){
@@ -78,6 +86,7 @@ public class ServerDataProc {
         public String ftar;
         public boolean download;
         public String code;
+        public Boolean active = null;
         public String verify;
 
         public boolean isSet(){
@@ -94,22 +103,35 @@ public class ServerDataProc {
             return prefix + fid + ".flx";
         }
     }
+    public static String fixFtarLink(String link){
+        String notFullUrl =link;
+        String[] splited1 = notFullUrl.split("/");
+        notFullUrl += "/"+splited1[splited1.length-1]+".p";
+        return notFullUrl;
+    }
     public static FlexatarChatCellInfo parseFlexatarCellUrl(String urlStr){
         try {
             FlexatarChatCellInfo ret = new FlexatarChatCellInfo();
+
             String queryString = urlStr.split("\\?")[1];
             String[] queryPairs = queryString.split("&");
+
+//            String[] arr = urlStr.split("\\?");
+//            String[] queryPairs = Arrays.copyOfRange(arr,1,arr.length);
 //            Log.d("FLX_INJECT", "queryString " + queryString);
 //            Log.d("FLX_INJECT", "queryPairs " + queryPairs.length);
 
             for (String pair :  queryPairs){
+//                Log.d("FLX_INJECT", "queryPairs " + pair);
                 String[] splited = pair.split("=");
                 if (splited.length<=1) continue;
                 if (splited[0].equals("ftar")){
-                    String notFullUrl = splited[1];
-                    String[] splited1 = notFullUrl.split("/");
-                    notFullUrl += "/"+splited1[splited1.length-1]+".p";
-                    ret.ftar = notFullUrl;
+                    ret.ftar = fixFtarLink(splited[1]);
+//                    TODO remove when url will be fixed
+//                    if (ret.ftar.startsWith("public")){
+//                        String[] splittedPath = ret.ftar.split("/");
+//                        ret.ftar = splittedPath[0] + "/" + splittedPath[1] + "/" +splittedPath[4] + "/"+splittedPath[5];
+//                    }
                 }
                 if (splited[0].equals("verify")){
                     ret.verify = splited[1];
@@ -119,6 +141,9 @@ public class ServerDataProc {
                 }
                 if (splited[0].equals("code")){
                     ret.code = splited[1];
+                }
+                if (splited[0].equals("active")){
+                    ret.active = splited[1].equals("true");
                 }
             }
 

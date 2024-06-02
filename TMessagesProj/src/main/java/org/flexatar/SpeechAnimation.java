@@ -34,25 +34,30 @@ public class SpeechAnimation {
         fileDescriptor.close();
         return ret;
     }
+    private static Object sync = new Object();
     public static void loadModels(Context context){
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            if (wav2melInterpreter != null && mel2phoneInterpreter != null && phon2avecInterpreter != null) return;
+        synchronized (sync) {
+            if (wav2melInterpreter != null && mel2phoneInterpreter != null && phon2avecInterpreter != null)
+                return;
+//        ExecutorService executor = Executors.newSingleThreadExecutor();
+//        executor.execute(() -> {
+
             try {
                 if (wav2melInterpreter == null)
-                    wav2melInterpreter = new Interpreter(loadModelFile(context,"flexatar/nn/wav2mel.tflite"), new Interpreter.Options());
-                Log.d("====DEB====","Successfuli loaded tf model1");
+                    wav2melInterpreter = new Interpreter(loadModelFile(context, "flexatar/nn/wav2mel.tflite"), new Interpreter.Options());
+                Log.d("====DEB====", "Successfuli loaded tf model1");
                 if (mel2phoneInterpreter == null)
-                    mel2phoneInterpreter = new Interpreter(loadModelFile(context,"flexatar/nn/mel2phon.tflite"), new Interpreter.Options());
-                Log.d("====DEB====","Successfuli loaded tf model2");
+                    mel2phoneInterpreter = new Interpreter(loadModelFile(context, "flexatar/nn/mel2phon.tflite"), new Interpreter.Options());
+                Log.d("====DEB====", "Successfuli loaded tf model2");
                 if (phon2avecInterpreter == null)
-                    phon2avecInterpreter = new Interpreter(loadModelFile(context,"flexatar/nn/phon2avec.tflite"), new Interpreter.Options());
-                Log.d("====DEB====","Successfuli loaded tf model3");
+                    phon2avecInterpreter = new Interpreter(loadModelFile(context, "flexatar/nn/phon2avec.tflite"), new Interpreter.Options());
+                Log.d("====DEB====", "Successfuli loaded tf model3");
             } catch (IOException e) {
-                Log.d("====DEB====","failed loaded tf model");
+                Log.d("====DEB====", "failed loaded tf model");
                 e.printStackTrace();
             }
-        });
+        }
+//        });
 
     }
     public static void loadModelsSync(Context context){

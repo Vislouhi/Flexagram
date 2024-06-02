@@ -54,7 +54,7 @@ public class FlexatarPreview extends FrameLayout {
     private final BaseFragment parentFragment;
 //    private final byte[] flxData;
     private final FlexatarData flexatarData;
-    private final FlexatarCell flexatarCell;
+    private final FlexatarPreviewFragment.FlxPreviewInput flexatarCell;
 
     private boolean isMouthOpened = false;
     private LinearLayout layout;
@@ -80,10 +80,10 @@ public class FlexatarPreview extends FrameLayout {
     private List<File> groupFiles = new ArrayList<>();
     private TimerAutoDestroy<FlxDrawer.GroupMorphState> groupTimer;
 
-    public FlexatarCell getFlexatarCell(){
+    public FlexatarPreviewFragment.FlxPreviewInput getFlexatarCell(){
         return flexatarCell;
     }
-    public FlexatarPreview(@NonNull Context context, FlexatarCell flexatarCell, BaseFragment parentFragment) {
+    public FlexatarPreview(@NonNull Context context, FlexatarPreviewFragment.FlxPreviewInput flexatarCell, BaseFragment parentFragment) {
         super(context);
 //        FlexatarStorageManager.clearHiddenRecord(context);
         this.flexatarCell=flexatarCell;

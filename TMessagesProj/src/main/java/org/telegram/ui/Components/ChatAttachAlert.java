@@ -2249,10 +2249,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         return;
                     }
                     openDocumentsLayout(true);
-                } else if (num == 11) {//TODO flexatar attach on click button
+                } /*else if (num == 11) {//TODO flexatar attach on click button
                     openFlexatarLayout(true);
 
-                } else if (num == 5) {
+                }*/ else if (num == 5) {
                     if (!plainTextEnabled && checkCanRemoveRestrictionsByBoosts()) {
                         return;
                     }
@@ -3030,9 +3030,9 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             newId = 3;
         } else if (layout == documentLayout) {
             newId = 4;
-        }else if (layout == flexatarLayout) {
+        }/*else if (layout == flexatarLayout) {
             newId = 11;
-        } else if (layout == contactsLayout) {
+        }*/ else if (layout == contactsLayout) {
             newId = 5;
         } else if (layout == locationLayout) {
             newId = 6;
@@ -4549,10 +4549,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else if (position == documentButton) {
                         attachButton.setTextAndIcon(4, LocaleController.getString("ChatDocument", R.string.ChatDocument), Theme.chat_attachButtonDrawables[2], Theme.key_chat_attachFileBackground, Theme.key_chat_attachFileText);
                         attachButton.setTag(4);
-                    } else if (position == flexatarButton) {
+                    } /*else if (position == flexatarButton) {
                         attachButton.setTextAndIcon(11, LocaleController.getString("FlexatarMenuName", R.string.FlexatarMenuName), Theme.chat_attachButtonDrawables[6], Theme.key_chat_attachFlexatarBackground, Theme.key_chat_attachFileText);
                         attachButton.setTag(11);
-                    }
+                    }*/
                     else if (position == locationButton) {
                         attachButton.setTextAndIcon(6, LocaleController.getString("ChatLocation", R.string.ChatLocation), Theme.chat_attachButtonDrawables[4], Theme.key_chat_attachLocationBackground, Theme.key_chat_attachLocationText);
                         attachButton.setTag(6);
@@ -4659,7 +4659,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
                 }
                 documentButton = buttonsCount++;
-                flexatarButton = buttonsCount++;
+//                flexatarButton = buttonsCount++;
 
                 if (plainTextEnabled) {
                     locationButton = buttonsCount++;

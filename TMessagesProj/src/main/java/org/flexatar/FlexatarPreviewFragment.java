@@ -20,13 +20,15 @@ import org.telegram.ui.Components.BitmapShaderTools;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 
+import java.io.File;
+
 public class FlexatarPreviewFragment extends BaseFragment{
     private final MotionBackgroundDrawable bgGreen = new MotionBackgroundDrawable(0xFF5FD051, 0xFF00B48E, 0xFFA9CC66, 0xFF5AB147, 0, false, true);
 
     private final BitmapShaderTools bgGreenShaderTools = new BitmapShaderTools(80, 80);
     private final BitmapShaderTools bgBlueVioletShaderTools = new BitmapShaderTools(80, 80);
     private final MotionBackgroundDrawable bgBlueViolet = new MotionBackgroundDrawable(0xFF00A3E6, 0xFF296EF7, 0xFF18CEE2, 0xFF3FB2FF, 0, false, true);
-    private FlexatarCell cell;
+    private FlxPreviewInput cell;
     private TextView positiveButton;
     private View.OnClickListener onViewInstructionsChosenListener = null;
     private FlexatarPreview flexatarPreview;
@@ -36,8 +38,16 @@ public class FlexatarPreviewFragment extends BaseFragment{
         super();
     }
 
-    FlexatarCabinetActivity parentFragment;
-    public  FlexatarPreviewFragment(FlexatarCell cell, FlexatarCabinetActivity parentFragment){
+    BaseFragment parentFragment;
+    public interface FlxPreviewInput{
+        public File getFlexatarFile();
+        public FlexatarStorageManager.FlexatarMetaData getMetaData();
+        public void setName(String name);
+        public boolean isBuiltin();
+        public boolean isPublic();
+    }
+    public  FlexatarPreviewFragment(FlxPreviewInput cell, BaseFragment parentFragment){
+//    public  FlexatarPreviewFragment(FlexatarCell cell, FlexatarCabinetActivity parentFragment){
         super();
         this.cell=cell;
         this.parentFragment=parentFragment;

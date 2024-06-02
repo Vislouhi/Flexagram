@@ -467,9 +467,12 @@ public class FlexatarCabinetActivity extends BaseFragment  {
             {
                 ItemModel item = new ItemModel(ItemModel.ACTION_CELL);
                 item.setImageResource(R.drawable.msg_delete);
-                item.setNameText("Try send log");
+                item.setNameText("process stat");
                 item.setOnClickListener(v -> {
-                    FlexatarServerAccess.debugLog("test","some log",FlexatarServiceAuth.getVerification(currentAccount).getBotToken());
+                    Statistics.process(UserConfig.selectedAccount);
+//                    FlexatarServiceAuth.getVerification(UserConfig.selectedAccount).verify();
+                    Marketing.sendEvent(UserConfig.selectedAccount,"test_event");
+//                    FlexatarServerAccess.debugLog("test","some log",FlexatarServiceAuth.getVerification(currentAccount).getBotToken());
                 });
 
                 itemsAction.add(item);
@@ -526,9 +529,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                         item.setChecked(!item.isChecked());
 
                         checkedCount += cell.isChecked() ? -1 : 1;
-                        handler.post(() -> {
-                            setCheckedFlexatarsCount();
-                        });
+                        handler.post(this::setCheckedFlexatarsCount);
                     }else{
                         showDialog(AlertDialogs.sayImposableToDelete(getContext()));
                     }
@@ -541,7 +542,7 @@ public class FlexatarCabinetActivity extends BaseFragment  {
 
             }
         });
-        itemAdapter.setFlexatarCellOnLongClickListener((pos,item,cell)->{
+        /*itemAdapter.setFlexatarCellOnLongClickListener((pos,item,cell)->{
             boolean isCallActivity = VoIPService.getSharedInstance() != null;
 
             if (isCallActivity) {
@@ -568,7 +569,8 @@ public class FlexatarCabinetActivity extends BaseFragment  {
                 setCheckedFlexatarsCount();
             }
 
-        });
+        });*/
+
         itemAdapter.setResourceProvider(getResourceProvider());
 
         recyclerView.setAdapter(itemAdapter);

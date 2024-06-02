@@ -77,7 +77,7 @@ public class AudioReader extends MediaCodec.Callback {
 
 
         } else {
-//                    Log.d(TAG, "input buffer encoded size: " + sampleSize);
+//                    Log.d(TAG, "input buffer index: " + index);
             long presentationTimeUs = extractor.getSampleTime();
             opusCodec.queueInputBuffer(index, 0, sampleSize, presentationTimeUs, 0);
             extractor.advance();
@@ -90,6 +90,7 @@ public class AudioReader extends MediaCodec.Callback {
     public void onOutputBufferAvailable(@NonNull MediaCodec mediaCodec, int index, @NonNull MediaCodec.BufferInfo bufferInfo) {
         synchronized (sync) {
             ByteBuffer outputBuffer = opusCodec.getOutputBuffer(index);
+//            Log.d(TAG,"outputBuffer ready index:"+index);
             audioBufferListener.onReady(outputBuffer,bufferInfo);
             opusCodec.releaseOutputBuffer(index, false);
             if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
@@ -102,11 +103,11 @@ public class AudioReader extends MediaCodec.Callback {
 
     @Override
     public void onError(@NonNull MediaCodec mediaCodec, @NonNull MediaCodec.CodecException e) {
-
+        Log.d(TAG,"media codec error");
     }
 
     @Override
     public void onOutputFormatChanged(@NonNull MediaCodec mediaCodec, @NonNull MediaFormat mediaFormat) {
-
+        Log.d(TAG,"media codec foormat changed");
     }
 }

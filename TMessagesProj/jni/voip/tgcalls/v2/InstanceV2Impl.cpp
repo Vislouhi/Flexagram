@@ -2092,7 +2092,7 @@ public:
             RTC_LOG(LS_INFO)
             << "setFlexatarAudioBufferCallback3 _outgoingAudioChannel not set";
         }
-        _flexatarAudioBufferCallback = callback;
+        _flexatarAudioBufferCallback = std::move(callback);
         if (_outgoingAudioChannel) {
 //            float dataArray1[] = {3.0f, 4.0f, 5.0f};
 //            callback(dataArray1,3);
@@ -2393,7 +2393,7 @@ void InstanceV2Impl::setFlexatarDelay1(bool flexatarDelay) {
 void InstanceV2Impl::setFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
     RTC_LOG(LS_INFO) << "setFlexatarAudioBufferCallback1";
     _internal->perform([callback](InstanceV2ImplInternal *internal) {
-        internal->setFlexatarAudioBufferCallback(callback);
+        internal->setFlexatarAudioBufferCallback(std::move(callback));
     });
 
 }

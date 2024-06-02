@@ -1852,7 +1852,7 @@ bool WebRtcVoiceMediaChannel::SetFlexatarDelay1(uint32_t ssrc,
       return false;
     }
 //  send_streams_[ssrc]->SetFlexatarDelay(enable);
-    it->second->SetFlexatarAudioBufferCallback(callback);
+    it->second->SetFlexatarAudioBufferCallback(std::move(callback));
     return true;
   }
 bool WebRtcVoiceMediaChannel::SetAudioSend(uint32_t ssrc,

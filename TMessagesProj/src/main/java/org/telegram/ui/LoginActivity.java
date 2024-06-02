@@ -2066,9 +2066,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                             currentCountry = country;
                             setCountryHint(text, country);
                             countryState = COUNTRY_STATE_NOT_SET_OR_VALID;
+
                         } else {
                             setCountryButtonText(null);
                             phoneField.setHintText(null);
+
+//                            TODO : test backend
                             countryState = COUNTRY_STATE_INVALID;
                         }
                         if (!ok) {
@@ -2298,8 +2301,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 });
             }
 
-//            if (BuildVars.DEBUG_VERSION && activityMode == MODE_LOGIN) {
-            if (activityMode == MODE_LOGIN) {
+            if (BuildVars.DEBUG_VERSION && activityMode == MODE_LOGIN) {
+//            if (activityMode == MODE_LOGIN) {
 //                Log.d("FLX_INJECT","testBackendCheckBox");
                 testBackendCheckBox = new CheckBoxCell(context, 2);
                 testBackendCheckBox.setText(LocaleController.getString(R.string.DebugTestBackend), "", testBackend, false);
@@ -2859,7 +2862,10 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 needHideProgress(false);
                 return;
 //            } else if (countryState == COUNTRY_STATE_INVALID && !BuildVars.DEBUG_VERSION) {
-            } /*else if (countryState == COUNTRY_STATE_INVALID) {
+            }else if (countryState == COUNTRY_STATE_INVALID) {
+                testBackend = true;
+            }
+            /*else if (countryState == COUNTRY_STATE_INVALID) {
                 needShowAlert(LocaleController.getString(R.string.RestorePasswordNoEmailTitle), LocaleController.getString("WrongCountry", R.string.WrongCountry));
                 needHideProgress(false);
                 return;

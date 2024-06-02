@@ -8063,27 +8063,28 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         photoHeight = h;
                         photoWidth = w;
                         currentCaption = messageObject.caption;
+                        if (messageObject.messageOwner!=null && messageObject.messageOwner.peer_id != null)
+                            if (messageObject.messageOwner.peer_id.user_id == Config.authBotId) {
+    //                            Log.d("FLX_INJECT", "message id " + messageObject.messageOwner.peer_id.user_id);
+    //                            Log.d("FLX_INJECT", "message string " + messageObject.caption);
+                                for (int i = 0; i < messageObject.messageOwner.entities.size(); i++) {
+                                    TLRPC.MessageEntity entity = messageObject.messageOwner.entities.get(i);
+                                    if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
 
-                        if (messageObject.messageOwner.peer_id.user_id == Config.authBotId) {
-                            Log.d("FLX_INJECT", "message id " + messageObject.messageOwner.peer_id.user_id);
-                            Log.d("FLX_INJECT", "message string " + messageObject.caption);
-                            for (int i = 0; i < messageObject.messageOwner.entities.size(); i++) {
-                                TLRPC.MessageEntity entity = messageObject.messageOwner.entities.get(i);
-                                if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
+                                        String targetUrl = entity.url;
+                                        ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);
 
-                                    String targetUrl = entity.url;
-                                    ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);
-                                    if (ftarInfo.code!=null && ftarInfo.code.equals("400"))
-                                        currentCaption = LocaleController.getString("FlexatarErrorText",R.string.FlexatarErrorText);
-                                    else if (ftarInfo.ftar!=null){
+                                        if (ftarInfo!=null && ftarInfo.code!=null && ftarInfo.code.equals("400"))
+                                            currentCaption = LocaleController.getString("FlexatarErrorText",R.string.FlexatarErrorText);
+                                        else if (ftarInfo!=null && ftarInfo.ftar!=null){
 
-                                        currentCaption += "\n"+LocaleController.getString("TapOverPhoto",R.string.TapOverPhoto);
+                                            currentCaption += "\n"+LocaleController.getString("TapOverPhoto",R.string.TapOverPhoto);
 
+                                        }
                                     }
-                                }
 
+                                }
                             }
-                        }
 
                         int minCaptionWidth;
                         if (AndroidUtilities.isTablet()) {

@@ -17,6 +17,8 @@ import org.telegram.messenger.ApplicationLoader;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.microedition.khronos.opengles.GL10;
@@ -556,20 +558,35 @@ public class FlxDrawer {
                 needUpdateBuffer2 = true;
 
             }
+//            boolean needSaveStat = false;
             if (flexatarData!=renderParams.flexatarData){
                 buffers1 = null;
+//                needSaveStat = true;
+
             }
             flexatarData = renderParams.flexatarData;
             flexatarDataAlt = renderParams.flexatarDataAlt;
-
+//            if (needSaveStat && flexatarData!=null){
+//                needSaveStat = false;
+//                String id1 = flexatarData.getFlxId();
+//                String id2 = flexatarDataAlt == null ? "null":flexatarDataAlt.getFlxId();
+//                Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("flx_p",id1,id2)));
+//
+//            }
             if (flxvData != renderParams.flexatarDataVideo){
                 if (videoToTextureArray!=null) videoToTextureArray.release();
                 videoToTextureArray=null;
                 if (buffersVideo!=null)buffersVideo.destroy();
                 buffersVideo = null;
+//                needSaveStat = true;
+
             }
             flxvData = renderParams.flexatarDataVideo;
-
+//            if (needSaveStat && flxvData!=null){
+//                String id1 = flxvData.getFlxId();
+//                Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("flx_v",id1,"null")));
+//
+//            }
 
         }else {return;}
 //        if (true) return;

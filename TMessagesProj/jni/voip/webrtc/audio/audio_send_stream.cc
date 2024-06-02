@@ -415,24 +415,64 @@ void AudioSendStream::SendAudioData(std::unique_ptr<AudioFrame> audio_frame) {
       _resamplerFrequency = audio_frame->samples_per_channel();
       _resamplerNumChannels = audio_frame->num_channels();
       _resampler = std::make_unique<webrtc::Resampler>();
-      if (_resampler->Reset(48000, 16000, audio_frame->num_channels()) == -1) {
+      if (_resampler->Reset(_resamplerFrequency*100, 16000, audio_frame->num_channels()) == -1) {
         _resampler = nullptr;
       }
     }
+//    RTC_LOG(LS_INFO) << "FLX_INJECT " << _resamplerFrequency<<" " <<audio_frame->num_channels();
+    if (_resamplerFrequency<=160){
+      std::vector<int16_t> samplesToResample(audio_frame->data(), audio_frame->data() +
+                                                                  audio_frame->samples_per_channel() *
+                                                                  audio_frame->num_channels());
 
-    if (_resampler) {
-      size_t outLen = 0;
-      std::vector<int16_t> samplesToResample(audio_frame->data(), audio_frame->data() + audio_frame->samples_per_channel() * audio_frame->num_channels());
-      std::vector<int16_t> resampled(160 * audio_frame->num_channels());
+      float *floatArray = new float[160];
+      unsigned int inputSize = samplesToResample.size();
+      for (size_t i = 0; i < 160; ++i) {
+        float cPos = static_cast<float>(i)/160;
+        int intPos = static_cast<int>(cPos);
+        if (intPos+1<inputSize){
+          float weight = cPos-static_cast<float>(intPos);
+          float p1 = static_cast<float>(samplesToResample.at(intPos)) / 32767.0f;
+          float p2 = static_cast<float>(samplesToResample.at(intPos+1)) / 32767.0f;
+          floatArray[i] = p1*(1-weight) + p2*weight;
+        }else{
+          floatArray[i] = static_cast<float>(samplesToResample.at(inputSize-1)) / 32767.0f;
+        }
+      }
+      /*for (size_t i = 0; i < samplesToResample.size()-1; ++i) {
+        if (i+1<samplesToResample.size()) {
+          float p1 = static_cast<float>(samplesToResample.at(i)) / 32767.0f;
+          float p2 = static_cast<float>(samplesToResample.at(i+1)) / 32767.0f;
+          floatArray[i*2] = p1;
+          floatArray[i*2+1] = (p1+p2)/2;
+        }
+
+//        std::cout << floatArray[i] << " ";
+      }*/
+//      floatArray[158] = floatArray[157];
+//      floatArray[159] = static_cast<float>(samplesToResample.at(samplesToResample.size()-1)) / 32767.0f;
+//      floatArray[159] = static_cast<float>(samplesToResample.at(79)) / 32767.0f;
+//        floatArray[i*2+1] = (p1+p2)/2;
+      flexatarAudioBufferCallback_(floatArray, 160);
+    }else {
+      if (_resampler) {
+        size_t outLen = 0;
+        std::vector<int16_t> samplesToResample(audio_frame->data(), audio_frame->data() +
+                                                                    audio_frame->samples_per_channel() *
+                                                                    audio_frame->num_channels());
+        std::vector<int16_t> resampled(160 * audio_frame->num_channels());
 
       _resampler->Push(samplesToResample.data(), samplesToResample.size(), resampled.data(), audio_frame->samples_per_channel() * audio_frame->num_channels(), outLen);
-      float* floatArray = new float[resampled.size()];
-      for (size_t i = 0; i < resampled.size(); ++i) {
-        floatArray[i] = static_cast<float>(resampled.at(i)) / 32767.0f;
+        float *floatArray = new float[resampled.size()];
+        for (size_t i = 0; i < resampled.size(); ++i) {
+          floatArray[i] = static_cast<float>(resampled.at(i)) / 32767.0f;
 //        std::cout << floatArray[i] << " ";
-      }
+        }
+//        RTC_LOG(LS_INFO) << "FLX_INJECT" << _resamplerFrequency << " " << resampled.at(0) << " "
+//                         << samplesToResample.at(0);
 //      float dataArray[] = {static_cast<float>(audio_frame->num_channels()), static_cast<float>(audio_frame->samples_per_channel()), static_cast<float>(resampled.at(10))};
-      flexatarAudioBufferCallback_(floatArray, resampled.size());
+        flexatarAudioBufferCallback_(floatArray, resampled.size());
+      }
     }
 
 
@@ -476,7 +516,7 @@ void AudioSendStream::SetFlexatarDelay1(bool flexatarDelay) {
 
 void AudioSendStream::SetFlexatarAudioBufferCallback(std::function<void(float *, int)> callback) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  flexatarAudioBufferCallback_ = callback;
+  flexatarAudioBufferCallback_ = std::move(callback);
 
 }
 webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {

@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 
@@ -179,15 +180,26 @@ public class FlexatarStorageManager {
         }
 
         public void setEffectIndex(int effectIndex){
+            if (tag.equals("call")) {
+                String eff = ""+effectIndex;
+                Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("eff", null, null,eff)));
+            }
             effectId = effectIndex == 3 ? 1:0;
             synchronized (flexatarFileLoadMutex) {
                 this.effectIndex = effectIndex;
                 Context context = ApplicationLoader.applicationContext;
                 String storageName = PREF_STORAGE_NAME_CHOSEN + tag + AccountInstance.getInstance(account).getUserConfig().getClientUserId();
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+                boolean isEffUsed = sharedPreferences.getBoolean("isFirstEff", false);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putInt("EffectIndex", effectIndex);
+                if (!isEffUsed && effectIndex!=0){
+                    editor.putBoolean("isFirstEff", true);
+                }
                 editor.apply();
+                if (!isEffUsed && effectIndex!=0 && tag.equals("call")){
+                    Marketing.sendEvent(account,Marketing.FIRST_EFFECT_USAGE_EVENT);
+                }
             }
         }
         public int getEffectIndex(){
@@ -316,11 +328,15 @@ public class FlexatarStorageManager {
                 Context context = ApplicationLoader.applicationContext;
                 String storageName = PREF_STORAGE_NAME_CHOSEN + tag + AccountInstance.getInstance(account).getUserConfig().getClientUserId();
                 SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
-//                String oldFirstPath = sharedPreferences.getString(FIRST, null);
+                boolean isFlexatarUsed = sharedPreferences.getBoolean("isUsed", false);
+
 
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString(FIRST, path);
                 editor.putString(SECOND, oldFirstPath);
+                if (!isFlexatarUsed){
+                    editor.putBoolean("isUsed", true);
+                }
                 editor.apply();
                 first = new File(path);
 //                if (oldFirstPath != null)
@@ -329,6 +345,14 @@ public class FlexatarStorageManager {
                 firstFlxData = null;
                 setFlexatarGroup();
                 Log.d("FLX_INJECT","change flexatar group size "+groupFiles.size());
+                if (tag.equals("call")) {
+                    String id1 = first.getName().replace(".flx", "");
+                    String id2 = second.getName().replace(".flx", "");
+                    Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("flx_p", id1, id2,null)));
+                    if(!isFlexatarUsed) {
+                        Marketing.sendEvent(account, Marketing.FIRST_FLEXATAR_USAGE_EVENT);
+                    }
+                }
             }
         }
         public void setChosenVideoFlexatar(String path) {
@@ -341,6 +365,12 @@ public class FlexatarStorageManager {
                 editor.apply();
                 chosenVideoFile = new File(path);
                 videoFlxData = null;
+                if (tag.equals("call")) {
+                    String id1 = chosenVideoFile.getName().replace(".flx", "");
+                    String id2 = "null";
+                    Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("flx_v", id1, id2,null)));
+                }
+
                 Log.d("FLX_INJECT","selected video flexatar: "+chosenVideoFile.getName());
 
 
@@ -515,6 +545,18 @@ public class FlexatarStorageManager {
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putInt(FLX_TYPE, flxType);
                 editor.apply();
+                if (tag.equals("call")) {
+                    if (flxType == 1) {
+                        String id1 = getChosenFirst().getName().replace(".flx", "");
+                        String id2 = getChosenSecond().getName().replace(".flx", "");
+                        Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("flx_p", id1, id2,null)));
+                    } else {
+                        String id1 = getChosenVideo().getName().replace(".flx", "");
+                        String id2 = "null";
+                        Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("flx_v", id1, id2,null)));
+
+                    }
+                }
 //                String firstPath = sharedPreferences.getInt(FLX_TYPE, null);
             }
         }
@@ -523,10 +565,10 @@ public class FlexatarStorageManager {
     public static File getFlexatarStorage(Context context,int account){
         File rootDir = context.getFilesDir();
         if (account == -1) account = UserConfig.selectedAccount;
-        Log.d("FLX_INJECT","flexatar strogae account "+account);
+//        Log.d("FLX_INJECT","flexatar strogae account "+account);
 
         String userFolderName = "tg_" + AccountInstance.getInstance(account).getUserConfig().getClientUserId();
-        Log.d("FLX_INJECT","userFolderName "+userFolderName);
+//        Log.d("FLX_INJECT","userFolderName "+userFolderName);
         File userFolder = new File(rootDir,userFolderName);
         if (!userFolder.exists()) userFolder.mkdir();
 
@@ -620,6 +662,9 @@ public class FlexatarStorageManager {
                 dataToFile(extractResult[1],videoFile);
 
             }
+            if (storageActionListener!=null){
+                storageActionListener.storageDidChanged(account,FLEXATAR_ADD,flexataFile);
+            }
 
         }
         return flexataFile;
@@ -640,11 +685,21 @@ public class FlexatarStorageManager {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
+            if (storageActionListener!=null){
+                storageActionListener.storageDidChanged(account,FLEXATAR_ADD,flexataFile);
+            }
         }
         return flexataFile;
     }
-    public static File addToStorage(Context context,int account, File srcFile){
+    public static class FlxDesc{
+        public File file;
+        public int type;
+        public FlxDesc(File file,int type){
+            this.file=file;
+            this.type=type;
+        }
+    }
+    public static FlxDesc addToStorage(Context context,int account, File srcFile){
         File videoFile = new File(srcFile.getAbsolutePath().replace(".flx", ".mp4"));
         boolean isVideo = videoFile.exists();
         String fid = srcFile.getName().replace(".flx","");
@@ -658,18 +713,23 @@ public class FlexatarStorageManager {
                 addStorageRecordVideo(context,account,fid);
             else
                 addStorageRecord(context,account,fid);
-            try {
-                copy(srcFile, flexataFile);
-                if (isVideo){
-                    File videoDstFile = new File(flexatarStorageFolder,videoFile.getName());
-                    copy(videoFile, videoDstFile);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+    //            try {
+    //                copy(srcFile, flexataFile);
+            srcFile.renameTo(flexataFile);
+            if (isVideo){
+                File videoDstFile = new File(flexatarStorageFolder,videoFile.getName());
+    //                    copy(videoFile, videoDstFile);
+                videoFile.renameTo(videoDstFile);
             }
-
+    //            } catch (IOException e) {
+    //                throw new RuntimeException(e);
+    //            }
+            if (storageActionListener!=null){
+                storageActionListener.storageDidChanged(account,FLEXATAR_ADD,flexataFile);
+            }
         }
-        return flexataFile;
+
+        return new FlxDesc(flexataFile,isVideo ? 0 : 1);
     }
     public static void copy(File src, File dst) throws IOException {
         InputStream in = new FileInputStream(src);
@@ -830,6 +890,39 @@ public class FlexatarStorageManager {
             throw new RuntimeException(e);
         }
 
+    }
+    public static synchronized void removeGroupRecord(Context context,int account,String fid){
+        if (account == -1) account = UserConfig.selectedAccount;
+        String storageName = PREF_STORAGE_NAME_GROUP + AccountInstance.getInstance(account).getUserConfig().getClientUserId();
+        SharedPreferences sharedPreferences = context.getSharedPreferences(storageName, Context.MODE_PRIVATE);
+        for (String groupKey : sharedPreferences.getAll().keySet()){
+            String flexatarFilesString = sharedPreferences.getString(groupKey, "[]");
+            try {
+                JSONArray jsonArray =  new JSONArray(flexatarFilesString);
+                if (jsonArray.length() != 0){
+                    boolean found = false;
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        if(jsonArray.getString(i).equals(fid)){
+                            jsonArray.remove(i);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found){
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        if (jsonArray.length() == 0){
+                            editor.remove(groupKey);
+                        }else{
+                            editor.putString(groupKey, jsonArray.toString());
+                        }
+                        editor.apply();
+                        break;
+                    }
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
     public static synchronized void removeGroupRecord(Context context,int account,String groupId,String fid){
         String groupKey = "groupId_"+groupId;
@@ -1080,6 +1173,12 @@ public class FlexatarStorageManager {
 //                    FlexatarServerAccess.lambdaRequest("/" + deleteRout, "DELETE", null, null, null);
         }
     }
+    public interface OnStorageChange{
+        void storageDidChanged(int account, int code,File flexatarFile);
+    }
+    public static final int FLEXATAR_DELETE = 0;
+    public static final int FLEXATAR_ADD = 1;
+    public static OnStorageChange storageActionListener;
     public static void deleteFromStorage(Context context,int account,File flexatarFile,boolean deleteOnCloaud){
         if (flexatarFile.exists()){
             File videoFile = new File(flexatarFile.getAbsolutePath().replace(".flx", ".mp4"));
@@ -1090,6 +1189,9 @@ public class FlexatarStorageManager {
                 removeRecord(context,account, flexatarFile.getName().replace(".flx", ""));
             }
             flexatarFile.delete();
+            if (storageActionListener!=null){
+                storageActionListener.storageDidChanged(account,FLEXATAR_DELETE,flexatarFile);
+            }
         }
         if (deleteOnCloaud) {
             deleteFromCloud(account,flexatarFile);

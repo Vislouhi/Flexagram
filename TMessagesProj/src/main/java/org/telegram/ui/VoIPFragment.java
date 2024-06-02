@@ -2820,13 +2820,15 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                     bottomButton.setType(VoIpSwitchLayout.Type.CAMERA, !service.isFrontFaceCamera());
 
                     if (FlexatarRenderer.isFlexatarCamera){
-                        FlexatarRenderer.isFlexatarCamera = false;
+                        FlexatarRenderer.setFlexatarCameraFlag(false);
+
                         service.restartCamera();
                         flexatarIcon.setEnabled(false);
                         flexatarIcon.setVisibility(View.GONE);
 
                     }else if(!service.isFrontFaceCamera() && !FlexatarRenderer.isFlexatarCamera){
-                        FlexatarRenderer.isFlexatarCamera = true;
+                        FlexatarRenderer.setFlexatarCameraFlag(true);
+
                         service.switchCamera();
                         flexatarIcon.setEnabled(true);
                         flexatarIcon.setVisibility(View.VISIBLE);
@@ -2863,7 +2865,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             if (!currentUserIsVideo) {
                 if (Build.VERSION.SDK_INT >= 21) {
                     if (previewDialog == null) {
-                        FlexatarRenderer.isFlexatarCamera = true;
+                        FlexatarRenderer.setFlexatarCameraFlag(true);
+
                         service.createCaptureDevice(false);
 
                         windowView.setLockOnScreen(true);

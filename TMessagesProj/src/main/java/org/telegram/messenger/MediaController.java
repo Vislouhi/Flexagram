@@ -4185,9 +4185,11 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 FlexatarNotificator.isMakingFlexatarRoundVideo = true;
                 OpusToAacConverter converter = new OpusToAacConverter();
                 converter.convertOpusToAac(new File(absPath), new File(audioAacPath), () -> {
+                    Log.d("FLX_INJECT", " audio conversion ready");
                     FlexatarNotificator.isMakingFlexatarRoundVideo = false;
                     SpeechAnimation.dropModels();
                     try {
+
                         Config.stopRecordingAudioSemaphore.await();
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);

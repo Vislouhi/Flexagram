@@ -13,11 +13,14 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import org.flexatar.DataOps.FlexatarData;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.LaunchActivity;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 public class FlexatarRenderer {
 //    private static final int SAMPLE_RATE = 16000;
@@ -30,7 +33,28 @@ public class FlexatarRenderer {
 //    public static FlexatarData currentFlxData;
 //    public static FlexatarData altFlxData;
     public static float[] speechState = {0,0,0,0,0};
-    public static boolean isFlexatarCamera = true;
+    public static boolean isFlexatarCamera = false;
+    public static void setFlexatarCameraFlag(boolean flag){
+        isFlexatarCamera = flag;
+        if (!flag)
+            Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("fin", null, null,null)));
+        else {
+            FlexatarStorageManager.FlexatarChooser chooser = FlexatarStorageManager.callFlexatarChooser[UserConfig.selectedAccount];
+            if (chooser.getFlxType() == 1) {
+                String id1 = chooser.getChosenFirst().getName().replace(".flx", "");
+                String id2 = chooser.getChosenSecond().getName().replace(".flx", "");
+                Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("flx_p", id1, id2, null)));
+            } else {
+                String id1 = chooser.getChosenVideo().getName().replace(".flx", "");
+                String id2 = "null";
+                Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("flx_v", id1, id2,null)));
+
+            }
+        }
+//            Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("stt", null, null, null)));
+//        }
+
+    }
 //    private static AudioRecord audioRecord;
 //    private static ExecutorService executor;
 //    private static boolean isRecording;
@@ -140,11 +164,12 @@ public class FlexatarRenderer {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-
+//        Statistics.check();
+//        TgPackFieId.check();
 //        VideoToTextureArray.decode();
 //        FlexatarServiceAuth.integrityCheck();
 //        Context context = ApplicationLoader.applicationContext;
-//        FlexatarStorageManager.clearStorage();
+//        FlexatarStorageManager.clearStorage(UserConfig.selectedAccount);
 
     }
 
@@ -179,15 +204,18 @@ public class FlexatarRenderer {
         synchronized (processingMutex) {
             LaunchActivity context = LaunchActivity.instance;
             SpeechAnimation.loadModels(context);
-            audioToTF.add(audioBuffer);
-            if (audioToTF.size() == 5) {
-                float[] buffer = concatenateFloatArrays(audioToTF);
-                if (buffer.length == 800) {
-                    FlexatarRenderer.speechState = SpeechAnimation.processAudio(concatenateFloatArrays(audioToTF));
-//                    Log.d("FLX_INJECT", "anim voice call " + Arrays.toString(FlexatarRenderer.speechState));
-                }else
-                    Log.d("processSpeechAnimation", "incorect size");
-                audioToTF.clear();
+            if (FlexatarRenderer.isFlexatarCamera) {
+                audioToTF.add(audioBuffer);
+//                Log.d("FLX_INJECT", "audioBuffer " + Arrays.toString(audioBuffer));
+                if (audioToTF.size() == 5) {
+                    float[] buffer = concatenateFloatArrays(audioToTF);
+                    if (buffer.length == 800) {
+                        FlexatarRenderer.speechState = SpeechAnimation.processAudio(concatenateFloatArrays(audioToTF));
+//                        Log.d("FLX_INJECT", "anim voice call " + Arrays.toString(FlexatarRenderer.speechState));
+                    } else
+                        Log.d("processSpeechAnimation", "incorect size");
+                    audioToTF.clear();
+                }
             }
         }
 

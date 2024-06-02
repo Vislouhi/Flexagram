@@ -70,9 +70,13 @@ public class FlexatarData {
         });
     }
     private File parentFile;
+    public String getFlxId(){
+//        Log.d("FLX_INJECT","parentFile "+parentFile);
+        return parentFile.getName().replace(".flx","");
+    }
     private void setParentFile(File file) {
         parentFile = file;
-        if (file.getName().contains("char1")) {
+        /*if (file.getName().contains("char1")) {
             Log.d("FLX_INJECT","saving default mouth");
 
 
@@ -81,7 +85,7 @@ public class FlexatarData {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }
+        }*/
     }
     public File getVideo() {
         return new File(parentFile.getAbsolutePath().replace(".flx",".mp4"));
@@ -269,7 +273,7 @@ public class FlexatarData {
 
         }else {
             mouthPoints = new ArrayList<>();
-
+//            idxOfInterest = {88,97,50,43,54,46}
             for (int i = 0; i < idxOfInterest.length; i++) {
                 List<float[]> vtxMandala = new ArrayList<>();
                 mouthPoints.add(vtxMandala);

@@ -23,19 +23,21 @@ import java.io.File;
 public class FlexatarHorizontalRecycleView extends RecyclerView {
     public FlexatarHorizontalRecycleView(@NonNull Context context,int account,int flexatarType,FlexatarUI.FlexatarChooseListener onChooseListener) {
         super(context);
-        setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-        setAdapter(new Adapter(context,account,flexatarType,onChooseListener));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
+        setLayoutManager(layoutManager);
+        setAdapter(new Adapter(context,account,flexatarType,layoutManager,onChooseListener));
+
     }
 
     public static class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
 
         private final Context mContext;
-        private final File[] flexatarsInLocalStorage;
+        private File[] flexatarsInLocalStorage;
         private final FlexatarUI.FlexatarChooseListener onChooseListener;
         private final int account;
         private OnFlexatarChosen onFlexatarChosenListener = null;
 
-        public Adapter(Context context,int account,int flexatarType, FlexatarUI.FlexatarChooseListener onChooseListener){
+        public Adapter(Context context,int account,int flexatarType,LinearLayoutManager layoutManager, FlexatarUI.FlexatarChooseListener onChooseListener){
             this.account=account;
             mContext = context;
             if (flexatarType == 0){
@@ -49,6 +51,25 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
             }
 //            flexatarsInLocalStorage = FlexatarStorageManager.getFlexatarFileList(context);
             this.onChooseListener = onChooseListener;
+            FlexatarStorageManager.storageActionListener = (a,code,file) -> {
+                if (a!=account) return;
+                if (code == FlexatarStorageManager.FLEXATAR_DELETE){
+                    ModifyResult result = deleteStringFromArray(flexatarsInLocalStorage, file);
+
+                    flexatarsInLocalStorage = result.array;
+                    if (result.idx!=-1)
+                        AndroidUtilities.runOnUIThread(()->{
+                            notifyItemRemoved(result.idx);
+                        });
+                }else if (code == FlexatarStorageManager.FLEXATAR_ADD){
+                    flexatarsInLocalStorage = addFileToArray(flexatarsInLocalStorage,file);
+                    AndroidUtilities.runOnUIThread(()->{
+
+                        notifyItemInserted(0);
+                        layoutManager.scrollToPosition(0);
+                    });
+                }
+            };
         }
         public interface OnFlexatarChosen{
             void onFlexatarChosen(File file);
@@ -112,5 +133,60 @@ public class FlexatarHorizontalRecycleView extends RecyclerView {
                 super(itemView);
             }
         }
+
+        // Record to store the result
+        private static class ModifyResult {
+            public File[] array;
+            public int idx;
+            public ModifyResult(File[] newArray, int modifiedIndex){
+                array=newArray;
+                idx=modifiedIndex;
+            }
+        }
+
+        // Function to delete the given string from the array
+        public static ModifyResult deleteStringFromArray(File[] array, File stringToDelete) {
+            int index = -1;
+
+            // Find the index of the string to delete
+            for (int i = 0; i < array.length; i++) {
+                if (array[i].equals(stringToDelete)) {
+                    index = i;
+                    break;
+                }
+            }
+
+            // If the string is not found, return the original array and index -1
+            if (index == -1) {
+                return new ModifyResult(array, index);
+            }
+
+            // Create a new array without the deleted string
+            File[] newArray = new File[array.length - 1];
+            int newArrayIndex = 0;
+            for (int i = 0; i < array.length; i++) {
+                if (i != index) {
+                    newArray[newArrayIndex++] = array[i];
+                }
+            }
+
+            // Return the result with the new array and the index of the deleted string
+            return new ModifyResult(newArray, index);
+        }
+        public static File[] addFileToArray(File[] array, File fileToAdd) {
+            // Create a new array with one more element than the original array
+            File[] newArray = new File[array.length + 1];
+
+            // Assign the given File to the first position of the new array
+            newArray[0] = fileToAdd;
+
+            // Copy the elements of the original array to the new array starting from the second position
+            System.arraycopy(array, 0, newArray, 1, array.length);
+
+            // Return the new array
+            return newArray;
+        }
+
     }
+
 }

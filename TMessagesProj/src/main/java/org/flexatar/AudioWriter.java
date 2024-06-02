@@ -76,7 +76,9 @@ public class AudioWriter extends MediaCodec.Callback {
 
         byte[] tempArray = new byte[bufferInfo.size];
         buffer.get(tempArray);
+//        Log.d(TAG,"before write latch");
         latch.countDown();
+//        Log.d(TAG,"after write latch");
         inputBuffer.put(tempArray);
         if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
             aacEncoder.queueInputBuffer(bufferIndex, 0, 0, presentationTime, MediaCodec.BUFFER_FLAG_END_OF_STREAM);

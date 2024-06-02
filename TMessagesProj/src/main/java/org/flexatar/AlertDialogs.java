@@ -290,6 +290,17 @@ public class AlertDialogs {
 
         return builder.create();
     }
+    public static AlertDialog sayNeedToActivateFlexatar(Context context){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("FlexatarInfo",R.string.FlexatarInfo));
+        builder.setMessage(LocaleController.getString("NeedToActivateFlexatar",R.string.NeedToActivateFlexatar));
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+
+        });
+
+        return builder.create();
+    }
     public static AlertDialog locationAlert(Context context,Runnable completion){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);

@@ -89,6 +89,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 
 import org.flexatar.FlexatarRenderer;
+import org.flexatar.Statistics;
 import org.json.JSONObject;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -147,6 +148,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @SuppressLint("NewApi")
@@ -2809,8 +2811,13 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		});
 	}
 	public void setAudioListener(boolean enabled){
-		if (tgVoip[CAPTURE_DEVICE_CAMERA]!=null)
+		Log.d("FLX_INJECT", "try to set audio listener");
+		if (tgVoip[CAPTURE_DEVICE_CAMERA]!=null) {
+
 			tgVoip[CAPTURE_DEVICE_CAMERA].setAudioListener(enabled);
+			Log.d("FLX_INJECT", "audio listener ready");
+		}
+
 	}
 	public boolean isMicMute() {
 		return micMute;
@@ -4498,6 +4505,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	}
 
 	private void callEnded() {
+		Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element("fin", null, null,null)));
+
 		if (BuildVars.LOGS_ENABLED) {
 			FileLog.d("Call " + getCallID() + " ended");
 		}

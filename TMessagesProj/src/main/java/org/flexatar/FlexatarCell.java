@@ -34,7 +34,7 @@ import org.telegram.ui.Components.RLottieDrawable;
 import java.io.File;
 
 
-public class FlexatarCell extends RelativeLayout {
+public class FlexatarCell extends RelativeLayout  implements  FlexatarPreviewFragment.FlxPreviewInput{
     private final ImageView icnFlx;
     private TextView dateTextView;
     private final LinearLayout textContentLayout;

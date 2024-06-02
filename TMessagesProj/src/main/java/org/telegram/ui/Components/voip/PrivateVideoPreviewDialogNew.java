@@ -453,7 +453,8 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                     showStub(true, true);
                     if (voipInstance != null ) {
                         if (visibleCameraPage == 2) {
-                            FlexatarRenderer.isFlexatarCamera = false;
+                            FlexatarRenderer.setFlexatarCameraFlag(false);
+
                             if (!isCurrentFontFace) {
                                 voipInstance.switchCamera();
                             }else{
@@ -462,7 +463,8 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                             flexatarPanelView.setVisibility(View.GONE);
                             flexatarPanelView.setEnabled(false);
                         }else if (visibleCameraPage == 3) {
-                            FlexatarRenderer.isFlexatarCamera = false;
+                            FlexatarRenderer.setFlexatarCameraFlag(false);
+
                             if (isCurrentFontFace) {
                                 voipInstance.switchCamera();
                             }else{
@@ -472,7 +474,8 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                             flexatarPanelView.setEnabled(false);
                         }else if (visibleCameraPage == 1) {
                             if (!FlexatarRenderer.isFlexatarCamera) {
-                                FlexatarRenderer.isFlexatarCamera = true;
+                                FlexatarRenderer.setFlexatarCameraFlag(true);
+
                                 voipInstance.restartCamera();
                             }
                             flexatarPanelView.setVisibility(View.VISIBLE);
@@ -486,7 +489,8 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
             } else {
                 if (position == 0) {
                     //switch to screencast from any camera
-                    FlexatarRenderer.isFlexatarCamera = false;
+                    FlexatarRenderer.setFlexatarCameraFlag(false);
+
                     viewPager.findViewWithTag("screencast_stub").setVisibility(VISIBLE);
                     saveLastCameraBitmap();
                     showStub(false, false);
@@ -507,7 +511,8 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                     }
                     if (position == 1 ){
                         if (!FlexatarRenderer.isFlexatarCamera) {
-                            FlexatarRenderer.isFlexatarCamera = true;
+                            FlexatarRenderer.setFlexatarCameraFlag(true);
+
                             if (voipInstance!=null)
                                 voipInstance.restartCamera();
                         }
@@ -515,7 +520,8 @@ public abstract class PrivateVideoPreviewDialogNew extends FrameLayout implement
                         flexatarPanelView.setEnabled(true);
                     }
                     if (position!=1 && realCurrentPage == 1){
-                        FlexatarRenderer.isFlexatarCamera = false;
+                        FlexatarRenderer.setFlexatarCameraFlag(false);
+
                         boolean isFrontFaceCamera = VoIPService.getSharedInstance().isFrontFaceCamera();
                         if (!isFrontFaceCamera && position == 2 || isFrontFaceCamera && position == 3){
                             if (voipInstance!=null)

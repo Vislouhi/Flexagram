@@ -423,7 +423,8 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
         boolean currentFrontface = service.isFrontFaceCamera();
         if (currentPage == 0 && needScreencast) {
             Log.d("FLX_INJECT","screen cast selected "+currentPage);
-            FlexatarRenderer.isFlexatarCamera = false;
+
+            FlexatarRenderer.setFlexatarCameraFlag(false);
         }
 
         if (currentTexturePage == 1){
@@ -432,7 +433,7 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
             cameraReady = false;
 
             if (!FlexatarRenderer.isFlexatarCamera) {
-                FlexatarRenderer.isFlexatarCamera = true;
+                FlexatarRenderer.setFlexatarCameraFlag(true);
                 service.restartCamera();
 
             }
@@ -445,7 +446,8 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
 
             cameraReady = false;
 
-            FlexatarRenderer.isFlexatarCamera = false;
+            FlexatarRenderer.setFlexatarCameraFlag(false);
+
             if (!currentFrontface) {
                 service.switchCamera();
             }else{
@@ -459,7 +461,8 @@ public abstract class PrivateVideoPreviewDialog extends FrameLayout implements V
 
             {
                 cameraReady = false;
-                FlexatarRenderer.isFlexatarCamera = false;
+                FlexatarRenderer.setFlexatarCameraFlag(false);
+
 
                 if (currentFrontface){
                     service.switchCamera();

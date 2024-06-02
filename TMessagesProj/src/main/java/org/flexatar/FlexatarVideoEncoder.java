@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 
 public class FlexatarVideoEncoder {
@@ -85,6 +86,21 @@ public class FlexatarVideoEncoder {
             secondFlx = null;
             videoFlx = null;
         }
+        String id1;
+        String id2;
+        String type;
+        if (flxType == 1) {
+            id1 = chooser.getChosenFirst().getName().replace(".flx", "");
+            id2 = chooser.getChosenSecond().getName().replace(".flx", "");
+            type = "rnd_p";
+        }else{
+            id1 = chooser.getChosenVideo().getName().replace(".flx", "");
+            id2 = null;
+            type = "rnd_v";
+
+        }
+        Executors.newSingleThreadExecutor().execute(() -> Statistics.addLine(new Statistics.Element(type, id1, id2,""+chooser.getEffectIndex())));
+
         /*flxDrawer.onFrameStartListener.set( ()-> new FlxDrawer.RenderParams(){{
             mixWeight = 1f;
             effectID = 0;
@@ -423,8 +439,10 @@ public class FlexatarVideoEncoder {
             mInputSurface = null;
         }
         if (mMuxer != null) {
-            mMuxer.stop();
-            mMuxer.release();
+            try {
+                mMuxer.stop();
+                mMuxer.release();
+            }catch (Exception ignored){}
             mMuxer = null;
         }
         completion.run();

@@ -128,6 +128,7 @@ import org.flexatar.AlertDialogs;
 import org.flexatar.Config;
 import org.flexatar.FlexatarCabinetActivity;
 import org.flexatar.FlexatarControlPanelLayout;
+import org.flexatar.FlexatarPreviewFragment;
 import org.flexatar.FlexatarStorageManager;
 import org.flexatar.ServerDataProc;
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -17586,6 +17587,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
+//        Log.d("FLX_INJECT", "notification id "+id);
         if (id == NotificationCenter.messagesDidLoad) {
             int guid = (Integer) args[10];
             if (guid != classGuid) {
@@ -34088,8 +34090,45 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             ServerDataProc.FlexatarChatCellInfo ftarInfo = ServerDataProc.parseFlexatarCellUrl(targetUrl);
 
                             if (ftarInfo!=null&&ftarInfo.ftar!=null&&ftarInfo.code==null){
+                                File flexatarStorageFolder = FlexatarStorageManager.getFlexatarStorage(ApplicationLoader.applicationContext,currentAccount);
+                                File ftarLocalFile = new File(flexatarStorageFolder, ServerDataProc.flxFileNameByRoute(ftarInfo.ftar));
                                 isFlexatarCell = true;
-                                if (flexatarPopUp == null) {
+                                if (ftarLocalFile.exists()) {
+                                    FlexatarStorageManager.FlexatarMetaData metaData = FlexatarStorageManager.getFlexatarMetaData(ftarLocalFile, false);
+                                    boolean isPublic = ftarInfo.ftar.startsWith("public");
+
+                                    FlexatarPreviewFragment.FlxPreviewInput flxPreviewInput = new FlexatarPreviewFragment.FlxPreviewInput() {
+
+                                        @Override
+                                        public File getFlexatarFile() {
+                                            return ftarLocalFile;
+                                        }
+
+                                        @Override
+                                        public FlexatarStorageManager.FlexatarMetaData getMetaData() {
+                                            return metaData;
+                                        }
+
+                                        @Override
+                                        public void setName(String name) {
+
+                                        }
+
+                                        @Override
+                                        public boolean isBuiltin() {
+                                            return false;
+                                        }
+
+                                        @Override
+                                        public boolean isPublic() {
+                                            return isPublic;
+                                        }
+
+                                    };
+
+                                    presentFragment(new FlexatarPreviewFragment(flxPreviewInput, ChatActivity.this));
+
+                                /*if (flexatarPopUp == null) {
                                     int fragW = fragmentView.getWidth();
                                     int fragH = fragmentView.getHeight();
                                     flexatarPopUp = AlertDialogs.importFlexatarPopup(getContext(), fragmentView, getResourceProvider(), ftarInfo,fragW,fragH,
@@ -34106,8 +34145,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                                 showDialog(AlertDialogs.sayFlexatarNotFound(getContext()));
 
                                             });
+                                }*/
+//                                    Log.d("FLX_INJECT", "need to process ftar " + ftarInfo.ftar);
+                                }else{
+                                    showDialog(AlertDialogs.sayNeedToActivateFlexatar(getContext()));
                                 }
-                                Log.d("FLX_INJECT", "need to process ftar " + ftarInfo.ftar);
                             }
                         }
                     }

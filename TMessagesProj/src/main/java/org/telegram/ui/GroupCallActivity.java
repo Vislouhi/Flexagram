@@ -4121,10 +4121,12 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             VoIPService service = VoIPService.getSharedInstance();
             if (service != null && service.getVideoState(false) == Instance.VIDEO_STATE_ACTIVE) {
                 if (FlexatarRenderer.isFlexatarCamera){
-                    FlexatarRenderer.isFlexatarCamera = false;
+                    FlexatarRenderer.setFlexatarCameraFlag(false);
+
                     service.restartCamera();
                 }else if(!service.isFrontFaceCamera() && !FlexatarRenderer.isFlexatarCamera){
-                    FlexatarRenderer.isFlexatarCamera = true;
+                    FlexatarRenderer.setFlexatarCameraFlag(true);
+
                     service.switchCamera();
                 }else {
                     service.switchCamera();
@@ -5258,7 +5260,8 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
 //                            voIPService.recreate();
 //                            voIPService.switchToFlexatar(true);
 
-                        FlexatarRenderer.isFlexatarCamera = true;
+                        FlexatarRenderer.setFlexatarCameraFlag(true);
+
                         voIPService.createCaptureDevice(false);
 
                     }
@@ -5268,7 +5271,8 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                         public void onDismiss(boolean screencast, boolean apply) {
                             Log.d("FLX_INJECT","group chosen screencast " + screencast);
                             if (screencast){
-                                FlexatarRenderer.isFlexatarCamera = false;
+                                FlexatarRenderer.setFlexatarCameraFlag(false);
+
                                 voIPService.setFlexatarDelay(false);
                             }
                             boolean showMicIcon = previewDialog.micEnabled;

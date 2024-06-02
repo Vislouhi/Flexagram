@@ -657,6 +657,8 @@ public class FlexatarServerAccess {
     private static final Object downloadsLock = new Object();
 
     public static void downloadFlexatar(int account,File flexatarFile,String servPath,OnReadyOrErrorListener listener){
+        FlexatarServiceAuth.FlexatarVerifyProcess verification = FlexatarServiceAuth.getVerification(account);
+        if (!verification.isVerified()) return;
         synchronized (downloadsLock) {
             if (activeDownloads.containsKey(servPath)) {
                 activeDownloads.put(servPath, listener);
@@ -734,7 +736,7 @@ public class FlexatarServerAccess {
                     activeDownloads.remove(servPath);
                     if (list != null) list.onError();
 
-                    FlexatarServerAccess.requestJson(FlexatarServiceAuth.getVerification(account), "verify", "POST",
+                    FlexatarServerAccess.requestJson(verification, "verify", "POST",
                             new FlexatarServerAccess.OnRequestJsonReady() {
                                 @Override
                                 public void onReady(FlexatarServerAccess.StdResponse response) {
